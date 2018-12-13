@@ -3,7 +3,6 @@
 
 """Tests for `roomacoustics` package."""
 
-import pytest
 
-
-from roomacoustics import roomacoustics
+def test_import():
+    import roomacoustics
