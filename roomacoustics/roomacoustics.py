@@ -2,14 +2,65 @@
 
 """Main module."""
 
+import re
 import numpy as np
+
+
+def reverberation_time_energy_decay_curve(energy_decay_curve, times, T='T20', normalize=True):
+    """Estimate the reverberation time from a given energy decay curve according
+    to the ISO standard 3382 _[1].
+
+    Parameters
+    ----------
+    energy_decay_curve : ndarray, double
+        Energy decay curve. The time needs to be the arrays last dimension.
+    times : ndarray, double
+        Time vector corresponding to each sample of the EDC.
+    T : 'T20', 'T30', 'T40', 'T50', 'T60', 'EDT'
+        Decay interval to be used for the reverberation time extrapolation
+
+    Returns
+    -------
+    reverberation_time : double
+        The reverberation time
+
+    References
+    ----------
+    .. [1]  ISO 3382, Acoustics - Measurement of the reverberation time of rooms
+            with reference to other acoustical parameters.
+
+    """
+    if T == 'EDT':
+        upper = 0.
+        lower = -10.
+    else:
+        upper = -5
+        lower = -np.double(re.findall(r'\d+', T)) + upper
+
+    if normalize:
+        energy_decay_curve /= energy_decay_curve[0]
+
+    edc_db = 10*np.log10(np.abs(energy_decay_curve))
+
+    idx_upper = np.argmin(np.abs(upper - edc_db))
+    idx_lower = np.argmin(np.abs(lower - edc_db))
+
+    edc_upper = edc_db[idx_upper]
+    edc_lower = edc_db[idx_lower]
+
+    time_upper = times[idx_upper]
+    time_lower = times[idx_lower]
+
+    reverberation_time = -60/((edc_lower - edc_upper)/(time_lower - time_upper))
+
+    return reverberation_time
 
 
 def energy_decay_curve_analytic(
         surfaces, alphas, volume, times, source=None,
         receiver=None, method='eyring', c=343.4, frequency=None):
     """Calculate the energy decay curve analytically by using Eyring's or
-    Sabine's equation.
+    Sabine's equation _[2].
 
     Parameters
     ----------
@@ -37,6 +88,10 @@ def energy_decay_curve_analytic(
     -------
     energy_decay_curve : ndarray, double
         The energy decay curve
+
+    References
+    ----------
+    .. [2]  H. Kuttruff, Room acoustics, 4th Ed. Taylor & Francis, 2009.
 
     """
 
