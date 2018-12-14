@@ -19,11 +19,6 @@ python36:
     stage: test
     script: tox -e py36
 
-linter:
-    image: python:3.6
-    stage: test
-    script: tox -e flake8
-
 build:
   stage: build
   script: tox -e build
