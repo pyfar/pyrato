@@ -56,6 +56,44 @@ def reverberation_time_energy_decay_curve(energy_decay_curve, times, T='T20', no
     return reverberation_time
 
 
+def schroeder_integration(impulse_response, is_energy=False):
+    """Calculate the Schroeder integral of a room impulse response _[3]. The
+    result is the energy decay curve for the given room impulse response.
+
+    .. math:
+
+        \\langle e^2(t) \\rangle = N\\cdot \\int_{t}^{\\infty} h^2(\\tau) \\mathrm{d} \\tau
+
+    Parameters
+    ----------
+    impulse_response : ndarray, double
+        Room impulse response as array
+    is_energy : boolean, optional
+        Whether the input represents energy data or sound pressure values.
+
+    Returns
+    -------
+    energy_decay_curve : ndarray, double
+        The energy decay curve
+
+    Reference
+    ---------
+    .. [3]  M. R. Schroeder, “New Method of Measuring Reverberation Time,”
+            The Journal of the Acoustical Society of America, vol. 37, no. 6,
+            pp. 1187–1187, 1965.
+
+    """
+    if not is_energy:
+        data = np.abs(impulse_response)**2
+
+    if data.ndim >= 2:
+        energy_decay_curve = np.fliplr(np.cumsum(np.fliplr(data), axis=-1))
+    else:
+        energy_decay_curve = np.flipud(np.cumsum(np.flipud(data)))
+
+    return energy_decay_curve
+
+
 def energy_decay_curve_analytic(
         surfaces, alphas, volume, times, source=None,
         receiver=None, method='eyring', c=343.4, frequency=None):
