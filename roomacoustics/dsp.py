@@ -2,9 +2,10 @@
 
 """Main module."""
 
-import re
+import warnings
+
 import numpy as np
-import scipy.signal as ssignal
+import scipy.signal as spsignal
 
 
 def find_impulse_response_start(impulse_response, threshold=20):
@@ -46,7 +47,6 @@ def find_impulse_response_start(impulse_response, threshold=20):
         raise ValueError("The SNR is lower than the defined threshold. Check \
                 if this is a valid impulse resonse with sufficient SNR.")
 
-    ir_shape = ir_squared.shape
     start_sample_shape = max_sample.shape
     n_samples = ir_squared.shape[-1]
     ir_squared = np.reshape(ir_squared, (-1, n_samples))
@@ -57,10 +57,189 @@ def find_impulse_response_start(impulse_response, threshold=20):
     start_sample = max_sample
     for idx in range(0, n_channels):
         if start_sample[idx] != 0:
-            mask_before_max = np.arange(0, max_sample[idx])
             ir_before_max = ir_squared[idx, :max_sample[idx]+1] / max_value[idx]
             start_sample[idx] = np.argwhere(ir_before_max < 10**(threshold/10))[-1]
 
     start_sample = np.reshape(start_sample, start_sample_shape)
 
     return np.squeeze(start_sample)
+
+
+def center_frequencies_octaves():
+    """Return the octave center frequencies according to the IEC 61260:1:2014 standard.
+
+    References
+    ----------
+    TODO: Add these here
+
+    Returns
+    -------
+    frequencies : ndarray, float
+        Octave center frequencies
+
+    """
+    nominal = np.array([31.5, 63, 125, 250, 500, 1e3,
+                        2e3, 4e3, 8e3, 16e3], dtype=np.float)
+    indices = _frequency_indices(nominal, 1)
+    exact = exact_center_frequencies_fractional_octaves(indices, 1)
+
+    return nominal, exact
+
+
+def center_frequencies_third_octaves():
+    """Return the third octave center frequencies according
+    to the ICE 61260:1:2014 standard.
+
+    References
+    ----------
+    TODO: Add these here
+
+    Returns
+    -------
+    frequencies : ndarray, float
+        third octave center frequencies
+
+    """
+    nominal = np.array([25, 31.5, 40, 50, 63, 80, 100, 125, 160,
+                        200, 250, 315, 400, 500, 630, 800, 1000,
+                        1250, 1600, 2000, 2500, 3150, 4000, 5000,
+                        6300, 8000, 10000, 12500, 16000, 20000], dtype=np.float)
+
+    indices = _frequency_indices(nominal, 3)
+    exact = exact_center_frequencies_fractional_octaves(indices, 3)
+
+    return nominal, exact
+
+
+def exact_center_frequencies_fractional_octaves(indices, num_fractions):
+    """Returns the exact center frequencies for fractional octave bands
+    according to the IEC 61260:1:2014 standard.
+
+    octave ratio
+    .. G = 10^{3/10}
+
+    center frequencies
+    .. f_m = f_r G^{x/b}
+    .. f_m = f_e G^{(2x+1)/(2b)}
+
+    where b is the number of octave fractions, f_r is the reference frequency
+    chosen as 1000Hz and x is the index of the frequency band.
+
+    Parameters
+    ----------
+    num_fractions : TODO
+
+    Returns
+    -------
+    frequencies : ndarray, float
+        center frequencies of the fractional octave bands
+
+    """
+
+    reference_freq = 1e3
+    octave_ratio = 10**(3/10)
+
+    iseven = np.mod(num_fractions, 2) == 0
+    if ~iseven:
+        exponent = (indices/num_fractions)
+    else:
+        exponent = ((2*indices + 1) / num_fractions / 2)
+
+    center_freq = reference_freq * octave_ratio**exponent
+
+    return center_freq
+
+
+def _frequency_indices(frequencies, num_fractions):
+    """Return the indices for fractional octave filters.
+
+    Parameters
+    ----------
+    frequencies : TODO
+
+    Returns
+    -------
+    TODO
+
+    """
+    reference_freq = 1e3
+    octave_ratio = 10**(3/10)
+
+    iseven = np.mod(num_fractions, 2) == 0
+    if ~iseven:
+        indices = np.around(num_fractions * np.log(frequencies/reference_freq) \
+                / np.log(octave_ratio))
+    else:
+        indices = np.around(2.0*num_fractions * \
+                np.log(frequencies/reference_freq) / np.log(octave_ratio) - 1)/2
+
+    return indices
+
+
+def filter_fractional_octave_bands(signal, samplingrate, num_fractions,
+                                   freq_range=(20.0, 20e3), order=6):
+    """Apply a fractional octave filter to a signal.
+
+    Notes
+    -----
+    This function uses second order sections of butterworth filters for
+    increased numeric accuracy and stability.
+
+    Parameters
+    ----------
+    signal : ndarray
+        input signal to be filtered
+    samplingrate : integer
+        samplingrate of the signal
+    num_fractions : integer
+        number of octave fractions
+    order : integer, optional
+        order of the butterworth filter
+
+    Returns
+    -------
+    signal_filtered : ndarray
+        Signal filtered into fractional octave bands. The array has a new axis
+        with dimension corresponding to the number of frequency bands:
+        [num_fractions, *signal.shape]
+
+    """
+
+    if not num_fractions in (1, 3):
+        raise ValueError("This currently supports only octave and third \
+                octave band filters.")
+
+    octave_ratio = 10**(3/10)
+
+    if num_fractions == 1:
+        nominal, exact = center_frequencies_octaves()
+    else:
+        nominal, exact = center_frequencies_third_octaves()
+
+    mask_frequencies = (nominal > freq_range[0]) & (nominal < freq_range[1])
+
+    nominal = nominal[mask_frequencies]
+    exact = exact[mask_frequencies]
+
+    signal_out_shape = (exact.size,) + signal.shape
+    signal_out = np.broadcast_to(signal, signal_out_shape).copy()
+
+    for band in range(0, exact.size):
+        freq_upper = exact[band] * octave_ratio**(1/2/num_fractions)
+        freq_lower = exact[band] * octave_ratio**(-1/2/num_fractions)
+
+        # normalize interval such that the Nyquist frequency is 1
+        Wn = np.array([freq_lower, freq_upper]) / samplingrate * 2
+        # in case the upper frequency limit is above Nyquist, do a highpass here
+        if Wn[-1] > 1:
+            warnings.warn('Your upper frequency limit [{}] is above the \
+                Nyquist frequency. Using a highpass filter instead of a \
+                bandpass'.format(freq_upper))
+            Wn = Wn[0]
+            btype = 'highpass'
+        else:
+            btype = 'bandpass'
+        sos = spsignal.butter(order, Wn, btype=btype, output='sos')
+        signal_out[band, :] = spsignal.sosfilt(sos, signal)
+
+    return signal_out
