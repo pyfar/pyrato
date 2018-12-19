@@ -65,6 +65,57 @@ def find_impulse_response_start(impulse_response, threshold=20):
     return np.squeeze(start_sample)
 
 
+def time_shift(signal, n_samples_shift):
+    """Shift a signal in the time domain by n samples. This function will
+    perform a circular shift. This inherently assumes that the signal is
+    periodic.
+
+    Notes
+    -----
+    This function is primarily intended to be used when processing impulse
+    responses.
+
+    Parameters
+    ----------
+    signal : ndarray, float
+        Signal to be shifted
+    n_samples_shift : integer
+        Number of samples by which the signal should be shifted. A negative
+        number of samples will result in a left-shift, while a positive
+        number of samples will result in a right shift of the signal.
+
+    Returns
+    -------
+    shifted_signal : ndarray, float
+        Shifted input signal
+
+    """
+    n_samples_shift = np.asarray(n_samples_shift, dtype=np.int)
+    if np.any(signal.shape[-1] < n_samples_shift):
+        warnings.warn("Shifting by more samples than length of the signal.",
+                      UserWarning)
+
+    n_samples = signal.shape[-1]
+    signal_shape = signal.shape
+    signal = np.reshape(signal, (-1, n_samples))
+    n_channels = signal.shape[0]
+    if n_samples_shift.size == 1:
+        n_samples_shift = np.broadcast_to(n_samples_shift, n_channels)
+    elif n_samples_shift.size == n_channels:
+        n_samples_shift = np.reshape(n_samples_shift, n_channels)
+    else:
+        raise ValueError("The number of shift samples has to match the number\
+            of signal channels.")
+
+    shifted_signal = signal.copy()
+    for channel in range(n_channels):
+        shifted_signal[channel, :] = \
+            np.roll(signal[channel, :], n_samples_shift[channel], axis=-1)
+
+    shifted_signal = np.squeeze(np.reshape(shifted_signal, signal_shape))
+    return shifted_signal
+
+
 def center_frequencies_octaves():
     """Return the octave center frequencies according to the IEC 61260:1:2014 standard.
 
