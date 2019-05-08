@@ -1,18 +1,133 @@
-%matplotlib inline
-%config InlineBackend.figure_format = 'retina'
 import numpy as np
 from matplotlib import pyplot as plt
 
-def intersection_time_lundeby(rir, sampling_rate, freq='broadband', plot=False):
+def estimate_noise_energy(data, region_start=0.9, region_end=1, isenergy=False):
+    """ This function estimates the noise energy level of a given room impulse response.
+
+    Parameters
+    ----------
+    rir: np.array
+        Contains the room impulse response.
+    region_start/end: double
+        Defines the region of the RIR to be evaluated for estimation.
+    isenergy: Boolean
+        Defines if the data is already squared.
+
+    Returns
+    -------
+    noise_energy: float
+        Returns the noise level estimation.
+    """
+
+    if not isenergy:
+        data = np.abs(data)**2
+
+    noise_energy = np.mean(
+        data[int(np.round(data.shape[0]*region_start)):int(np.round(data.shape[0]*region_end))])+np.finfo(np.double).tiny
+
+    return noise_energy
+
+def energy_decay_curve_truncation(data, sampling_rate, freq='broadband', isenergy=False):
+    """ This function trucates a given RIR or EDC.
+
+    Parameters
+    ----------
+    data: np.array
+        Contains the room impulse response or EDC.
+    sampling_rate: integer
+        Defines the sampling rate of the room impulse response.
+    freq: integer OR string
+        Defines the frequency band. If set to 'broadband',
+        the time window will not be set in dependence of frequency
+    isenergy: Boolean
+        Defines if the data is already squared.
+
+    Returns
+    -------
+    noise_energy: float
+        Returns the noise level estimation.
+    """
+    intersection_time = intersection_time_lundeby(data, sampling_rate, freq, False, isenergy)[0]
+    return data[0:intersection_time*sampling_rate]
+
+def energy_decay_curve_lundeby(data, sampling_rate, freq='broadband', plot=False, isenergy=False):
+    """ Description: TODO!
+
+    Parameters
+    ----------
+    data: np.array
+        Contains the room impulse response.
+    sampling_rate: integer
+        Defines the sampling rate of the room impulse response.
+    freq: integer OR string
+        Defines the frequency band. If set to 'broadband',
+        the time window will not be set in dependence of frequency
+    plot: Boolean
+        Specifies, whether the results should be visualized or not.
+    isenergy: Boolean
+        Defines if the data is already squared.
+
+    Returns
+    -------
+    edc_lundeby: np.array
+        Returns the noise handeled edc.
+
+
+    References
+    ----------
+        [1] Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of Measurements
+        in Room Acoustics - ACUSTICA Vol. 81 (1995)
+
+    """
+    intersection_time, late_reveberation_time, noise_level = intersection_time_lundeby(data, sampling_rate, freq, False, isenergy)
+    smooth_block_length = 0.075; # in sec  (used for noise estimation)  TODO: frequency dependent?
+    raw_time_data = data**2
+    n_samples = raw_time_data.shape[0]
+
+    # smooth data TODO: try moving max window
+    n_samples_per_block = np.round(smooth_block_length * sampling_rate, 0)
+
+    time_window_data = np.sum(np.reshape(
+        raw_time_data[0:int(np.floor(n_samples/n_samples_per_block)*n_samples_per_block)],
+        (int(np.floor(n_samples/n_samples_per_block)), int(n_samples_per_block))), 1)/n_samples_per_block
+    time_vector_window = (0.5+np.arange(0, time_window_data.shape[0]))*n_samples_per_block/sampling_rate
+    time_vector = (0.5+np.arange(0, raw_time_data.shape[0]))/sampling_rate
+
+    intersection_time_idx = np.argmin(np.abs(time_vector_window - intersection_time))
+    intersection_time2_idx = np.argmin(np.abs(time_vector - intersection_time))
+
+    p_square_at_intersection =  time_window_data[intersection_time_idx]
+
+    # calculate correction term according to DIN EN ISO 3382
+    correction = p_square_at_intersection * late_reveberation_time/ (6*np.log(10)) * sampling_rate
+    EDC = np.cumsum(raw_time_data[intersection_time2_idx::-1])[::-1]
+    EDC_correction = EDC + correction
+    EDC = EDC / EDC[0]
+    EDC_correction = EDC_correction / EDC_correction[0]
+
+    if plot:
+        plt.figure(figsize=(15, 3))
+        plt.subplot(131)
+        plt.plot(time_vector, 10*np.log10(raw_time_data))
+        plt.xlabel('Time [s]')
+        plt.ylabel('Original EDC [dB]')
+        plt.subplot(132)
+        plt.plot(time_vector[0:EDC.shape[0]], 10*np.log10(EDC))
+        plt.xlabel('Time [s]')
+        plt.ylabel('Truncated EDC [dB]')
+        plt.subplot(133)
+        plt.plot(time_vector[0:EDC_correction.shape[0]], 10*np.log10(EDC_correction))
+        plt.xlabel('Time [s]')
+        plt.ylabel('Tr. EDC with correction [dB]')
+        plt.tight_layout()
+
+    return EDC_correction
+
+def intersection_time_lundeby(rir, sampling_rate, freq='broadband', plot=False, isenergy=False):
     """ This function uses the algorithm after Lundeby et al. [1] to calculate the (late)
     reverberation time, intersection time and noise level estimation.
 
     TO-DO: write test function, ...
-
-    References
-    [1] Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of Measurements
-        in Room Acoustics - ACUSTICA Vol. 81 (1995)
-
 
     Parameters
     ----------
@@ -23,6 +138,8 @@ def intersection_time_lundeby(rir, sampling_rate, freq='broadband', plot=False):
     freq: integer OR string
         Defines the frequency band. If set to 'broadband',
         the time window will not be set in dependence of frequency
+    isenergy: Boolean
+        Defines if the data is already squared.
 
     Returns
     -------
@@ -32,6 +149,12 @@ def intersection_time_lundeby(rir, sampling_rate, freq='broadband', plot=False):
         Returns the Lundeby intersection time.
     noise_level: float
         Returns the noise level estimation.
+
+    References
+    ----------
+        [1] Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of Measurements
+        in Room Acoustics - ACUSTICA Vol. 81 (1995)
+
     """
 
     n_intervals_per_10dB = 5   # time intervals per 10 dB decay. Lundeby: 3 ... 10
@@ -45,8 +168,11 @@ def intersection_time_lundeby(rir, sampling_rate, freq='broadband', plot=False):
 
     # if shortRevTimeMode: # TODO!
     #    freq_dependent_window_time = freq_dependent_window_time / 5;
+    if not isenergy:
+        raw_time_data = np.abs(rir)**2 # squared room impulse response
+    else:
+        raw_time_data = rir
 
-    raw_time_data = rir**2  # squared room impulse response
     n_samples = raw_time_data.shape[0]
     #n_samples = n_samples - n_samples2cut;
 
@@ -73,8 +199,8 @@ def intersection_time_lundeby(rir, sampling_rate, freq='broadband', plot=False):
         plt.ylabel('Smoothened EDC [dB]')
 
     # (2) ESTIMATE NOISE
-    noise_estimation = np.mean(
-        time_window_data[-int(np.round(time_window_data.shape[0]/10)):])+np.finfo(np.double).tiny
+    noise_estimation = estimate_noise_energy(time_window_data, 0.9, 1, True)
+
     if plot:
         plt.plot(time_vector_window[-int(np.round(time_window_data.shape[0]/10))],
                  10*np.log10(noise_estimation), marker='o', label='noise estimation')
@@ -201,4 +327,4 @@ def intersection_time_lundeby(rir, sampling_rate, freq='broadband', plot=False):
         plt.tight_layout()
         plt.legend()
 
-    return reverberation_time, intersection_time, noise_level
+    return intersection_time, reverberation_time, noise_level
