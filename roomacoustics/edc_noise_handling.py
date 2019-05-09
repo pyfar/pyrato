@@ -1,16 +1,21 @@
 import numpy as np
 from matplotlib import pyplot as plt
+import warnings
+from roomacoustics import dsp
+np.seterr(divide = 'ignore')
 
-def estimate_noise_energy(data, region_start=0.9, region_end=1, isenergy=False):
+# TO-DO: Write test functions, check multidimensional compatibility.
+
+def estimate_noise_energy(data, region_start=0.9, region_end=1, is_energy=True):
     """ This function estimates the noise energy level of a given room impulse response.
 
     Parameters
     ----------
-    rir: np.array
+    data: np.array
         Contains the room impulse response.
-    region_start/end: double
-        Defines the region of the RIR to be evaluated for estimation.
-    isenergy: Boolean
+    region_start/end: float
+        Defines the region of the RIR to be evaluated for estimation (0 = 0%, 1=100%).
+    is_energy: Boolean
         Defines if the data is already squared.
 
     Returns
@@ -19,7 +24,7 @@ def estimate_noise_energy(data, region_start=0.9, region_end=1, isenergy=False):
         Returns the noise level estimation.
     """
 
-    if not isenergy:
+    if not is_energy:
         data = np.abs(data)**2
 
     noise_energy = np.mean(
@@ -27,8 +32,34 @@ def estimate_noise_energy(data, region_start=0.9, region_end=1, isenergy=False):
 
     return noise_energy
 
-def energy_decay_curve_truncation(data, sampling_rate, freq='broadband', isenergy=False):
-    """ This function trucates a given RIR or EDC.
+def prepare_rir_for_processing(data, is_energy=False):
+    rir_start_idx = dsp.find_impulse_response_start(data)
+    data = dsp.time_shift(data, -rir_start_idx)
+    data = data[:-rir_start_idx*2] # TO-DO: find a stable solution for time shift.
+    if not is_energy:
+        energy_data = np.abs(data)**2
+    else:
+        energy_data = data
+    return energy_data
+
+def smooth_edc(data, sampling_rate, smooth_block_length=0.075):
+    n_samples = data.shape[0]
+    n_samples_per_block = np.round(smooth_block_length * sampling_rate, 0)
+    time_window_data = np.sum(np.reshape(
+        data[0:int(np.floor(n_samples/n_samples_per_block)*n_samples_per_block)],
+        (int(np.floor(n_samples/n_samples_per_block)), int(n_samples_per_block))), 1)/n_samples_per_block
+    time_vector_window = (0.5+np.arange(0, time_window_data.shape[0]))*n_samples_per_block/sampling_rate # TODO: 0.5??
+    time_vector = (0.5+np.arange(0, data.shape[0]))/sampling_rate
+    return time_window_data, time_vector_window, time_vector
+
+def substact_noise_from_edc(data):
+    noise_level = estimate_noise_energy(data)
+    return (data - noise_level)
+
+def energy_decay_curve_truncation(data, sampling_rate, freq='broadband', is_energy=False):
+    """ This function trucates a given RIR by the intersection time after Lundeby and
+    calculates the EDC.
+
 
     Parameters
     ----------
@@ -39,19 +70,27 @@ def energy_decay_curve_truncation(data, sampling_rate, freq='broadband', isenerg
     freq: integer OR string
         Defines the frequency band. If set to 'broadband',
         the time window will not be set in dependence of frequency
-    isenergy: Boolean
+    is_energy: Boolean
         Defines if the data is already squared.
 
     Returns
     -------
-    noise_energy: float
-        Returns the noise level estimation.
+    EDC: np.array
+        Returns the noise handeled edc.
     """
-    intersection_time = intersection_time_lundeby(data, sampling_rate, freq, False, isenergy)[0]
-    return data[0:intersection_time*sampling_rate]
 
-def energy_decay_curve_lundeby(data, sampling_rate, freq='broadband', plot=False, isenergy=False):
-    """ Description: TODO!
+    energy_data = prepare_rir_for_processing(data, is_energy)
+
+    intersection_time = intersection_time_lundeby(data, sampling_rate, freq, False, is_energy)[0]
+    intersection_time_idx = int(np.round(intersection_time * sampling_rate))
+    EDC = np.cumsum(energy_data[intersection_time_idx::-1])[::-1]
+    EDC = EDC / EDC[0]
+    return EDC
+
+def energy_decay_curve_lundeby(data, sampling_rate, freq='broadband', plot=False, is_energy=False):
+    """ Lundeby et al. [1] proposed a correction term to prevent the truncation error.
+    The missing signal energy from truncation time to infinity is estimated and
+    added to the truncated integral.
 
     Parameters
     ----------
@@ -64,7 +103,7 @@ def energy_decay_curve_lundeby(data, sampling_rate, freq='broadband', plot=False
         the time window will not be set in dependence of frequency
     plot: Boolean
         Specifies, whether the results should be visualized or not.
-    isenergy: Boolean
+    is_energy: Boolean
         Defines if the data is already squared.
 
     Returns
@@ -79,28 +118,20 @@ def energy_decay_curve_lundeby(data, sampling_rate, freq='broadband', plot=False
         in Room Acoustics - ACUSTICA Vol. 81 (1995)
 
     """
-    intersection_time, late_reveberation_time, noise_level = intersection_time_lundeby(data, sampling_rate, freq, False, isenergy)
-    smooth_block_length = 0.075; # in sec  (used for noise estimation)  TODO: frequency dependent?
-    raw_time_data = data**2
-    n_samples = raw_time_data.shape[0]
+    # Find start of RIR and perform a cyclic shift:
+    energy_data = prepare_rir_for_processing(data, is_energy)
 
-    # smooth data TODO: try moving max window
-    n_samples_per_block = np.round(smooth_block_length * sampling_rate, 0)
+    intersection_time, late_reveberation_time, noise_level = intersection_time_lundeby(data, sampling_rate, freq, False, is_energy)
+    time_window_data, time_vector_window, time_vector = smooth_edc(energy_data, sampling_rate)
 
-    time_window_data = np.sum(np.reshape(
-        raw_time_data[0:int(np.floor(n_samples/n_samples_per_block)*n_samples_per_block)],
-        (int(np.floor(n_samples/n_samples_per_block)), int(n_samples_per_block))), 1)/n_samples_per_block
-    time_vector_window = (0.5+np.arange(0, time_window_data.shape[0]))*n_samples_per_block/sampling_rate
-    time_vector = (0.5+np.arange(0, raw_time_data.shape[0]))/sampling_rate
+    intersection_time_window_idx = np.argmin(np.abs(time_vector_window - intersection_time))
+    intersection_time_idx = np.argmin(np.abs(time_vector - intersection_time))
 
-    intersection_time_idx = np.argmin(np.abs(time_vector_window - intersection_time))
-    intersection_time2_idx = np.argmin(np.abs(time_vector - intersection_time))
-
-    p_square_at_intersection =  time_window_data[intersection_time_idx]
+    p_square_at_intersection =  time_window_data[intersection_time_window_idx]
 
     # calculate correction term according to DIN EN ISO 3382
     correction = p_square_at_intersection * late_reveberation_time/ (6*np.log(10)) * sampling_rate
-    EDC = np.cumsum(raw_time_data[intersection_time2_idx::-1])[::-1]
+    EDC = np.cumsum(energy_data[intersection_time_idx::-1])[::-1]
     EDC_correction = EDC + correction
     EDC = EDC / EDC[0]
     EDC_correction = EDC_correction / EDC_correction[0]
@@ -108,7 +139,7 @@ def energy_decay_curve_lundeby(data, sampling_rate, freq='broadband', plot=False
     if plot:
         plt.figure(figsize=(15, 3))
         plt.subplot(131)
-        plt.plot(time_vector, 10*np.log10(raw_time_data))
+        plt.plot(time_vector, 10*np.log10(energy_data))
         plt.xlabel('Time [s]')
         plt.ylabel('Original EDC [dB]')
         plt.subplot(132)
@@ -123,7 +154,141 @@ def energy_decay_curve_lundeby(data, sampling_rate, freq='broadband', plot=False
 
     return EDC_correction
 
-def intersection_time_lundeby(rir, sampling_rate, freq='broadband', plot=False, isenergy=False):
+def energy_decay_curve_chu(data, sampling_rate, freq='broadband', plot=False, is_energy=False):
+    """ Implementation of the "subtraction of noise"-method after Chu [1]
+    The noise level is estimated and subtracted from the impulse response
+    before backward integration.
+
+    Parameters
+    ----------
+    data: np.array
+        Contains the room impulse response.
+    sampling_rate: integer
+        Defines the sampling rate of the room impulse response.
+    freq: integer OR string
+        Defines the frequency band. If set to 'broadband',
+        the time window will not be set in dependence of frequency
+    plot: Boolean
+        Specifies, whether the results should be visualized or not.
+    is_energy: Boolean
+        Defines if the data is already squared.
+
+    Returns
+    -------
+    edc_lundeby: np.array
+        Returns the noise handeled edc.
+
+
+    References
+    ----------
+        [1] W. T. Chu. “Comparison of reverberation measurements using Schroeder’s
+            impulse method and decay-curve averaging method”. In: Journal of the Acoustical
+            Society of America 63.5 (1978), pp. 1444–1450.
+
+    """
+    # Find start of RIR and perform a cyclic shift:
+    energy_data = prepare_rir_for_processing(data, is_energy)
+
+    substraction = substact_noise_from_edc(energy_data)
+    n_samples = energy_data.shape[0]
+    EDC = np.cumsum(substraction[n_samples::-1])[::-1]
+    EDC = EDC / EDC[0]
+    EDC[EDC < 0] = np.nan
+
+    if plot:
+        time_vector = (0.5+np.arange(0, energy_data.shape[0]))/sampling_rate
+        plt.figure(figsize=(15, 3))
+        plt.subplot(121)
+        plt.plot(time_vector, 10*np.log10(energy_data))
+        plt.xlabel('Time [s]')
+        plt.ylabel('Original EDC [dB]')
+        plt.subplot(122)
+        plt.plot(time_vector[0:EDC.shape[0]], 10*np.log10(EDC))
+        plt.xlabel('Time [s]')
+        plt.ylabel('EDC, noise substracted [dB]')
+        plt.tight_layout()
+
+    return EDC
+
+def energy_decay_curve_chu_lundeby(data, sampling_rate, freq='broadband', plot=False, is_energy=False):
+    """ Description: This function combines Chu's and Lundeby's methods:
+    The estimated noise level is subtracted before backward integration,
+    the impulse response is truncated at the intersection time,
+    and the correction for the truncation is applied. [1, 2, 3]
+
+    Parameters
+    ----------
+    data: np.array
+        Contains the room impulse response.
+    sampling_rate: integer
+        Defines the sampling rate of the room impulse response.
+    freq: integer OR string
+        Defines the frequency band. If set to 'broadband',
+        the time window will not be set in dependence of frequency
+    plot: Boolean
+        Specifies, whether the results should be visualized or not.
+    is_energy: Boolean
+        Defines if the data is already squared.
+
+    Returns
+    -------
+    edc_lundeby: np.array
+        Returns the noise handeled edc.
+
+
+    References
+    ----------
+        [1] Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of Measurements
+        in Room Acoustics - ACUSTICA Vol. 81 (1995)
+        [2] M. Guski, “Influences of external error sources on measurements of room acoustic parameters,” 2015.
+        [3] W. T. Chu. “Comparison of reverberation measurements using Schroeder’s
+            impulse method and decay-curve averaging method”. In: Journal of the Acoustical
+            Society of America 63.5 (1978), pp. 1444–1450.
+
+    """
+    # Find start of RIR and perform a cyclic shift:
+    energy_data = prepare_rir_for_processing(data, is_energy)
+
+    substraction = substact_noise_from_edc(energy_data)
+
+    intersection_time, late_reveberation_time, noise_level = intersection_time_lundeby(data, sampling_rate, freq, False, is_energy)
+    time_window_data, time_vector_window, time_vector = smooth_edc(energy_data, sampling_rate)
+
+    intersection_time_window_idx = np.argmin(np.abs(time_vector_window - intersection_time))
+    intersection_time_idx = np.argmin(np.abs(time_vector - intersection_time))
+
+    p_square_at_intersection =  time_window_data[intersection_time_window_idx]
+
+    # calculate correction term according to DIN EN ISO 3382
+    correction = p_square_at_intersection * late_reveberation_time / (6*np.log(10)) * sampling_rate
+    EDC = np.cumsum(substraction[intersection_time_idx::-1])[::-1]
+    EDC_correction = EDC + correction
+    EDC = EDC / EDC[0]
+    EDC_correction = EDC_correction / EDC_correction[0]
+
+    if plot:
+        plt.figure(figsize=(15, 3))
+        plt.subplot(141)
+        plt.plot(time_vector, 10*np.log10(energy_data))
+        plt.xlabel('Time [s]')
+        plt.ylabel('Original EDC [dB]')
+        plt.subplot(142)
+        plt.plot(time_vector, 10*np.log10(substraction))
+        plt.xlabel('Time [s]')
+        plt.ylabel('Noise substracted EDC [dB]')
+        plt.subplot(143)
+        plt.plot(time_vector[0:EDC.shape[0]], 10*np.log10(EDC))
+        plt.xlabel('Time [s]')
+        plt.ylabel('Truncated EDC [dB]')
+        plt.subplot(144)
+        plt.plot(time_vector[0:EDC_correction.shape[0]], 10*np.log10(EDC_correction))
+        plt.xlabel('Time [s]')
+        plt.ylabel('Tr. EDC with corr. & subst. [dB]')
+        plt.tight_layout()
+
+    return EDC_correction
+
+def intersection_time_lundeby(data, sampling_rate, freq='broadband', plot=False, is_energy=False):
     """ This function uses the algorithm after Lundeby et al. [1] to calculate the (late)
     reverberation time, intersection time and noise level estimation.
 
@@ -138,7 +303,7 @@ def intersection_time_lundeby(rir, sampling_rate, freq='broadband', plot=False, 
     freq: integer OR string
         Defines the frequency band. If set to 'broadband',
         the time window will not be set in dependence of frequency
-    isenergy: Boolean
+    is_energy: Boolean
         Defines if the data is already squared.
 
     Returns
@@ -157,82 +322,75 @@ def intersection_time_lundeby(rir, sampling_rate, freq='broadband', plot=False, 
 
     """
 
+    # Define constants:
     n_intervals_per_10dB = 5   # time intervals per 10 dB decay. Lundeby: 3 ... 10
     dB_above_noise = 10   # end of regression 5 ... 10 dB
     use_dyn_range_for_regression = 20  # 10 ... 20 dB
+
+    energy_data = prepare_rir_for_processing(data, is_energy)
 
     if freq == 'broadband':
         freq_dependent_window_time = 0.03  # broadband: use 30 ms windows sizes
     else:
         freq_dependent_window_time = (800/freq+10) / 1000
 
-    # if shortRevTimeMode: # TODO!
+    # if shortRevTimeMode: # TO-DO?
     #    freq_dependent_window_time = freq_dependent_window_time / 5;
-    if not isenergy:
-        raw_time_data = np.abs(rir)**2 # squared room impulse response
-    else:
-        raw_time_data = rir
 
-    n_samples = raw_time_data.shape[0]
-    #n_samples = n_samples - n_samples2cut;
-
-    # TODO: Implement time shift!
+    n_samples = energy_data.shape[0]
 
     # (1) SMOOTH
-    n_samples_per_block = np.round(freq_dependent_window_time * sampling_rate, 0)
-    time_window_data = np.squeeze(np.sum(np.reshape(
-        raw_time_data[0:int(np.floor(n_samples/n_samples_per_block)*n_samples_per_block)],
-        (int(np.floor(n_samples/n_samples_per_block)), int(n_samples_per_block))), 1))/n_samples_per_block
-    time_vector_window = np.arange(0, time_window_data.shape[0])*n_samples_per_block/sampling_rate
-    time_vector_window2 = np.arange(0, raw_time_data.shape[0])/sampling_rate
+    time_window_data, time_vector_window, time_vector = smooth_edc(energy_data,
+                                                                   sampling_rate,
+                                                                   freq_dependent_window_time)
+    time_window_data = time_window_data/time_window_data[0]
+    # (2) ESTIMATE NOISE
+    noise_estimation = estimate_noise_energy(time_window_data)
 
-    # (...) PLOT FOR DEMONSTRATION
+    # (...) PLOT FOR VISUALIZSATION
     if plot:
         plt.figure(figsize=(15, 3))
         plt.subplot(131)
-        plt.plot(time_vector_window2, 10*np.log10(raw_time_data))
+        plt.plot(time_vector, 10*np.log10(energy_data))
         plt.xlabel('Time [s]')
         plt.ylabel('Original EDC [dB]')
         plt.subplot(132)
         plt.plot(time_vector_window, 10*np.log10(time_window_data))
         plt.xlabel('Time [s]')
         plt.ylabel('Smoothened EDC [dB]')
-
-    # (2) ESTIMATE NOISE
-    noise_estimation = estimate_noise_energy(time_window_data, 0.9, 1, True)
-
-    if plot:
         plt.plot(time_vector_window[-int(np.round(time_window_data.shape[0]/10))],
                  10*np.log10(noise_estimation), marker='o', label='noise estimation')
 
     # (3) REGRESSION
 
     start_idx = np.argmax(time_window_data)
-    stop_idx = np.argwhere(10*np.log10(time_window_data[start_idx+1:-1])
-                           > 10*np.log10(noise_estimation) + dB_above_noise)[-1, 0] + start_idx
+    try:
+        stop_idx = np.argwhere(10*np.log10(time_window_data[start_idx+1:-1])
+                            > 10*np.log10(noise_estimation) + dB_above_noise)[-1, 0] + start_idx
+    except:
+        raise Exception('Regression did not work due to low SNR. Estimation was terminated.')
+
     dyn_range = np.diff(10*np.log10(np.take(time_window_data, [start_idx, stop_idx])))
 
-    if stop_idx.size == 0 or (stop_idx == start_idx) or dyn_range > -5:
-        print('Regression did not work due to low SNR, continuing with next channel/band')
+    if (stop_idx == start_idx) or dyn_range > -5:
+        raise Exception('Regression did not work due to low SNR. Estimation was terminated.')
 
     # regression_matrix*slope = edc
     regression_matrix = np.vstack(
         (np.ones([stop_idx-start_idx]), time_vector_window[start_idx:stop_idx]))
-    # TODO: least-squares solution necessary?
+    # TO-DO: least-squares solution necessary?
     slope = np.linalg.lstsq(regression_matrix.T,
                             (10*np.log10(time_window_data[start_idx:stop_idx])), rcond=None)[0]
-    if plot:
-        plt.plot([time_vector_window[start_idx], time_vector_window[stop_idx]], [10*np.log10(time_window_data[start_idx]),
-                                                                                 10*np.log10(time_window_data[start_idx])+slope[1]*time_vector_window[stop_idx]], marker='o', label='regression')
 
     if slope[1] == 0 or np.any(np.isnan(slope)):
-        print('Regression did not work due, T would be Inf, setting to 0, continuing with next channel/band')
-        # TODO: throw error
+        raise Exception('Regression did not work due, T would be Inf, setting to 0. Estimation was terminated.')
 
     # (4) PRELIMINARY CROSSING POINT
     crossing_point = (10*np.log10(noise_estimation) - slope[0]) / slope[1]
 
     if plot:
+        plt.plot([time_vector_window[start_idx], time_vector_window[stop_idx]], [10*np.log10(time_window_data[start_idx]),
+                                                                                 10*np.log10(time_window_data[start_idx])+slope[1]*time_vector_window[stop_idx]], marker='o', label='regression')
         plt.plot(crossing_point, 10*np.log10(noise_estimation),
                  marker='o', label='preliminary crosspoint')
         plt.legend()
@@ -248,8 +406,9 @@ def intersection_time_lundeby(rir, sampling_rate, freq='broadband', plot=False, 
 
     # (6) AVERAGE
     time_window_data = np.squeeze(np.sum(np.reshape(
-        raw_time_data[0:int(np.floor(n_samples/n_samples_per_block)*n_samples_per_block)],
+        energy_data[0:int(np.floor(n_samples/n_samples_per_block)*n_samples_per_block)],
         (int(np.floor(n_samples/n_samples_per_block)), int(n_samples_per_block))), 1)/n_samples_per_block)  # np.squeeze notwendig?
+    time_window_data = time_window_data/time_window_data[0]
 
     time_vector_window = np.arange(0, time_window_data.shape[0])*n_samples_per_block/sampling_rate
     idx_max = np.argmax(time_window_data)
@@ -282,12 +441,11 @@ def intersection_time_lundeby(rir, sampling_rate, freq='broadband', plot=False, 
 
         if stop_idx.size == 0:
             start_idx = 1
-
-        stop_idx = np.argwhere(10*np.log10(time_window_data[start_idx+1:]) < (
-            10*np.log10(noise_estimation) + dB_above_noise))[0, 0] + start_idx
-        if stop_idx.size == 0:
-            print('Regression did not work due to low SNR, continuing with next channel/band')
-            break
+        try:
+            stop_idx = np.argwhere(10*np.log10(time_window_data[start_idx+1:]) < (
+                10*np.log10(noise_estimation) + dB_above_noise))[0, 0] + start_idx
+        except:
+            raise Exception('Regression did not work due to low SNR. Estimation was terminated.')
 
         # regression_matrix*slope = edc
         regression_matrix = np.vstack(
@@ -296,9 +454,8 @@ def intersection_time_lundeby(rir, sampling_rate, freq='broadband', plot=False, 
                                 (10*np.log10(time_window_data[start_idx:stop_idx])), rcond=None)[0]
 
         if slope[1] >= 0:
-            print('Regression did not work due, T would be Inf, setting to 0, continuing with next channel/band')
-            slope[1] = np.inf
-            break
+            raise Exception('Regression did not work due, T would be Inf, setting to 0. Estimation was terminated.')
+            #slope[1] = np.inf
 
         # (9) FIND CROSSPOINT
         old_crossing_point = crossing_point
@@ -306,11 +463,11 @@ def intersection_time_lundeby(rir, sampling_rate, freq='broadband', plot=False, 
 
         loop_counter = loop_counter + 1
         if loop_counter > 30:
-            print('30 iterations => cancel')
+            warnings.warn("Warning: Lundeby algorithm was canceled after 30 iterations.") # TO-DO: Paper says 5 iterations are sufficient in all cases!
             break
 
     reverberation_time = -60/slope[1]
-    noise_level = 10*np.log10(noise_estimation)
+    noise_level = 10*np.log10(noise_estimation) # TO-DO: dB or absolute value?
     intersection_time = crossing_point
     noise_peak_level = 10 * \
         np.log10(
