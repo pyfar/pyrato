@@ -87,6 +87,9 @@ def rectangular_room_rigid_walls(dimensions,
     K_n = np.prod(L) * 0.5**(np.sum(n > 0, axis=0))
     factor = c**2 / K_n
     coeff = coeff_source * coeff_receiver * factor
+
+    # import ipdb; ipdb.set_trace()
+
     coeff[0] = 0.
 
     # delta = np.ones(n_modes) * delta_n_raw
@@ -95,11 +98,12 @@ def rectangular_room_rigid_walls(dimensions,
     n_bins = freqs.size
     omega = 2*np.pi*freqs
     omega_n = 2*np.pi*f_n
+    omega_squared = omega**2
 
     transfer_function = np.zeros(n_bins, np.complex)
-    for idx in range(0, f_n.size):
-        den = (omega**2 - delta_n_raw**2 - omega_n[idx]**2 - 2*1j*delta_n_raw*omega)
-        transfer_function += (coeff[idx]/den)
+    for om_n, coeff_n in zip(omega_n, coeff):
+        den = (omega_squared - delta_n_raw**2 - om_n**2 - 2*1j*delta_n_raw*omega)
+        transfer_function += (coeff_n/den)
 
     rir = np.fft.irfft(transfer_function, n=n_samples)
     return rir, transfer_function, freqs
