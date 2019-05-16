@@ -48,11 +48,13 @@ def rectangular_room_rigid_walls(dimensions,
     f_max = max_freq
 
     idx = 0
-    n_x_max = int(np.floor(2*f_max/c * L_x))
+    n_x_max = int(np.floor(2*f_max/c * L_x)) + 1
     for n_x in range(0, n_x_max):
-        n_y_max = int(np.floor(np.real(np.sqrt(2*f_max/c)**2 - (n_x/L_x)**2) * L_y))
+        n_y_max = int(np.floor(np.real(
+            np.sqrt((2*f_max/c)**2 - (n_x/L_x)**2) * L_y))) + 1
         for n_y in range(0, n_y_max):
-            idx += int(np.floor(np.real(np.sqrt((2*f_max/c)**2 - (n_x/L_x)**2 - (n_y/L_y)**2) * L_z)) + 1)
+            idx += int(np.floor(np.real(
+                np.sqrt((2*f_max/c)**2 - (n_x/L_x)**2 - (n_y/L_y)**2) * L_z)))
 
     n_modes = idx
     print("Found {} eigenfrequencies.".format(n_modes))
@@ -60,18 +62,20 @@ def rectangular_room_rigid_walls(dimensions,
     n = np.zeros((3, n_modes))
 
     idx = 0
-    n_x_max = int(np.floor(2*f_max/c*L_x))
+    n_x_max = int(np.floor(2*f_max/c * L_x)) + 1
     for n_x in range(0, n_x_max):
-        n_y_max = int(np.floor(np.real(np.sqrt(2*f_max/c)**2 - (n_x/L_x)**2) * L_y))
+        n_y_max = int(np.floor(np.real(
+            np.sqrt((2*f_max/c)**2 - (n_x/L_x)**2) * L_y))) + 1
         for n_y in range(0, n_y_max):
-            n_z_max = int(np.floor(np.real(np.sqrt((2*f_max/c)**2 - (n_x/L_x)**2 - (n_y/L_y)**2) * L_z)))
+            n_z_max = int(np.floor(np.real(
+                np.sqrt((2*f_max/c)**2 - (n_x/L_x)**2 - (n_y/L_y)**2) * L_z)))
 
             idx_end = idx + n_z_max
             n[0, idx:idx_end] = n_x
             n[1, idx:idx_end] = n_y
             n[2, idx:idx_end] = np.arange(0, n_z_max)
 
-            idx += n_z_max + 1
+            idx += n_z_max
 
     print("Calculated {} eigenfrequencies.".format(idx - n_z_max))
 
@@ -80,19 +84,15 @@ def rectangular_room_rigid_walls(dimensions,
     coeff_receiver = np.cos(np.pi*n[0]*receiver[0]/L_x) \
                     *np.cos(np.pi*n[1]*receiver[1]/L_y) \
                     *np.cos(np.pi*n[2]*receiver[2]/L_z)
-    coeff_source  =  np.cos(np.pi*n[0]*source[0]/L_x) \
-                    *np.cos(np.pi*n[1]*source[1]/L_y) \
-                    *np.cos(np.pi*n[2]*source[2]/L_z)
+    coeff_source = np.cos(np.pi*n[0]*source[0]/L_x) \
+                  *np.cos(np.pi*n[1]*source[1]/L_y) \
+                  *np.cos(np.pi*n[2]*source[2]/L_z)
 
     K_n = np.prod(L) * 0.5**(np.sum(n > 0, axis=0))
     factor = c**2 / K_n
     coeff = coeff_source * coeff_receiver * factor
 
-    # import ipdb; ipdb.set_trace()
-
     coeff[0] = 0.
-
-    # delta = np.ones(n_modes) * delta_n_raw
 
     freqs = np.fft.rfftfreq(n_samples, d=1 / samplingrate)
     n_bins = freqs.size
