@@ -3,14 +3,44 @@ import matplotlib.pyplot as plt
 
 import roomacoustics.analytic
 
-L = np.array([8, 5, 3])/10
-source_pos = np.array([5, 3, 1.2])/10
-receiver_pos = [0, 0, 0]
+def test_analytic_shoebox_eigenfreqs():
+    L = np.array([8, 5, 3])/10
+    source_pos = np.array([5, 3, 1.2])/10
+    receiver_pos = [0, 0, 0]
 
-rir, res, freqs = roomacoustics.analytic.rectangular_room_rigid_walls(
-        L,
-        source_pos,
-        receiver_pos,
-        1,
-        max_freq=10000,
-        n_samples=2**18)
+    rir, eigenfreqs = roomacoustics.analytic.rectangular_room_rigid_walls(
+            L,
+            source_pos,
+            receiver_pos,
+            1,
+            max_freq=1e3,
+            n_samples=2**18,
+            speed_of_sound=343.9)
+
+    f_n = np.array([0,
+                    5.731666666666666,
+                    3.439000000000000,
+                    6.684214522124330,
+                    6.877999999999999,
+                    8.953149545147662,
+                    2.149375000000000,
+                    6.121422683363956,
+                    4.055432639142833,
+                    7.021291666666667,
+                    7.206018102296510,
+                    9.207534939841542,
+                    4.298750000000000,
+                    7.164583333333334,
+                    5.505086063132890,
+                    7.947199213576930,
+                    8.110865278285665,
+                    9.931673491425187,
+                    6.448125000000000,
+                    8.627300782597231,
+                    7.307874999999999,
+                    9.287466812506130,
+                    9.427894781743429,
+                    8.597500000000000,
+                    9.259790885867778]) * 1e2
+
+    np.testing.assert_allclose(eigenfreqs, f_n)

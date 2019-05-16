@@ -8,7 +8,7 @@ def rectangular_room_rigid_walls(dimensions,
                                  reverberation_time,
                                  max_freq,
                                  samplingrate=44100,
-                                 speed_of_sound=343.6,
+                                 speed_of_sound=343.9,
                                  n_samples=2**18):
     """Calculate the transfer function of a rectangular room based on the
     analytic model.
@@ -26,14 +26,24 @@ def rectangular_room_rigid_walls(dimensions,
         eigenfrequencies of the room
     samplingrate : int
         The sampling rate
-    speed_of_sound : double, optional (343.6)
+    speed_of_sound : double, optional (343.9)
         THe speed of sound
     n_samples : int
         number of samples for the calculation
 
     Returns
     -------
-    TODO
+    rir : ndarray, double
+        The room impulse response
+    eigenfrequencies: ndarray, double
+        The eigenfrequencies for which the room impulse response was
+        calculated
+
+    References
+    ----------
+    .. [1]  H. Kuttruff, Room acoustics, pp. 64-66, 4th Ed. Taylor & Francis,
+            2009.
+
 
     """
     delta_n_raw = 3*np.log(10)/reverberation_time
@@ -54,10 +64,10 @@ def rectangular_room_rigid_walls(dimensions,
             np.sqrt((2*f_max/c)**2 - (n_x/L_x)**2) * L_y))) + 1
         for n_y in range(0, n_y_max):
             idx += int(np.floor(np.real(
-                np.sqrt((2*f_max/c)**2 - (n_x/L_x)**2 - (n_y/L_y)**2) * L_z)))
+                np.sqrt((2*f_max/c)**2 - (n_x/L_x)**2 - (n_y/L_y)**2) * L_z))) + 1
 
     n_modes = idx
-    print("Found {} eigenfrequencies.".format(n_modes))
+    # print("Found {} eigenfrequencies.".format(n_modes))
 
     n = np.zeros((3, n_modes))
 
@@ -68,7 +78,7 @@ def rectangular_room_rigid_walls(dimensions,
             np.sqrt((2*f_max/c)**2 - (n_x/L_x)**2) * L_y))) + 1
         for n_y in range(0, n_y_max):
             n_z_max = int(np.floor(np.real(
-                np.sqrt((2*f_max/c)**2 - (n_x/L_x)**2 - (n_y/L_y)**2) * L_z)))
+                np.sqrt((2*f_max/c)**2 - (n_x/L_x)**2 - (n_y/L_y)**2) * L_z))) + 1
 
             idx_end = idx + n_z_max
             n[0, idx:idx_end] = n_x
@@ -77,7 +87,7 @@ def rectangular_room_rigid_walls(dimensions,
 
             idx += n_z_max
 
-    print("Calculated {} eigenfrequencies.".format(idx - n_z_max))
+    # print("Calculated {} eigenfrequencies.".format(idx - n_z_max + 1))
 
     f_n = c/2*np.sqrt(np.sum((n/L[np.newaxis].T)**2, axis=0))
 
@@ -106,5 +116,4 @@ def rectangular_room_rigid_walls(dimensions,
         transfer_function += (coeff_n/den)
 
     rir = np.fft.irfft(transfer_function, n=n_samples)
-    return rir, transfer_function, freqs
-
+    return rir, f_n
