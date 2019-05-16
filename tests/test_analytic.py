@@ -1,6 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
-
 import roomacoustics.analytic
 
 def test_analytic_shoebox_eigenfreqs():
