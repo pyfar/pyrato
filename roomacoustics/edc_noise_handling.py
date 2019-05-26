@@ -107,20 +107,16 @@ def remove_silence_at_beginning_and_square_data(data,
         energy_data = result
     return energy_data
 
+
 def smooth_edc(data, sampling_rate, smooth_block_length=0.075):
     n_samples = data.shape[-1]
 
-    if data.ndim < 2:
-        n_channels = 1
-    else:
-        n_channels = data.shape[-2]
     n_samples_per_block = int(np.round(smooth_block_length * sampling_rate, 0))
     n_blocks = int(np.floor(n_samples/n_samples_per_block))
     n_samples_actual = int(n_blocks*n_samples_per_block)
-    time_window_data = np.zeros([n_channels, n_blocks])
-    for idx_channel in range(0, n_channels):
-        reshaped_array = np.reshape(data[idx_channel, 0:n_samples_actual], (n_blocks, n_samples_per_block))
-        time_window_data[idx_channel,:] = np.squeeze(np.sum(reshaped_array,1)/n_samples_per_block)
+    reshaped_array = np.reshape(data[..., :n_samples_actual],
+                                (-1, n_blocks, n_samples_per_block))
+    time_window_data = np.mean(reshaped_array, axis=-1)
 
     time_vector_window = ((0.5+np.arange(0, n_blocks)) *
                             n_samples_per_block/sampling_rate)
@@ -476,6 +472,7 @@ def intersection_time_lundeby(data, sampling_rate, freq='broadband', plot=False,
     n_samples = energy_data.shape[-1]
     if data.ndim < 2:
         n_channels = 1
+        energy_data = energy_data[np.newaxis]
     else:
         n_channels = data.shape[-2]
 
@@ -536,7 +533,7 @@ def intersection_time_lundeby(data, sampling_rate, freq='broadband', plot=False,
         # (6) AVERAGE
         time_window_data_current_channel = np.squeeze(np.sum(np.reshape(
             energy_data[idx_channel, 0:int(np.floor(n_samples/n_samples_per_block)*n_samples_per_block)],
-            (int(np.floor(n_samples/n_samples_per_block)), int(n_samples_per_block))), 1)/n_samples_per_block)  # np.squeeze notwendig?
+            (int(np.floor(n_samples/n_samples_per_block)), int(n_samples_per_block))), axis=-1)/n_samples_per_block)  # np.squeeze notwendig?
         #time_window_data = time_window_data/time_window_data[0]
 
         idx_max = np.argmax(time_window_data_current_channel)
