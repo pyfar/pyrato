@@ -56,7 +56,7 @@ def reverberation_time_energy_decay_curve(energy_decay_curve, times, T='T20', no
     return reverberation_time
 
 
-def schroeder_integration(data, is_energy=False):
+def schroeder_integration(impulse_response, is_energy=False):
     """Calculate the Schroeder integral of a room impulse response _[3]. The
     result is the energy decay curve for the given room impulse response.
 
