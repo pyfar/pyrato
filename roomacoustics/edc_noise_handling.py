@@ -43,6 +43,42 @@ def estimate_noise_energy(data,
     return noise
 
 
+def estimate_noise_energy_from_edc(energy_decay_curve, intersection_time, sampling_rate):
+    """Estimate the noise energy from the differential of the energy decay
+    curve. The interval used ranges from the intersection time to the end of
+    the decay curve. The noise is assumed to be Gaussian.
+
+    Parameters
+    ----------
+    energy_decay_curve : ndarray, double
+        The energy decay curve
+    intersection_time : double
+        The intersection time between decay curve and noise
+    sampling_rate : int
+        The sampling rate
+
+    Returns
+    -------
+    noise_energy : double
+        The energy of the additive Gaussian noise
+
+    """
+
+    n_samples = energy_decay_curve.shape[-1]
+    times = np.arange(0, n_samples) * sampling_rate
+    mask_second = times > intersection_time
+    mask = times > intersection_time
+    mask_first = np.concatenate((mask[1:], [False]))
+    intersection_sample = int(np.ceil(intersection_time*sampling_rate))
+    factor = 1/(n_samples - intersection_sample)
+
+    noise_energy = factor * np.sum(
+        energy_decay_curve[mask_first] - energy_decay_curve[mask_second])
+
+    return noise_energy
+
+
+
 def remove_silence_at_beginning_and_square_data(data,
                                                 is_energy=False,
                                                 channel_independent=False):
@@ -147,7 +183,7 @@ def energy_decay_curve_truncation(data, sampling_rate, freq='broadband', is_ener
     data_shape[-1] = n_samples-min_shift
     energy_decay_curve = np.reshape(energy_decay_curve, data_shape)
 
-    return energy_decay_curve TODO
+    return energy_decay_curve # TODO
 
 
 def energy_decay_curve_lundeby(data, sampling_rate, freq='broadband', plot=False, is_energy=False):
