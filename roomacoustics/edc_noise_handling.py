@@ -5,25 +5,25 @@ from roomacoustics import dsp
 from roomacoustics import roomacoustics as ra
 
 def estimate_noise_energy(data,
-                          region_start=0.9,
-                          region_end=1,
-                          is_energy=True):
-
-    """ This function estimates the noise energy level of a given room impulse response.
+                          interval=[0.9, 1.0],
+                          is_energy=False):
+    """ This function estimates the noise energy level of a given room impulse
+    response. The noise is assumed to be Gaussian.
 
     Parameters
     ----------
     data: np.array
-        Contains the room impulse response.
-    region_start/end: float
-        Defines the region of the RIR to be evaluated for estimation (0 = 0%, 1=100%).
+        The room impulse response with dimension [..., n_samples]
+    interval : tuple, float
+        Defines the interval of the RIR to be evaluated for the estimation.
+        The interval is relative to the length of the RIR [0 = 0%, 1=100%)]
     is_energy: Boolean
         Defines if the data is already squared.
 
     Returns
     -------
     noise_energy: float
-        Returns the noise level estimation.
+        The energy of the background noise
     """
 
     if not is_energy:
@@ -31,8 +31,11 @@ def estimate_noise_energy(data,
     else:
         energy_data = data
 
-    region_start_idx = np.int(energy_data.shape[-1]*region_start)
-    region_end_idx = np.int(energy_data.shape[-1]*region_end)
+    if np.any(energy_data) < 0:
+        raise ValueError("Energy is negative, check your input signal.")
+
+    region_start_idx = np.int(energy_data.shape[-1]*interval[0])
+    region_end_idx = np.int(energy_data.shape[-1]*interval[1])
     mask = np.arange(region_start_idx, region_end_idx)
     print(np.take(energy_data, mask, axis=-1)) # TODO! Not working, array vs vector...
     noise = np.mean(np.take(energy_data, mask, axis=-1), axis=-1)
@@ -446,7 +449,7 @@ def intersection_time_lundeby(data, sampling_rate, freq='broadband', plot=False,
                                                                    freq_dependent_window_time)
     #time_window_data = time_window_data/time_window_data[0]
     # (2) ESTIMATE NOISE
-    noise_estimation = estimate_noise_energy(time_window_data)
+    noise_estimation = estimate_noise_energy(time_window_data, is_energy=True)
 
     # (3) REGRESSION
 
