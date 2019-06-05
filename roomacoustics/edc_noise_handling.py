@@ -4,10 +4,8 @@ import warnings
 from roomacoustics import dsp
 from roomacoustics import roomacoustics as ra
 
-
-def estimate_noise_energy(data,
-                          interval=[0.9, 1.0],
-                          is_energy=False):
+def estimate_noise_energy(
+    data, interval=[0.9, 1.0], is_energy=False):
     """ This function estimates the noise energy level of a given room impulse
     response. The noise is assumed to be Gaussian.
 
@@ -43,7 +41,8 @@ def estimate_noise_energy(data,
     return noise_energy
 
 
-def estimate_noise_energy_from_edc(energy_decay_curve, intersection_time, sampling_rate):
+def estimate_noise_energy_from_edc(
+    energy_decay_curve, intersection_time, sampling_rate):
     """Estimate the noise energy from the differential of the energy decay
     curve. The interval used ranges from the intersection time to the end of
     the decay curve. The noise is assumed to be Gaussian.
@@ -78,10 +77,8 @@ def estimate_noise_energy_from_edc(energy_decay_curve, intersection_time, sampli
     return noise_energy
 
 
-
-def remove_silence_at_beginning_and_square_data(data,
-                                                is_energy=False,
-                                                channel_independent=False):
+def remove_silence_at_beginning_and_square_data(
+    data, is_energy=False, channel_independent=False):
 
     rir_start_idx = dsp.find_impulse_response_start(data)
     n_samples = data.shape[-1]
@@ -124,15 +121,16 @@ def smooth_rir(data, sampling_rate, smooth_block_length=0.075):
 
     return time_window_data, time_vector_window, time_vector
 
-def substract_noise_from_edc(data, is_energy=False): #name!
+
+def substract_noise_from_rir(data, is_energy=False):
     noise_level = estimate_noise_energy(data, is_energy=is_energy)
     return (data.T - noise_level).T
 
 
-def energy_decay_curve_truncation(data, sampling_rate, freq='broadband', is_energy=False):
+def energy_decay_curve_truncation(
+    data, sampling_rate, freq='broadband', is_energy=False, normalize=True):
     """ This function trucates a given RIR by the intersection time after Lundeby and
     calculates the EDC.
-
 
     Parameters
     ----------
@@ -151,37 +149,35 @@ def energy_decay_curve_truncation(data, sampling_rate, freq='broadband', is_ener
     EDC: np.array
         Returns the noise handeled edc.
     """
-
     energy_data = remove_silence_at_beginning_and_square_data(data, is_energy)
-
-    intersection_time = intersection_time_lundeby(data,
-                                                  sampling_rate,
-                                                  freq,
-                                                  False,
-                                                  is_energy)[0]
+    intersection_time = intersection_time_lundeby(
+        data, sampling_rate, freq, False, is_energy)[0]
     if data.ndim < 2:
         n_channels = 1
     else:
         n_channels = data.shape[-2]
+
     n_samples = energy_data.shape[-1]
-    data_shape = list(data.shape)
-    data = np.reshape(data, (-1,n_samples))
+    data_shape = list(energy_data.shape)
+    energy_data = np.reshape(energy_data, (-1, n_samples))
 
     intersection_time_idx = np.rint(intersection_time * sampling_rate)
-
+    max_intersection_time_idx = np.amax(intersection_time_idx)
     energy_decay_curve = np.zeros([n_channels, n_samples])
     for idx_channel in range(0, n_channels):
-        energy_decay_curve[idx_channel,:int(intersection_time_idx[idx_channel])] = ra.schroeder_integration(energy_data[idx_channel,:int(intersection_time_idx[idx_channel])],
-                                                  is_energy=True)
-    energy_decay_curve /= np.linalg.norm(energy_decay_curve, ord=np.inf, axis=-1, keepdims=True)
+        energy_decay_curve[idx_channel,:int(intersection_time_idx[idx_channel])] = (
+            ra.schroeder_integration(
+                energy_data[idx_channel,:int(intersection_time_idx[idx_channel])],
+                is_energy=True))
+    if normalize:
+        energy_decay_curve = (energy_decay_curve.T / energy_decay_curve[..., 0]).T
 
-    data_shape[-1] = n_samples-min_shift
     energy_decay_curve = np.reshape(energy_decay_curve, data_shape)
+    return energy_decay_curve
 
-    return energy_decay_curve # TODO
 
-
-def energy_decay_curve_lundeby(data, sampling_rate, freq='broadband', plot=False, is_energy=False):
+def energy_decay_curve_lundeby(
+    data, sampling_rate, freq='broadband', plot=False, is_energy=False, normalize=True):
     """ Lundeby et al. [1] proposed a correction term to prevent the truncation error.
     The missing signal energy from truncation time to infinity is estimated and
     added to the truncated integral.
@@ -219,35 +215,42 @@ def energy_decay_curve_lundeby(data, sampling_rate, freq='broadband', plot=False
     else:
         n_channels = data.shape[-2]
     n_samples = energy_data.shape[-1]
+    data_shape = list(energy_data.shape)
+    energy_data = np.reshape(energy_data, (-1,n_samples))
 
     intersection_time, late_reveberation_time, noise_level = intersection_time_lundeby(
         data, sampling_rate, freq, False, is_energy)
-    time_window_data, time_vector_window, time_vector = smooth_rir(energy_data, sampling_rate)
+
+    time_vector = smooth_rir(energy_data, sampling_rate)[2]
+
     energy_decay_curve = np.zeros([n_channels, n_samples])
 
     for idx_channel in range(0, n_channels):
-        intersection_time_window_idx = np.argmin(np.abs(time_vector_window - intersection_time[idx_channel]))
         intersection_time_idx = np.argmin(np.abs(time_vector - intersection_time[idx_channel]))
 
-        p_square_at_intersection = time_window_data[idx_channel, intersection_time_window_idx]
+        p_square_at_intersection = estimate_noise_energy(
+            energy_data[idx_channel], is_energy=True)
 
         # calculate correction term according to DIN EN ISO 3382
-        correction = p_square_at_intersection * late_reveberation_time[idx_channel] / (6*np.log(10)) * sampling_rate
+        correction = (p_square_at_intersection * late_reveberation_time[idx_channel] /
+                      (6*np.log(10)) * sampling_rate)
 
-        energy_decay_curve[idx_channel,:intersection_time_idx] = ra.schroeder_integration(energy_data[idx_channel,:intersection_time_idx],
-                                                      is_energy=True)
+        energy_decay_curve[idx_channel,:intersection_time_idx] = ra.schroeder_integration(
+            energy_data[idx_channel,:intersection_time_idx], is_energy=True)
         energy_decay_curve[idx_channel] += correction
-    energy_decay_curve /= np.linalg.norm(energy_decay_curve, ord=np.inf, axis=-1, keepdims=True)
-
+    if normalize:
+        energy_decay_curve = (energy_decay_curve.T / energy_decay_curve[..., 0]).T
+    energy_decay_curve[..., intersection_time_idx:] = np.nan
+    energy_decay_curve = np.reshape(energy_decay_curve, data_shape)
 
     if plot:
         plt.figure(figsize=(15, 3))
         plt.subplot(121)
-        plt.plot(time_vector, 10*np.log10(energy_data[0]))
+        plt.plot(time_vector, 10*np.log10(energy_data.T))
         plt.xlabel('Time [s]')
         plt.ylabel('Squared IR [dB]')
         plt.subplot(122)
-        plt.plot(time_vector[0:energy_decay_curve.shape[-1]], 10*np.log10(energy_decay_curve[0]))
+        plt.plot(time_vector[0:energy_decay_curve.shape[-1]], 10*np.log10(energy_decay_curve.T))
         plt.xlabel('Time [s]')
         plt.ylabel('Tr. EDC with correction [dB]')
         plt.tight_layout()
@@ -255,7 +258,9 @@ def energy_decay_curve_lundeby(data, sampling_rate, freq='broadband', plot=False
     return energy_decay_curve
 
 
-def energy_decay_curve_chu(data, sampling_rate, freq='broadband', plot=False, is_energy=False, time_shift=True):
+def energy_decay_curve_chu(
+    data, sampling_rate, freq='broadband', plot=False, is_energy=False,
+    time_shift=True, normalize=True):
     """ Implementation of the "subtraction of noise"-method after Chu [1]
     The noise level is estimated and subtracted from the impulse response
     before backward integration.
@@ -297,28 +302,27 @@ def energy_decay_curve_chu(data, sampling_rate, freq='broadband', plot=False, is
         else:
             energy_data = np.abs(data)**2
 
-    subtracted = substract_noise_from_edc(energy_data, is_energy=True)
+    subtracted = substract_noise_from_rir(energy_data, is_energy=True)
 
     energy_decay_curve = ra.schroeder_integration(
         subtracted, is_energy=True)
-    energy_decay_curve /= energy_decay_curve[..., 0]
+    if normalize:
+        energy_decay_curve = (energy_decay_curve.T / energy_decay_curve[..., 0]).T
     mask = energy_decay_curve <= 0
     if np.any(mask):
-        first_zero = np.argmax(energy_decay_curve[mask], axis=-1)
+        first_zero = np.argmax(energy_decay_curve[mask], axis=-1) # Maybe too senstitive?
         energy_decay_curve[..., first_zero:] = np.nan
-
-
 
     if plot:
         time_vector = (0.5+np.arange(0, energy_data.shape[-1]))/sampling_rate
         plt.figure(figsize=(15, 3))
         plt.subplot(131)
-        plt.plot(time_vector, 10*np.log10(energy_data/energy_data.max(axis=-1)).T)
+        plt.plot(time_vector, 10*np.log10(energy_data.T/energy_data.max(axis=-1)).T)
         plt.xlabel('Time [s]')
         plt.ylabel('Squared IR [dB]')
         plt.grid(True)
         plt.subplot(132)
-        plt.plot(time_vector, 10*np.log10(subtracted/subtracted.max(axis=-1)).T)
+        plt.plot(time_vector, 10*np.log10(subtracted.T/subtracted.max(axis=-1)).T)
         plt.xlabel('Time [s]')
         plt.ylabel('Noise substracted IR [dB]')
         plt.grid(True)
@@ -332,7 +336,7 @@ def energy_decay_curve_chu(data, sampling_rate, freq='broadband', plot=False, is
     return energy_decay_curve
 
 
-def energy_decay_curve_chu_lundeby(data, sampling_rate, freq='broadband', plot=False, is_energy=False):
+def energy_decay_curve_chu_lundeby(data, sampling_rate, freq='broadband', plot=False, is_energy=False, normalize=True):
     """ Description: This function combines Chu's and Lundeby's methods:
     The estimated noise level is subtracted before backward integration,
     the impulse response is truncated at the intersection time,
@@ -368,32 +372,31 @@ def energy_decay_curve_chu_lundeby(data, sampling_rate, freq='broadband', plot=F
             Society of America 63.5 (1978), pp. 1444–1450.
 
     """
-    # Find start of RIR and perform a cyclic shift:
     energy_data = remove_silence_at_beginning_and_square_data(data, is_energy)
     if data.ndim < 2:
         n_channels = 1
     else:
         n_channels = data.shape[-2]
     n_samples = energy_data.shape[-1]
+    data_shape = list(energy_data.shape)
+    energy_data = np.reshape(energy_data, (-1,n_samples))
 
-    substraction = substract_noise_from_edc(energy_data)
+    substraction = substract_noise_from_rir(energy_data, is_energy=True)
 
     intersection_time, late_reveberation_time, noise_level = (
-        intersection_time_lundeby(data,
-                                  sampling_rate,
-                                  freq,
-                                  False,
-                                  is_energy))
+        intersection_time_lundeby(data=data,
+                                  sampling_rate=sampling_rate,
+                                  freq=freq,
+                                  plot=False,
+                                  is_energy=is_energy))
 
-    time_window_data, time_vector_window, time_vector = (
-        smooth_rir(energy_data, sampling_rate))
+    time_vector = smooth_rir(energy_data, sampling_rate)[2]
     energy_decay_curve = np.zeros([n_channels, n_samples])
 
     for idx_channel in range(0, n_channels):
-        intersection_time_window_idx = np.argmin(np.abs(time_vector_window - intersection_time[idx_channel]))
         intersection_time_idx = np.argmin(np.abs(time_vector - intersection_time[idx_channel]))
 
-        p_square_at_intersection = time_window_data[idx_channel, intersection_time_window_idx]
+        p_square_at_intersection = estimate_noise_energy(energy_data[idx_channel], is_energy=True)
 
         # calculate correction term according to DIN EN ISO 3382
         correction = p_square_at_intersection * late_reveberation_time[idx_channel] / (6*np.log(10)) * sampling_rate
@@ -402,21 +405,28 @@ def energy_decay_curve_chu_lundeby(data, sampling_rate, freq='broadband', plot=F
                                                       is_energy=True)
         energy_decay_curve[idx_channel] += correction
 
-    energy_decay_curve /= np.linalg.norm(energy_decay_curve, ord=np.inf, axis=-1, keepdims=True)
-
+    if normalize:
+        energy_decay_curve = (energy_decay_curve.T / energy_decay_curve[..., 0]).T
+    mask = energy_decay_curve <= 0
+    if np.any(mask):
+        first_zero = np.argmax(energy_decay_curve[mask], axis=-1)
+        energy_decay_curve[..., first_zero:] = np.nan
+    energy_decay_curve = np.reshape(energy_decay_curve, data_shape)
+    energy_decay_curve[..., intersection_time_idx:] = np.nan
+    energy_decay_curve = np.reshape(energy_decay_curve, data_shape)
 
     if plot:
         plt.figure(figsize=(15, 3))
         plt.subplot(131)
-        plt.plot(time_vector, 10*np.log10(energy_data[0]))
+        plt.plot(time_vector, 10*np.log10(energy_data.T))
         plt.xlabel('Time [s]')
         plt.ylabel('Squared IR [dB]')
         plt.subplot(132)
-        plt.plot(time_vector, 10*np.log10(substraction[0]))
+        plt.plot(time_vector, 10*np.log10(substraction.T))
         plt.xlabel('Time [s]')
         plt.ylabel('Noise substracted IR [dB]')
         plt.subplot(133)
-        plt.plot(time_vector[0:energy_decay_curve.shape[-1]], 10*np.log10(energy_decay_curve[0]))
+        plt.plot(time_vector[0:energy_decay_curve.shape[-1]], 10*np.log10(energy_decay_curve.T))
         plt.xlabel('Time [s]')
         plt.ylabel('Tr. EDC with corr. & subst. [dB]')
         plt.tight_layout()
@@ -424,7 +434,7 @@ def energy_decay_curve_chu_lundeby(data, sampling_rate, freq='broadband', plot=F
     return energy_decay_curve
 
 
-def intersection_time_lundeby(data, sampling_rate, freq='broadband', plot=False, is_energy=False):
+def intersection_time_lundeby(data, sampling_rate, freq='broadband', plot=False, is_energy=False, time_shift=True):
     """ This function uses the algorithm after Lundeby et al. [1] to calculate the (late)
     reverberation time, intersection time and noise level estimation.
 
@@ -463,8 +473,16 @@ def intersection_time_lundeby(data, sampling_rate, freq='broadband', plot=False,
     dB_above_noise = 10   # end of regression 5 ... 10 dB
     use_dyn_range_for_regression = 20  # 10 ... 20 dB
 
-    energy_data = remove_silence_at_beginning_and_square_data(
-            data, is_energy=is_energy)
+    if time_shift:
+        energy_data = remove_silence_at_beginning_and_square_data(
+                data, is_energy=is_energy)
+    else:
+        if is_energy:
+            energy_data = data.copy()
+        else:
+            energy_data = np.abs(data)**2
+    is_energy = True
+
 
     if freq == 'broadband':
         freq_dependent_window_time = 0.03  # broadband: use 30 ms windows sizes
@@ -483,7 +501,7 @@ def intersection_time_lundeby(data, sampling_rate, freq='broadband', plot=False,
         energy_data, sampling_rate, freq_dependent_window_time)
 
     # (2) ESTIMATE NOISE
-    noise_estimation = estimate_noise_energy(time_window_data, is_energy=True)
+    noise_estimation = estimate_noise_energy(energy_data, is_energy=True)
 
     # (3) REGRESSION
     reverberation_time = np.zeros(n_channels)
