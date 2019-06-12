@@ -59,17 +59,21 @@ def estimate_noise_energy_from_edc(
         The energy of the additive Gaussian noise
 
     """
-
     n_samples = energy_decay_curve.shape[-1]
-    times = np.arange(0, n_samples) * sampling_rate
-    mask_second = times > intersection_time
-    mask = times > intersection_time
-    mask_first = np.concatenate((mask[1:], [False]))
-    intersection_sample = int(np.ceil(intersection_time*sampling_rate))
-    factor = 1/(n_samples - intersection_sample)
-
-    noise_energy = factor * np.sum(
-        energy_decay_curve[mask_first] - energy_decay_curve[mask_second])
+    if energy_decay_curve.ndim < 2:
+        n_channels = 1
+        energy_decay_curve = energy_decay_curve[np.newaxis]
+    else:
+        n_channels = energy_decay_curve.shape[-2]
+    noise_energy = np.zeros([n_channels])
+    for idx_channel in range(0, n_channels):
+        times = np.arange(0, n_samples) * sampling_rate
+        mask_second = times > intersection_time[idx_channel]
+        mask = times > intersection_time[idx_channel]
+        mask_first = np.concatenate((mask[1:], [False]))
+        intersection_sample = int(np.ceil(intersection_time[idx_channel]*sampling_rate))
+        factor = 1/(n_samples - intersection_sample)
+        noise_energy[idx_channel] = factor * np.nansum(energy_decay_curve[idx_channel, mask_first] - energy_decay_curve[idx_channel, mask_second])
 
     return noise_energy
 
@@ -114,15 +118,14 @@ def preprocess_rir(data, is_energy=False, time_shift=False,
     if time_shift:
         rir_start_idx = dsp.find_impulse_response_start(data)
         min_shift = np.amin(rir_start_idx)
-        result = np.zeros([n_channels, n_samples-min_shift])
+        result = np.zeros([n_channels, n_samples])
 
-        if channel_independent: # Shift each channel independently.
+        if channel_independent and not n_channels == 1: # Shift each channel independently.
             for idx_channel in range(0, n_channels):
-                result[idx_channel,0:-rir_start_idx[idx_channel]] = (
-                    data[idx_channel, rir_start_idx[idx_channel]:])
+                result[idx_channel,0:-rir_start_idx[idx_channel]] = data[idx_channel, rir_start_idx[idx_channel]:]
         else: # Shift each channel by the earliest impulse response start.
-            result[:,:] = data[:, min_shift:]
-        data_shape[-1] = n_samples-min_shift
+            result[:,:-min_shift] = data[:, min_shift:]
+        #data_shape[-1] = n_samples-min_shift
 
     else:
         result = data
@@ -227,6 +230,7 @@ def energy_decay_curve_truncation(
         channel_independent=channel_independent)
     n_samples = energy_data.shape[-1]
 
+    #plt.plot(10*np.log10(energy_data[-1]))
     intersection_time = intersection_time_lundeby(
         energy_data, sampling_rate=sampling_rate, freq=freq, is_energy=True,
         time_shift=False, channel_independent=False, plot=False)[0]
@@ -594,9 +598,7 @@ def intersection_time_lundeby(
     dB_above_noise = 10   # end of regression 5 ... 10 dB
     use_dyn_range_for_regression = 20  # 10 ... 20 dB
 
-    energy_data, n_channels, data_shape = preprocess_rir(
-        data, is_energy=is_energy, time_shift=time_shift,
-        channel_independent=channel_independent)
+    energy_data, n_channels, data_shape = preprocess_rir(data, is_energy=is_energy, time_shift=time_shift, channel_independent=channel_independent)
     if freq == 'broadband':
         freq_dependent_window_time = 0.03  # broadband: use 30 ms windows sizes
     else:
@@ -605,8 +607,7 @@ def intersection_time_lundeby(
     n_samples = energy_data.shape[-1]
 
     # (1) SMOOTH
-    time_window_data, time_vector_window, time_vector = smooth_rir(
-        energy_data, sampling_rate, freq_dependent_window_time)
+    time_window_data, time_vector_window, time_vector = smooth_rir(energy_data, sampling_rate, freq_dependent_window_time)
 
     # (2) ESTIMATE NOISE
     noise_estimation = estimate_noise_energy(energy_data, is_energy=True)
@@ -621,98 +622,74 @@ def intersection_time_lundeby(
         time_window_data_current_channel = time_window_data[idx_channel]
         start_idx = np.argmax(time_window_data_current_channel, axis=-1)
         try:
-            stop_idx = np.argwhere(10*np.log10(
-                time_window_data_current_channel[start_idx+1:-1]) > (10*np.log10(
-                    noise_estimation[idx_channel]) + dB_above_noise))[-1, 0] + start_idx
+            stop_idx = np.argwhere(10*np.log10(time_window_data_current_channel[start_idx+1:-1]) > (10*np.log10(noise_estimation[idx_channel]) + dB_above_noise))[-1, 0] + start_idx
         except:
             raise Exception('Regression did not work due to low SNR. Estimation was terminated.')
 
-        dyn_range = np.diff(10*np.log10(np.take(time_window_data_current_channel,
-                                                [start_idx, stop_idx])))
+        dyn_range = np.diff(10*np.log10(np.take(time_window_data_current_channel, [start_idx, stop_idx])))
 
         if (stop_idx == start_idx) or dyn_range > -5:
             raise Exception('Regression did not work due to low SNR. Estimation was terminated.')
 
         # regression_matrix*slope = edc
-        regression_matrix = np.vstack(
-            (np.ones([stop_idx-start_idx]), time_vector_window[start_idx:stop_idx]))
+        regression_matrix = np.vstack((np.ones([stop_idx-start_idx]), time_vector_window[start_idx:stop_idx]))
         # TO-DO: least-squares solution necessary?
-        slope = np.linalg.lstsq(regression_matrix.T,
-                (10*np.log10(time_window_data_current_channel[start_idx:stop_idx])), rcond=None)[0]
+        slope = np.linalg.lstsq(regression_matrix.T, (10*np.log10(time_window_data_current_channel[start_idx:stop_idx])), rcond=None)[0]
 
         if slope[1] == 0 or np.any(np.isnan(slope)):
             raise Exception(
                 'Regression did not work due, T would be Inf, setting to 0. Estimation was terminated.')
 
-        regression_time = np.array([time_vector_window[start_idx],
-                               time_vector_window[stop_idx]])
-        regression_values = np.array([10*np.log10(time_window_data[0, start_idx]),
-                            10*np.log10(time_window_data[0, start_idx]) +
-                            slope[1]*time_vector_window[stop_idx]])
+        regression_time = np.array([time_vector_window[start_idx], time_vector_window[stop_idx]])
+        regression_values = np.array([10*np.log10(time_window_data[0, start_idx]), 10*np.log10(time_window_data[0, start_idx]) + slope[1]*time_vector_window[stop_idx]])
 
         # (4) PRELIMINARY CROSSING POINT
 
         preliminary_crossing_point = (10*np.log10(noise_estimation[idx_channel]) - slope[0]) / slope[1]
 
         # (5) NEW LOCAL TIME INTERVAL LENGTH
-        n_blocks_in_decay = np.diff(
-            10*np.log10(np.take(time_window_data_current_channel, [start_idx, stop_idx]))) / -10 * n_intervals_per_10dB
+        n_blocks_in_decay = np.diff(10*np.log10(np.take(time_window_data_current_channel, [start_idx, stop_idx]))) / -10 * n_intervals_per_10dB
 
-        n_samples_per_block = np.round(
-            np.diff(np.take(time_vector_window, [start_idx, stop_idx])) / n_blocks_in_decay * sampling_rate)
+        n_samples_per_block = np.round(np.diff(np.take(time_vector_window, [start_idx, stop_idx])) / n_blocks_in_decay * sampling_rate)
 
         window_time = n_samples_per_block/sampling_rate
         # (6) AVERAGE
 
-        time_window_data_current_channel, time_vector_window_current_channel, time_vector_current_channel = (
-            smooth_rir(energy_data[idx_channel], sampling_rate, window_time))
-        time_window_data_current_channel = np.squeeze(
-            time_window_data_current_channel)
+        time_window_data_current_channel, time_vector_window_current_channel, time_vector_current_channel = smooth_rir(energy_data[idx_channel], sampling_rate, window_time)
+        time_window_data_current_channel = np.squeeze(time_window_data_current_channel)
         idx_max = np.argmax(time_window_data_current_channel)
 
         old_crossing_point = 11+preliminary_crossing_point  # high start value to enter while-loop
         loop_counter = 0
 
-        while(np.abs(old_crossing_point - preliminary_crossing_point) > 0.01):
+        while(True):
             # (7) ESTIMATE BACKGROUND LEVEL
             corresponding_decay = 10  # 5...10 dB
             idx_last_10_percent = np.round(time_window_data_current_channel.shape[-1]*0.9)
-            idx_10dB_below_crosspoint = np.amax(
-                [1, np.round((preliminary_crossing_point - corresponding_decay / slope[1]) * sampling_rate / n_samples_per_block)])
+            idx_10dB_below_crosspoint = np.amax([1, np.round((preliminary_crossing_point - corresponding_decay / slope[1]) * sampling_rate / n_samples_per_block)])
 
-            noise_estimation_current_channel = np.mean(time_window_data_current_channel[int(
-                np.amin([idx_last_10_percent, idx_10dB_below_crosspoint])):])
+            noise_estimation_current_channel = np.mean(time_window_data_current_channel[int(np.amin([idx_last_10_percent, idx_10dB_below_crosspoint])):])
 
             # (8) ESTIMATE LATE DECAY SLOPE
             try:
-                start_idx_loop = np.argwhere(10*np.log10(
-                    time_window_data_current_channel[idx_max:]) < 10*np.log10(
-                    noise_estimation_current_channel) + dB_above_noise + (
-                    use_dyn_range_for_regression)[0, 0] + idx_max)
+                start_idx_loop = np.argwhere(10*np.log10(time_window_data_current_channel[idx_max:]) < 10*np.log10(noise_estimation_current_channel) + dB_above_noise + (use_dyn_range_for_regression)[0, 0] + idx_max)
             except:
                 start_idx_loop = 0
 
             try:
-                stop_idx_loop = np.argwhere(10*np.log10(
-                    time_window_data_current_channel[start_idx_loop+1:]) < (
-                    10*np.log10(noise_estimation_current_channel) +
-                    dB_above_noise))[0, 0] + start_idx_loop
+                stop_idx_loop = np.argwhere(10*np.log10(time_window_data_current_channel[start_idx_loop+1:]) < (10*np.log10(noise_estimation_current_channel) + dB_above_noise))[0, 0] + start_idx_loop
             except:
                 raise Exception('Regression did not work due to low SNR. Estimation was terminated.')
 
             # regression_matrix*slope = edc
             #regression_matrix = 0
 
-            regression_matrix = np.vstack(
-                (np.ones([stop_idx_loop-start_idx_loop]),
-                 time_vector_window_current_channel[start_idx_loop:stop_idx_loop]))
+            regression_matrix = np.vstack((np.ones([stop_idx_loop-start_idx_loop]),time_vector_window_current_channel[start_idx_loop:stop_idx_loop]))
 
-            slope = np.linalg.lstsq(regression_matrix.T, (10*np.log10(
-                    time_window_data_current_channel[start_idx_loop:stop_idx_loop])),rcond=None)[0]
+            slope = np.linalg.lstsq(regression_matrix.T, (10*np.log10(time_window_data_current_channel[start_idx_loop:stop_idx_loop])),rcond=None)[0]
 
             if slope[1] >= 0:
-                raise Exception(
-                    'Regression did not work due, T would be Inf, setting to 0. Estimation was terminated.')
+                raise Exception('Regression did not work due, T would be Inf, setting to 0. Estimation was terminated.')
                 #slope[1] = np.inf
 
             # (9) FIND CROSSPOINT
@@ -720,6 +697,9 @@ def intersection_time_lundeby(
             crossing_point = (10*np.log10(noise_estimation_current_channel) - slope[0]) / slope[1]
 
             loop_counter = loop_counter + 1
+
+            if (np.abs(old_crossing_point - preliminary_crossing_point) < 0.01):
+                break
             if loop_counter > 30:
                 # TO-DO: Paper says 5 iterations are sufficient in all cases!
                 warnings.warn("Warning: Lundeby algorithm was canceled after 30 iterations.")
@@ -728,10 +708,7 @@ def intersection_time_lundeby(
         reverberation_time[idx_channel] = -60/slope[1]
         noise_level[idx_channel] = 10*np.log10(noise_estimation_current_channel)  # TO-DO: dB or absolute value?
         intersection_time[idx_channel] = crossing_point
-        noise_peak_level[idx_channel] = 10 * \
-            np.log10(
-                np.amax(time_window_data_current_channel[int(np.amin(
-                    [idx_last_10_percent, idx_10dB_below_crosspoint])):]))
+        noise_peak_level[idx_channel] = 10 * np.log10(np.amax(time_window_data_current_channel[int(np.amin([idx_last_10_percent, idx_10dB_below_crosspoint])):]))
 
     if plot:
         plt.figure(figsize=(15, 3))
