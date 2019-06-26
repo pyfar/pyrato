@@ -195,7 +195,7 @@ def subtract_noise_from_squared_rir(data):
 
 def energy_decay_curve_truncation(
     data, sampling_rate, freq='broadband', is_energy=False, time_shift=True,
-    channel_independent=False, normalize=True):
+    channel_independent=False, normalize=True, plot=False):
     """ This function trucates a given room impulse response by the
     intersection time after Lundeby and calculates the energy decay curve.
 
@@ -219,6 +219,8 @@ def energy_decay_curve_truncation(
     normalize : boolean
         Defines, if the energy decay curve should be normalized in the end
         or not.
+    plot: Boolean
+        Specifies, whether the results should be visualized or not.
 
     Returns
     -------
@@ -234,6 +236,7 @@ def energy_decay_curve_truncation(
     intersection_time = intersection_time_lundeby(
         energy_data, sampling_rate=sampling_rate, freq=freq, is_energy=True,
         time_shift=False, channel_independent=False, plot=False)[0]
+    time_vector = smooth_rir(energy_data, sampling_rate)[2]
 
     intersection_time_idx = np.rint(intersection_time * sampling_rate)
     max_intersection_time_idx = np.amax(intersection_time_idx)
@@ -254,6 +257,18 @@ def energy_decay_curve_truncation(
 
     # Recover original data shape:
     energy_decay_curve = np.reshape(energy_decay_curve, data_shape)
+
+    if plot:
+        plt.figure(figsize=(15, 3))
+        plt.subplot(121)
+        plt.plot(time_vector, 10*np.log10(energy_data.T))
+        plt.xlabel('Time [s]')
+        plt.ylabel('Squared IR [dB]')
+        plt.subplot(122)
+        plt.plot(time_vector[0:energy_decay_curve.shape[-1]], 10*np.log10(energy_decay_curve.T))
+        plt.xlabel('Time [s]')
+        plt.ylabel('EDC: Truncation method [dB]')
+        plt.tight_layout()
 
     return energy_decay_curve
 
