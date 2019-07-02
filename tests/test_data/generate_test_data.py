@@ -1,3 +1,17 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+    The generate_test_data module provides the functionallity to generate
+    adequate test data for automatic testing.
+"""
+
+__author__ = "Johannes Imort"
+__version__ = "0.1.0"
+__maintainer__ = "Johannes Imort"
+__email__ = "johannes.imort@rwth-aachen.de"
+__status__ = "Development"
+
 import numpy as np
 import roomacoustics.edc_noise_handling as nh
 from roomacoustics import test_edc_noise_handling as test_enh
