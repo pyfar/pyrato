@@ -1,6 +1,73 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+from scipy import optimize
+
+
+def eigenfrequencies_rectangular_room_rigid(
+        dimensions, max_freq, speed_of_sound):
+    """Calculate the eigenfrequencies of a rectangular room with rigid walls.
+
+    Parameters
+    ----------
+    dimensions : double, ndarray
+        The dimensions of the room in the form [L_x, L_y, L_z]
+    max_freq : double
+        The maximum frequency to consider for the calculation of the
+        eigenfrequencies of the room
+    speed_of_sound : double, optional (343.9)
+        The speed of sound
+
+    Returns
+    -------
+    f_n : double, ndarray
+        The eigenfrequencies of the room
+    n : int, ndarray
+        The modal index
+
+    References
+    ----------
+    .. [1]  H. Kuttruff, Room acoustics, pp. 64-66, 4th Ed. Taylor & Francis,
+            2009.
+    """
+    c = speed_of_sound
+    L = np.asarray(dimensions)
+    L_x = dimensions[0]
+    L_y = dimensions[1]
+    L_z = dimensions[2]
+    f_max = max_freq
+
+    n_modes = 0
+    n_x_max = int(np.floor(2*f_max/c * L_x)) + 1
+    for n_x in range(0, n_x_max):
+        n_y_max = int(np.floor(np.real(
+            np.sqrt((2*f_max/c)**2 - (n_x/L_x)**2) * L_y))) + 1
+        for n_y in range(0, n_y_max):
+            n_modes += int(np.floor(np.real(
+                np.sqrt((2*f_max/c)**2 - (n_x/L_x)**2 - (n_y/L_y)**2) * L_z))) + 1
+
+    n = np.zeros((3, n_modes))
+
+    idx = 0
+    n_x_max = int(np.floor(2*f_max/c * L_x)) + 1
+    for n_x in range(0, n_x_max):
+        n_y_max = int(np.floor(np.real(
+            np.sqrt((2*f_max/c)**2 - (n_x/L_x)**2) * L_y))) + 1
+        for n_y in range(0, n_y_max):
+            n_z_max = int(np.floor(np.real(
+                np.sqrt((2*f_max/c)**2 - (n_x/L_x)**2 - (n_y/L_y)**2) * L_z))) + 1
+
+            idx_end = idx + n_z_max
+            n[0, idx:idx_end] = n_x
+            n[1, idx:idx_end] = n_y
+            n[2, idx:idx_end] = np.arange(0, n_z_max)
+
+            idx += n_z_max
+
+    f_n = c/2*np.sqrt(np.sum((n/L[np.newaxis].T)**2, axis=0))
+
+    return f_n, n
+
 
 def rectangular_room_rigid_walls(dimensions,
                                  source,
@@ -27,7 +94,7 @@ def rectangular_room_rigid_walls(dimensions,
     samplingrate : int
         The sampling rate
     speed_of_sound : double, optional (343.9)
-        THe speed of sound
+        The speed of sound
     n_samples : int
         number of samples for the calculation
 
@@ -55,41 +122,9 @@ def rectangular_room_rigid_walls(dimensions,
     L_z = dimensions[2]
     source = np.asarray(source)
     receiver = np.asarray(receiver)
-    f_max = max_freq
 
-    idx = 0
-    n_x_max = int(np.floor(2*f_max/c * L_x)) + 1
-    for n_x in range(0, n_x_max):
-        n_y_max = int(np.floor(np.real(
-            np.sqrt((2*f_max/c)**2 - (n_x/L_x)**2) * L_y))) + 1
-        for n_y in range(0, n_y_max):
-            idx += int(np.floor(np.real(
-                np.sqrt((2*f_max/c)**2 - (n_x/L_x)**2 - (n_y/L_y)**2) * L_z))) + 1
-
-    n_modes = idx
-    # print("Found {} eigenfrequencies.".format(n_modes))
-
-    n = np.zeros((3, n_modes))
-
-    idx = 0
-    n_x_max = int(np.floor(2*f_max/c * L_x)) + 1
-    for n_x in range(0, n_x_max):
-        n_y_max = int(np.floor(np.real(
-            np.sqrt((2*f_max/c)**2 - (n_x/L_x)**2) * L_y))) + 1
-        for n_y in range(0, n_y_max):
-            n_z_max = int(np.floor(np.real(
-                np.sqrt((2*f_max/c)**2 - (n_x/L_x)**2 - (n_y/L_y)**2) * L_z))) + 1
-
-            idx_end = idx + n_z_max
-            n[0, idx:idx_end] = n_x
-            n[1, idx:idx_end] = n_y
-            n[2, idx:idx_end] = np.arange(0, n_z_max)
-
-            idx += n_z_max
-
-    # print("Calculated {} eigenfrequencies.".format(idx - n_z_max + 1))
-
-    f_n = c/2*np.sqrt(np.sum((n/L[np.newaxis].T)**2, axis=0))
+    f_n, n = eigenfrequencies_rectangular_room_rigid(
+        dimensions, max_freq, speed_of_sound)
 
     coeff_receiver = np.cos(np.pi*n[0]*receiver[0]/L_x) \
                     *np.cos(np.pi*n[1]*receiver[1]/L_y) \
