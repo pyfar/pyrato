@@ -1,18 +1,14 @@
 import numpy as np
 import roomacoustics.analytic
 
+
 def test_analytic_shoebox_eigenfreqs():
     L = np.array([8, 5, 3])/10
-    source_pos = np.array([5, 3, 1.2])/10
-    receiver_pos = [0, 0, 0]
 
-    rir, eigenfreqs = roomacoustics.analytic.rectangular_room_rigid_walls(
+    eigenfreqs, _ = \
+        roomacoustics.analytic.eigenfrequencies_rectangular_room_rigid(
             L,
-            source_pos,
-            receiver_pos,
-            1,
             max_freq=1e3,
-            n_samples=2**18,
             speed_of_sound=343.9)
 
     f_n = np.array([0,
@@ -42,3 +38,25 @@ def test_analytic_shoebox_eigenfreqs():
                     9.259790885867778]) * 1e2
 
     np.testing.assert_allclose(eigenfreqs, f_n)
+
+
+def test_analytic_shoebox_rir():
+    L = np.array([8, 5, 3])/10
+    source_pos = np.array([5, 3, 1.2])/10
+    receiver_pos = [1, 0, 0]
+
+    rir, _ = roomacoustics.analytic.rectangular_room_rigid_walls(
+        L,
+        source_pos,
+        receiver_pos,
+        1,
+        max_freq=1e3,
+        n_samples=2**16,
+        speed_of_sound=343.9)
+
+    ref = np.loadtxt(
+        './tests/data/analytic_rir_rigid_walls.csv',
+        delimiter=',',
+        skiprows=1)
+
+    np.testing.assert_allclose(rir, ref)
