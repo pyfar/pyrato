@@ -23,7 +23,7 @@ def reverberation_time_energy_decay_curve(
         Energy decay curve. The time needs to be the arrays last dimension.
     times : ndarray, double
         Time vector corresponding to each sample of the EDC.
-    T : 'T20', 'T30', 'T40', 'T50', 'T60', 'EDT'
+    T : 'T20', 'T30', 'T40', 'T50', 'T60', 'EDT', 'LDT'
         Decay interval to be used for the reverberation time extrapolation
 
     Returns
@@ -40,6 +40,9 @@ def reverberation_time_energy_decay_curve(
     if T == 'EDT':
         upper = 0.
         lower = -10.
+    if T == 'LDT':
+        upper = -25.
+        lower = -35.
     else:
         upper = -5
         lower = -np.double(re.findall(r'\d+', T)) + upper
