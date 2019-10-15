@@ -4,9 +4,16 @@
 
 import re
 import numpy as np
+import matplotlib.pyplot as plt
 
 
-def reverberation_time_energy_decay_curve(energy_decay_curve, times, T='T20', normalize=True):
+def reverberation_time_energy_decay_curve(
+    energy_decay_curve,
+    times,
+    T='T20',
+    normalize=True,
+    regression=True,
+    plot=False):
     """Estimate the reverberation time from a given energy decay curve according
     to the ISO standard 3382 _[1].
 
@@ -45,13 +52,35 @@ def reverberation_time_energy_decay_curve(energy_decay_curve, times, T='T20', no
     idx_upper = np.argmin(np.abs(upper - edc_db))
     idx_lower = np.argmin(np.abs(lower - edc_db))
 
-    edc_upper = edc_db[idx_upper]
-    edc_lower = edc_db[idx_lower]
 
-    time_upper = times[idx_upper]
-    time_lower = times[idx_lower]
+    if regression:
+        A = np.vstack([times[idx_upper:idx_lower], np.ones(idx_lower - idx_upper)]).T
+        gradient, const = np.linalg.lstsq(A, edc_db[..., idx_upper:idx_lower], rcond=None)[0]
+    else:
+        edc_upper = edc_db[idx_upper]
+        edc_lower = edc_db[idx_lower]
 
-    reverberation_time = -60/((edc_lower - edc_upper)/(time_lower - time_upper))
+        time_upper = times[idx_upper]
+        time_lower = times[idx_lower]
+        gradient = ((edc_lower - edc_upper) / (time_lower - time_upper))
+        const = 0
+
+    reverberation_time = -60 / gradient
+
+    if plot:
+        plt.figure()
+        plt.plot(times, edc_db, label='edc')
+        plt.plot(times, times * gradient + const, label='regression', linestyle='-.')
+        ax = plt.gca()
+        ax.set_ylim((-95, 5))
+
+        reverberation_time = -60 / gradient
+
+        ax.set_xlim((-0.05*reverberation_time, 2*reverberation_time))
+        plt.grid(True)
+        plt.legend()
+        ax.set_ylabel('EDC [dB]')
+        ax.set_xlabel('Time [s]')
 
     return reverberation_time
 
