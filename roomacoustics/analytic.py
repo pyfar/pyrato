@@ -292,3 +292,51 @@ def eigenfrequencies_rectangular_room_impedance(L, ks, k_max, zeta):
     mode_indices = perms[mask_bc[:, 0]]
 
     return kk_ns, mode_indices
+
+
+def pressure_mode_solution(position, eigenvals, phase_shift):
+    return np.cosh(1j*eigenvals * position + phase_shift)
+
+
+def pressure_modal_superposition(
+        ks, omegas, k_ns, kk_ns, mode_indices, r_R, r_S, L, zeta_0):
+
+    phi = []
+    p_ns_r = []
+    p_ns_s = []
+    K_n = []
+
+    for idx in range(0, 3):
+        phi.append(np.arctanh(
+            np.tile(ks, ((k_ns[idx].shape[-1]), 1)).T / (k_ns[idx]*zeta_0[idx])
+        ))
+        p_ns_r.append(pressure_mode_solution(k_ns[idx], r_R[idx], phi[idx]))
+        p_ns_s.append(pressure_mode_solution(k_ns[idx], r_S[idx], phi[idx]))
+        K_n.append(
+            L[idx]/2*(
+                1+1/(1j*k_ns[idx]*L[idx]) *
+                np.sinh(1j*k_ns[idx]*L[idx]) *
+                np.cosh(1j*k_ns[idx]*L[idx] + 2*phi[idx])
+            )
+        )
+
+    p_x_n = np.zeros(len(ks), dtype=np.complex)
+
+    for lin_idx, mode_idx in zip(count(), mode_indices):
+        pp_n_r = \
+            p_ns_r[0][:, mode_idx[0]] * \
+            p_ns_r[1][:, mode_idx[1]] * \
+            p_ns_r[2][:, mode_idx[2]]
+        pp_n_s = \
+            p_ns_s[0][:, mode_idx[0]] * \
+            p_ns_s[1][:, mode_idx[1]] * \
+            p_ns_s[2][:, mode_idx[2]]
+        KK_n = \
+            K_n[0][:, mode_idx[0]] * \
+            K_n[1][:, mode_idx[1]] * \
+            K_n[2][:, mode_idx[2]]
+        nom = 1j*omegas*1.2*pp_n_r*pp_n_s
+        denom = (KK_n*(kk_ns[:, lin_idx]**2 - ks**2))
+        p_x_n += nom / denom
+
+    return p_x_n
