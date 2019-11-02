@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from itertools import count
 
 import numpy as np
 from scipy import optimize
@@ -152,3 +153,136 @@ def rectangular_room_rigid_walls(dimensions,
 
     rir = np.fft.irfft(transfer_function, n=n_samples)
     return rir, f_n
+
+
+def transcendental_equation_eigenfrequencies_impedance(k_n, k, L, zeta):
+    """The transcendental equation to be solved for the estimation of the
+    complex eigenfrequencies of the rectangular room with uniform impedances.
+    This function is intended as the cost function for solving for the roots.
+
+    Parameters
+    ----------
+    k_n : array, double
+        The real and imaginary part of the complex eigenfrequency
+    k : double
+        The real valued wave number
+    L : double
+        The room dimension
+    zeta : array, double
+        The normalized specific impedance
+
+    Returns
+    -------
+    func : array, double
+        The real and imaginary part of the transcendental equation
+    """
+    k_n_real = k_n[0]
+    k_n_imag = k_n[1]
+
+    k_n_complex = k_n_real + 1j*k_n_imag
+
+    left = np.tan(k_n_complex*L)
+    right = \
+        (1j*k*L*(zeta[0] + zeta[1])) / (k_n_complex*L * (zeta[0]*zeta[1] +
+                                        (k*L)**2/(k_n_complex*L)**2))
+    func = left - right
+
+    return [func.real, func.imag]
+
+
+def initial_solution_transcendental_equation(k, L, zeta):
+    """ Initial solution to the transcendental equation for the complex
+    eigenfrequencies of the rectangular room with uniform impedance at
+    the boundaries. This will approximate the zeroth order mode.
+
+    Parameters
+    ----------
+    k : array, double
+        Wave number array
+
+    Returns
+    -------
+    k_0 : array, complex
+        The complex zero order eigenfrequency
+    """
+    zeta_0 = zeta[0]
+    zeta_L = zeta[1]
+    k_0 = 1/L*np.sqrt(-(k*L)**2/zeta_0/zeta_L + 1j*k*L*(1/zeta_0+1/zeta_L))
+
+    return k_0
+
+
+def eigenfrequencies_rectangular_room_1d(
+        L_l, ks, k_max, zeta):
+
+    n_l_max = int(np.ceil(k_max/np.pi*L_l))
+
+    k_ns_l = np.zeros((n_l_max, len(ks)), dtype=np.complex64)
+    k_n_init = initial_solution_transcendental_equation(ks[0], L_l, zeta)
+    for idx_k, k in enumerate(ks):
+        idx_n = 0
+        while k_n_init.real < k_max:
+            args_costfun = (k, L_l, zeta)
+            kk_n = optimize.fsolve(
+                transcendental_equation_eigenfrequencies_impedance,
+                (k_n_init.real, k_n_init.imag),
+                args=args_costfun)
+            if kk_n[0] > k_max:
+                break
+            else:
+                kk_n_cplx = kk_n[0] + 1j*kk_n[1]
+                k_ns_l[idx_n, idx_k] = kk_n_cplx
+                k_n_init = (kk_n_cplx*L_l + np.pi) / L_l
+                idx_n += 1
+
+        k_n_init = k_ns_l[0, idx_k]
+
+    return k_ns_l
+
+
+def normal_eigenfrequencies_rectangular_room_impedance(
+        L, ks, k_max, zeta):
+
+    k_ns = []
+    for dim, L_l, zeta_l in zip(count(), L, zeta):
+        k_ns_l = eigenfrequencies_rectangular_room_1d(
+            L_l, ks, k_max, zeta_l)
+        k_ns.append(np.array(k_ns_l, dtype=np.complex))
+    return k_ns
+
+
+def eigenfrequencies_rectangular_room_impedance(L, ks, k_max, zeta):
+    ks = np.asarray(ks)
+    mask = ks >= 0.02
+    ks_search = ks[mask]
+    k_ns = normal_eigenfrequencies_rectangular_room_impedance(
+        L, ks_search, k_max, zeta
+    )
+    for idx in range(0, len(L)):
+        k_ns[idx] = np.vstack(
+            (np.tile(k_ns[idx][0], (np.sum(~mask), 1)), k_ns[idx])
+            )
+
+    n_z = np.arange(0, k_ns[2].shape[0])
+    n_y = np.arange(0, k_ns[1].shape[0])
+    n_x = np.arange(0, k_ns[0].shape[0])
+
+    combs = np.meshgrid(n_x, n_y, n_z)
+    perms = np.array(combs).T.reshape(-1, 3)
+
+    kk_ns = np.sqrt(
+        k_ns[0][perms[:, 0]]**2 +
+        k_ns[1][perms[:, 1]]**2 +
+        k_ns[2][perms[:, 2]]**2)
+
+    mask_perms = (kk_ns[:, -1].real < k_max)
+
+    mask_bc = np.broadcast_to(
+        np.atleast_2d(mask_perms).T,
+        (len(mask_perms), len(ks)))
+
+    kk_ns = kk_ns[mask_bc].reshape(-1, len(ks))
+
+    mode_indices = perms[mask_bc[:, 0]]
+
+    return kk_ns, mode_indices
