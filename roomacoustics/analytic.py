@@ -45,7 +45,9 @@ def eigenfrequencies_rectangular_room_rigid(
             np.sqrt((2*f_max/c)**2 - (n_x/L_x)**2) * L_y))) + 1
         for n_y in range(0, n_y_max):
             n_modes += int(np.floor(np.real(
-                np.sqrt((2*f_max/c)**2 - (n_x/L_x)**2 - (n_y/L_y)**2) * L_z))) + 1
+                np.sqrt(
+                    (2*f_max/c)**2 - (n_x/L_x)**2 - (n_y/L_y)**2
+                ) * L_z))) + 1
 
     n = np.zeros((3, n_modes))
 
@@ -56,7 +58,9 @@ def eigenfrequencies_rectangular_room_rigid(
             np.sqrt((2*f_max/c)**2 - (n_x/L_x)**2) * L_y))) + 1
         for n_y in range(0, n_y_max):
             n_z_max = int(np.floor(np.real(
-                np.sqrt((2*f_max/c)**2 - (n_x/L_x)**2 - (n_y/L_y)**2) * L_z))) + 1
+                np.sqrt(
+                    (2*f_max/c)**2 - (n_x/L_x)**2 - (n_y/L_y)**2
+                ) * L_z))) + 1
 
             idx_end = idx + n_z_max
             n[0, idx:idx_end] = n_x
@@ -127,12 +131,14 @@ def rectangular_room_rigid_walls(dimensions,
     f_n, n = eigenfrequencies_rectangular_room_rigid(
         dimensions, max_freq, speed_of_sound)
 
-    coeff_receiver = np.cos(np.pi*n[0]*receiver[0]/L_x) \
-                    *np.cos(np.pi*n[1]*receiver[1]/L_y) \
-                    *np.cos(np.pi*n[2]*receiver[2]/L_z)
-    coeff_source = np.cos(np.pi*n[0]*source[0]/L_x) \
-                  *np.cos(np.pi*n[1]*source[1]/L_y) \
-                  *np.cos(np.pi*n[2]*source[2]/L_z)
+    coeff_receiver = \
+        np.cos(np.pi*n[0]*receiver[0]/L_x) * \
+        np.cos(np.pi*n[1]*receiver[1]/L_y) * \
+        np.cos(np.pi*n[2]*receiver[2]/L_z)
+    coeff_source = \
+        np.cos(np.pi*n[0]*source[0]/L_x) * \
+        np.cos(np.pi*n[1]*source[1]/L_y) * \
+        np.cos(np.pi*n[2]*source[2]/L_z)
 
     K_n = np.prod(L) * 0.5**(np.sum(n > 0, axis=0))
     factor = c**2 / K_n
@@ -148,7 +154,7 @@ def rectangular_room_rigid_walls(dimensions,
 
     transfer_function = np.zeros(n_bins, np.complex)
     for om_n, coeff_n in zip(omega_n, coeff):
-        den = (omega_squared - delta_n_raw**2 - om_n**2 - 2*1j*delta_n_raw*omega)
+        den = omega_squared - delta_n_raw**2 - om_n**2 - 2*1j*delta_n_raw*omega
         transfer_function += (coeff_n/den)
 
     rir = np.fft.irfft(transfer_function, n=n_samples)
