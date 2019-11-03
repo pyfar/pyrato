@@ -198,6 +198,38 @@ def test_analytic_shoebox_eigenfreqs_impedance():
     npt.assert_allclose(np.sort(f_n), np.sort(truth), atol=1e-3, rtol=1e-3)
 
 
+def test_analytic_eigenfrequencies_impedance_cplx():
+    L = np.array([8, 5, 3])/10
+    zetas = np.ones((3, 2)) * 1e10
+
+    c = 343.9
+
+    k_max = 1e3*2*np.pi/c
+    k_min = 150*2*np.pi/c
+    k = np.linspace(k_min, k_max*1.1, 2**10)
+
+    k_ns, _ = analytic.eigenfrequencies_rectangular_room_impedance(
+            L, k, k_max, zetas, only_normal=True
+        )
+
+    k_ns_x = np.loadtxt(
+        'tests/data/analytic_impedance/k_ns_x.csv',
+        delimiter=',',
+        dtype=np.complex)
+    k_ns_y = np.loadtxt(
+        'tests/data/analytic_impedance/k_ns_y.csv',
+        delimiter=',',
+        dtype=np.complex)
+    k_ns_z = np.loadtxt(
+        'tests/data/analytic_impedance/k_ns_z.csv',
+        delimiter=',',
+        dtype=np.complex)
+
+    npt.assert_allclose(k_ns[0], k_ns_x, rtol=1e-6)
+    npt.assert_allclose(k_ns[1], k_ns_y, rtol=1e-6)
+    npt.assert_allclose(k_ns[2], k_ns_z, rtol=1e-6)
+
+
 def test_analytic_pressure_shoebox_impedance():
 
     # import matplotlib.pyplot as plt
