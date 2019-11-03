@@ -87,6 +87,29 @@ def test_eigenfreq_impedance_1d_real():
     npt.assert_allclose(f_n, truth, rtol=1e-3, atol=1e-3)
 
 
+def test_eigenfreq_impedance_1d_real_jac():
+    L = 8/10
+    zeta = np.ones(2) * 1e10
+    c = 343.9
+
+    k = [0.1]
+    k_max = 1e3*2*np.pi/c
+
+    k_ns = analytic.eigenfrequencies_rectangular_room_1d_jac(
+        L, k, k_max, zeta
+    )
+
+    truth = np.array([
+        1e-6,
+        2.149375000000000,
+        4.298750000000000,
+        6.448125000000000,
+        8.597500000000000]) * 1e2
+
+    f_n = np.squeeze(c*k_ns.real/2/np.pi)
+    npt.assert_allclose(f_n, truth, rtol=1e-3, atol=1e-3)
+
+
 def test_analytic_shoebox_eigenfreqs_impedance_multi_k():
     L = np.array([8, 5, 3])/10
     zetas = np.ones((3, 2)) * 1e10
