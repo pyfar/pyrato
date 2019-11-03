@@ -328,10 +328,9 @@ def eigenfrequencies_rectangular_room_impedance(
         L, ks_search, k_max, zeta
     )
     for idx in range(0, len(L)):
-        k_ns[idx] = np.hstack(
-            (np.tile(k_ns[idx][:, 0], (np.sum(~mask), 1)).T,
-            k_ns[idx])
-            )
+        k_ns[idx] = np.hstack((
+            np.tile(k_ns[idx][:, 0], (np.sum(~mask), 1)).T,
+            k_ns[idx]))
 
     n_z = np.arange(0, k_ns[2].shape[0])
     n_y = np.arange(0, k_ns[1].shape[0])
