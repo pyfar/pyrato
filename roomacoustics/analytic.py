@@ -350,9 +350,11 @@ def eigenfrequencies_rectangular_room_impedance(
         np.atleast_2d(mask_perms).T,
         (len(mask_perms), len(ks)))
 
+    # TODO: Document this!
     if only_normal:
-        kk_ns = kk_ns[mask_bc].reshape(-1, len(ks))
         kk_ns = k_ns
+    else:
+        kk_ns = kk_ns[mask_bc].reshape(-1, len(ks))
 
     mode_indices = perms[mask_bc[:, 0]]
 
