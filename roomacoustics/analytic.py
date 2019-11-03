@@ -285,7 +285,8 @@ def normal_eigenfrequencies_rectangular_room_impedance(
     return k_ns
 
 
-def eigenfrequencies_rectangular_room_impedance(L, ks, k_max, zeta):
+def eigenfrequencies_rectangular_room_impedance(
+        L, ks, k_max, zeta, only_normal=False):
     """Estimates the complex eigenvalues in the wavenumber domain for a
     rectangular room with arbitrary uniform impedances on the boundary by
     numerically solving for the roots of the transcendental equation.
@@ -327,8 +328,9 @@ def eigenfrequencies_rectangular_room_impedance(L, ks, k_max, zeta):
         L, ks_search, k_max, zeta
     )
     for idx in range(0, len(L)):
-        k_ns[idx] = np.vstack(
-            (np.tile(k_ns[idx][0], (np.sum(~mask), 1)), k_ns[idx])
+        k_ns[idx] = np.hstack(
+            (np.tile(k_ns[idx][:, 0], (np.sum(~mask), 1)).T,
+            k_ns[idx])
             )
 
     n_z = np.arange(0, k_ns[2].shape[0])
@@ -349,7 +351,9 @@ def eigenfrequencies_rectangular_room_impedance(L, ks, k_max, zeta):
         np.atleast_2d(mask_perms).T,
         (len(mask_perms), len(ks)))
 
-    kk_ns = kk_ns[mask_bc].reshape(-1, len(ks))
+    if only_normal:
+        kk_ns = kk_ns[mask_bc].reshape(-1, len(ks))
+        kk_ns = k_ns
 
     mode_indices = perms[mask_bc[:, 0]]
 
@@ -361,44 +365,33 @@ def pressure_mode_solution(position, eigenvals, phase_shift):
 
 
 def pressure_modal_superposition(
-        ks, omegas, k_ns, kk_ns, mode_indices, r_R, r_S, L, zeta_0):
+        ks, omegas, k_ns, mode_indices, r_R, r_S, L, zeta):
 
-    phi = []
-    p_ns_r = []
-    p_ns_s = []
-    K_n = []
+    zeta_0 = zeta[:, 0]
 
-    for idx in range(0, 3):
-        phi.append(np.arctanh(
-            np.tile(ks, ((k_ns[idx].shape[-1]), 1)).T / (k_ns[idx]*zeta_0[idx])
-        ))
-        p_ns_r.append(pressure_mode_solution(k_ns[idx], r_R[idx], phi[idx]))
-        p_ns_s.append(pressure_mode_solution(k_ns[idx], r_S[idx], phi[idx]))
-        K_n.append(
-            L[idx]/2*(
-                1+1/(1j*k_ns[idx]*L[idx]) *
-                np.sinh(1j*k_ns[idx]*L[idx]) *
-                np.cosh(1j*k_ns[idx]*L[idx] + 2*phi[idx])
-            )
-        )
+    kk_ns = np.sqrt(
+        k_ns[0][mode_indices[:, 0]]**2 +
+        k_ns[1][mode_indices[:, 1]]**2 +
+        k_ns[2][mode_indices[:, 2]]**2)
 
-    p_x_n = np.zeros(len(ks), dtype=np.complex)
+    k_ns_xyz = np.array([
+        k_ns[0][mode_indices[:, 0]],
+        k_ns[1][mode_indices[:, 1]],
+        k_ns[2][mode_indices[:, 2]]
+        ])
 
-    for lin_idx, mode_idx in zip(count(), mode_indices):
-        pp_n_r = \
-            p_ns_r[0][:, mode_idx[0]] * \
-            p_ns_r[1][:, mode_idx[1]] * \
-            p_ns_r[2][:, mode_idx[2]]
-        pp_n_s = \
-            p_ns_s[0][:, mode_idx[0]] * \
-            p_ns_s[1][:, mode_idx[1]] * \
-            p_ns_s[2][:, mode_idx[2]]
-        KK_n = \
-            K_n[0][:, mode_idx[0]] * \
-            K_n[1][:, mode_idx[1]] * \
-            K_n[2][:, mode_idx[2]]
-        nom = 1j*omegas*1.2*pp_n_r*pp_n_s
-        denom = (KK_n*(kk_ns[:, lin_idx]**2 - ks**2))
-        p_x_n += nom / denom
+    phi = np.arctanh(ks/(zeta_0 * k_ns_xyz.T).T)
+    p_ns_r = np.prod(np.cosh(1j * r_R * k_ns_xyz.T + phi.T).T, axis=0)
+    p_ns_s = np.prod(np.cosh(1j * r_S * k_ns_xyz.T + phi.T).T, axis=0)
 
-    return p_x_n
+    K_n_sc = \
+        np.sinh(1j * k_ns_xyz.T * L) * \
+        np.cosh(1j * k_ns_xyz.T * L + 2*phi.T)
+
+    K_n = np.prod((L/2 * (1 + 1/(1j*k_ns_xyz.T * L) * K_n_sc)).T, axis=0)
+
+    nom = 1j*omegas*1.2*p_ns_r*p_ns_s
+    denom = K_n * (kk_ns**2 - ks**2)
+    spec = np.sum(nom / denom, axis=0)
+
+    return spec
