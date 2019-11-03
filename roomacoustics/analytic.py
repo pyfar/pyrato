@@ -220,7 +220,35 @@ def initial_solution_transcendental_equation(k, L, zeta):
 
 def eigenfrequencies_rectangular_room_1d(
         L_l, ks, k_max, zeta):
+    """Estimates the complex eigenvalues in the wavenumber domain for one
+    dimension by numerically solving for the roots of the transcendental
+    equation. A initial approximation to the zeroth order mode is applied to
+    improve the conditioning of the problem.
 
+    Parameters
+    ----------
+    L_l : double
+        The dimension in m
+    ks : array, double
+        The wave numbers for which the eigenvalues are to be solved.
+    k_max : double
+        The real part of the largest eigenvalue. This solves as a stopping
+        criterion independent from the real wave number k.
+    zeta : array, double
+        The normalized specific impedance on the boundaries.
+
+    Returns
+    -------
+    k_ns : array, complex
+        The complex eigenvalues for each wavenumber
+
+    Note
+    ----
+    This function assumes that the real part of the largest eigenvalue may be
+    calculated using the approximation for rigid walls.
+
+    """
+    ks = np.atleast_1d(ks)
     n_l_max = int(np.ceil(k_max/np.pi*L_l))
 
     k_ns_l = np.zeros((n_l_max, len(ks)), dtype=np.complex64)
@@ -253,12 +281,46 @@ def normal_eigenfrequencies_rectangular_room_impedance(
     for dim, L_l, zeta_l in zip(count(), L, zeta):
         k_ns_l = eigenfrequencies_rectangular_room_1d(
             L_l, ks, k_max, zeta_l)
-        k_ns.append(np.array(k_ns_l, dtype=np.complex))
+        k_ns.append(k_ns_l)
     return k_ns
 
 
 def eigenfrequencies_rectangular_room_impedance(L, ks, k_max, zeta):
-    ks = np.asarray(ks)
+    """Estimates the complex eigenvalues in the wavenumber domain for a
+    rectangular room with arbitrary uniform impedances on the boundary by
+    numerically solving for the roots of the transcendental equation.
+    A initial approximation to the zeroth order mode is applied to
+    improve the conditioning of the problem. The eigenvalues corresponding to
+    tangential and oblique modes are calculated from the eigenvalues of the
+    respective axial modes. Resulting eigenvalues with a real part larger than
+    k_max will be discarded.
+
+    Parameters
+    ----------
+    L : array, double
+        The dimensions in m
+    ks : array, double
+        The wave numbers for which the eigenvalues are to be solved.
+    k_max : double
+        The real part of the largest eigenvalue. This solves as a stopping
+        criterion independent from the real wave number k.
+    zeta : array, double
+        The normalized specific impedance on the boundaries.
+
+    Returns
+    -------
+    k_ns : array, complex
+        The complex eigenvalues for each wavenumber
+    mode_indices : array, integer
+        The wave number indices of respective eigenvalues.
+
+    Note
+    ----
+    Eigenvalues smaller for a wave number $k < 0.02$ will be replaced by the
+    value for the closest larger wave number to ensure finding the root.
+
+    """
+    ks = np.atleast_1d(ks)
     mask = ks >= 0.02
     ks_search = ks[mask]
     k_ns = normal_eigenfrequencies_rectangular_room_impedance(
