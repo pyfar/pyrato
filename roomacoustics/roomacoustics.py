@@ -8,12 +8,12 @@ import matplotlib.pyplot as plt
 
 
 def reverberation_time_energy_decay_curve(
-    energy_decay_curve,
-    times,
-    T='T20',
-    normalize=True,
-    regression=True,
-    plot=False):
+        energy_decay_curve,
+        times,
+        T='T20',
+        normalize=True,
+        regression=True,
+        plot=False):
     """Estimate the reverberation time from a given energy decay curve according
     to the ISO standard 3382 _[1].
 
@@ -33,8 +33,8 @@ def reverberation_time_energy_decay_curve(
 
     References
     ----------
-    .. [1]  ISO 3382, Acoustics - Measurement of the reverberation time of rooms
-            with reference to other acoustical parameters.
+    .. [1]  ISO 3382, Acoustics - Measurement of the reverberation time of
+            rooms with reference to other acoustical parameters.
 
     """
     if T == 'EDT':
@@ -55,10 +55,12 @@ def reverberation_time_energy_decay_curve(
     idx_upper = np.argmin(np.abs(upper - edc_db))
     idx_lower = np.argmin(np.abs(lower - edc_db))
 
-
     if regression:
-        A = np.vstack([times[idx_upper:idx_lower], np.ones(idx_lower - idx_upper)]).T
-        gradient, const = np.linalg.lstsq(A, edc_db[..., idx_upper:idx_lower], rcond=None)[0]
+        A = np.vstack(
+            [times[idx_upper:idx_lower],
+             np.ones(idx_lower - idx_upper)]).T
+        gradient, const = np.linalg.lstsq(
+            A, edc_db[..., idx_upper:idx_lower], rcond=None)[0]
     else:
         edc_upper = edc_db[idx_upper]
         edc_lower = edc_db[idx_lower]
@@ -72,8 +74,15 @@ def reverberation_time_energy_decay_curve(
 
     if plot:
         plt.figure()
-        plt.plot(times, edc_db, label='edc')
-        plt.plot(times, times * gradient + const, label='regression', linestyle='-.')
+        plt.plot(
+            times,
+            edc_db,
+            label='edc')
+        plt.plot(
+            times,
+            times * gradient + const,
+            label='regression',
+            linestyle='-.')
         ax = plt.gca()
         ax.set_ylim((-95, 5))
 
@@ -196,12 +205,16 @@ def energy_decay_curve_analytic(
     else:
         raise ValueError("The method has to be either 'eyring' or 'sabine'.")
 
-
     return energy_decay_curve
 
 
-def air_attenuation_coefficient(frequency, temperature=20, humidity=50, atmospheric_pressure=101325):
-    """Calculate the attenuation coefficient m for the absorption caused by friction with the surrounding air.
+def air_attenuation_coefficient(
+        frequency,
+        temperature=20,
+        humidity=50,
+        atmospheric_pressure=101325):
+    """Calculate the attenuation coefficient m for the absorption caused
+     by friction with the surrounding air.
 
     Parameters
     ----------
@@ -225,7 +238,7 @@ def air_attenuation_coefficient(frequency, temperature=20, humidity=50, atmosphe
     referencePressureKPa = 101.325
     pressureKPa = atmospheric_pressure/1000.0
 
-    #determine molar concentration of water vapor
+    # determine molar concentration of water vapor
     tmp = (( 10.79586 * (1.0 - (273.16/roomTemperatureKelvin) )) -
         (5.02808 * np.log10((roomTemperatureKelvin/273.16)) ) +
         (1.50474 * 0.0001 * (1.0 - 10.0 ** (-8.29692*((roomTemperatureKelvin/273.16) - 1.0)))) +
