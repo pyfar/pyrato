@@ -103,3 +103,6 @@ ENV/
 
 # visual studio code
 .vscode/
+
+# pycharm
+.idea/
