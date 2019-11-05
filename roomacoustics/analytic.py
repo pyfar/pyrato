@@ -244,9 +244,9 @@ def gradient_trancendental_equation_eigenfrequencies_impedance(
     .. math::
 
         L \left(\tan^{2}{\left(L k_{n} \right)} + 1\right) -
-        \frac{2.0 i k^{3} \left(\zeta_{0} + \zeta_{L}\right)}{k_{n}^{4}
+        \frac{2 i k^{3} \left(\zeta_{0} + \zeta_{L}\right)}{k_{n}^{4}
         \left(\frac{k^{2}}{k_{n}^{2}} + \zeta_{0} \zeta_{L}\right)^{2}} +
-        \frac{1.0 i k \left(\zeta_{0} + \zeta_{L}\right)}{k_{n}^{2}
+        \frac{ i k \left(\zeta_{0} + \zeta_{L}\right)}{k_{n}^{2}
         \left(\frac{k^{2}}{k_{n}^{2}} + \zeta_{0} \zeta_{L}\right)} = 0
 
     Parameters
@@ -297,64 +297,6 @@ def initial_solution_transcendental_equation(k, L, zeta):
     k_0 = 1/L*np.sqrt(-(k*L)**2/zeta_0/zeta_L + 1j*k*L*(1/zeta_0+1/zeta_L))
 
     return k_0
-
-
-def eigenfrequencies_rectangular_room_1d_newton_grad(
-        L_l, ks, k_max, zeta):
-    """Estimates the complex eigenvalues in the wavenumber domain for one
-    dimension by numerically solving for the roots of the transcendental
-    equation. A initial approximation to the zeroth order mode is applied to
-    improve the conditioning of the problem.
-
-    Parameters
-    ----------
-    L_l : double
-        The dimension in m
-    ks : array, double
-        The wave numbers for which the eigenvalues are to be solved.
-    k_max : double
-        The real part of the largest eigenvalue. This solves as a stopping
-        criterion independent from the real wave number k.
-    zeta : array, double
-        The normalized specific impedance on the boundaries.
-
-    Returns
-    -------
-    k_ns : array, complex
-        The complex eigenvalues for each wavenumber
-
-    Note
-    ----
-    This function assumes that the real part of the largest eigenvalue may be
-    calculated using the approximation for rigid walls.
-
-    """
-    ks = np.atleast_1d(ks)
-    n_l_max = int(np.ceil(k_max/np.pi*L_l))
-
-    k_ns_l = np.zeros((n_l_max, len(ks)), dtype=np.complex64)
-    k_n_init = initial_solution_transcendental_equation(ks[0], L_l, zeta)
-    for idx_k, k in enumerate(ks):
-        idx_n = 0
-        while k_n_init.real < k_max:
-            args_costfun = (k, L_l, zeta)
-            kk_n = optimize.newton(
-                transcendental_equation_eigenfrequencies_impedance_newton,
-                k_n_init,
-                fprime=gradient_trancendental_equation_eigenfrequencies_impedance,
-                args=args_costfun)
-            if kk_n.real > k_max:
-                break
-            else:
-                # kk_n_cplx = kk_n[0] + 1j*kk_n[1]
-                kk_n_cplx = kk_n
-                k_ns_l[idx_n, idx_k] = kk_n_cplx
-                k_n_init = (kk_n_cplx*L_l + np.pi) / L_l
-                idx_n += 1
-
-        k_n_init = k_ns_l[0, idx_k]
-
-    return k_ns_l
 
 
 def eigenfrequencies_rectangular_room_1d(
@@ -490,7 +432,7 @@ def normal_eigenfrequencies_rectangular_room_impedance(
 
 def eigenfrequencies_rectangular_room_impedance(
         L, ks, k_max, zeta, only_normal=False):
-    """Estimates the complex eigenvalues in the wavenumber domain for a
+    r"""Estimates the complex eigenvalues in the wavenumber domain for a
     rectangular room with arbitrary uniform impedances on the boundary by
     numerically solving for the roots of the transcendental equation.
     A initial approximation to the zeroth order mode is applied to
@@ -510,6 +452,12 @@ def eigenfrequencies_rectangular_room_impedance(
         criterion independent from the real wave number k.
     zeta : array, double
         The normalized specific impedance on the boundaries.
+    only_normal : boolean, optional (False)
+        Only return the eigenvalues corresponding to the axial modes.
+        The mode indices will still contain the indices for all modes in
+        the defined frequency range. The complete set of eigenvalues
+        can be calculated as
+        :math:`k_n = \sqrt{ k_{n,x}^2+k_{n,y}^2+k_{n,z}^2 }`.
 
     Returns
     -------
@@ -520,8 +468,8 @@ def eigenfrequencies_rectangular_room_impedance(
 
     Note
     ----
-    Eigenvalues smaller for a wave number $k < 0.02$ will be replaced by the
-    value for the closest larger wave number to ensure finding the root.
+    Eigenvalues smaller for a wave number :math:`k < 0.02` will be replaced by
+    the value for the closest larger wave number to ensure finding the root.
 
     """
     ks = np.atleast_1d(ks)
