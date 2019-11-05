@@ -196,22 +196,85 @@ def transcendental_equation_eigenfrequencies_impedance(k_n, k, L, zeta):
     return [func.real, func.imag]
 
 
+def transcendental_equation_eigenfrequencies_impedance_newton(k_n, k, L, zeta):
+    r"""The transcendental equation to be solved for the estimation of the
+    complex eigenfrequencies of the rectangular room with uniform impedances.
+    This function is intended as the cost function for solving for the roots.
+
+    .. math::
+
+        \frac{ i k \left(\zeta_{0} + \zeta_{L}\right)}{k_{n}
+        \left(\frac{k^{2}}{k_{n}^{2}} + \zeta_{0} \zeta_{L}\right)} +
+        \tan{\left(L k_{n} \right)} = 0
+
+    Parameters
+    ----------
+    k_n : complex
+        The complex eigenvalue
+    k : double
+        The real valued wave number
+    L : double
+        The room dimension
+    zeta : array, double
+        The normalized specific impedance
+
+    Returns
+    -------
+    func : array, double
+        The complex transcendental equation
+    """
+    left = np.tan(k_n*L)
+    zeta_prod = zeta[0]*zeta[1]
+    zeta_sum = zeta[0]+zeta[1]
+
+    right = \
+        (1j*k*zeta_sum) / (k_n * (zeta_prod + (k/k_n)**2))
+    func = left - right
+
+    return func
+
+
 def gradient_trancendental_equation_eigenfrequencies_impedance(
         k_n, k, L, zeta):
+    r"""The gradient of the  transcendental equation for the estimation of the
+    complex eigenfrequencies of the rectangular room with uniform impedances.
+    This function is intended as the analytic jacobian function for solving
+    for the roots of the transcendental equation.
 
-    k_n_real = k_n[0]
-    k_n_imag = k_n[1]
+    .. math::
 
-    k_n_complex = k_n_real + 1j*k_n_imag
+        L \left(\tan^{2}{\left(L k_{n} \right)} + 1\right) -
+        \frac{2.0 i k^{3} \left(\zeta_{0} + \zeta_{L}\right)}{k_{n}^{4}
+        \left(\frac{k^{2}}{k_{n}^{2}} + \zeta_{0} \zeta_{L}\right)^{2}} +
+        \frac{1.0 i k \left(\zeta_{0} + \zeta_{L}\right)}{k_{n}^{2}
+        \left(\frac{k^{2}}{k_{n}^{2}} + \zeta_{0} \zeta_{L}\right)} = 0
 
-    tan = L * (np.tan(L * k_n_complex)**2 + 1)
-    left = 2*k**3 * (np.sum(zeta)) / (k_n_complex**4 * (k**2/k_n_complex**2 + np.prod(zeta))**2)
-    right = 2*k * (np.sum(zeta)) / (k_n_complex**2 * (k**2/k_n_complex**2 + np.prod(zeta)))
+    Parameters
+    ----------
+    k_n : complex
+        The complex eigenvalue
+    k : double
+        The real valued wave number
+    L : double
+        The room dimension
+    zeta : array, double
+        The normalized specific impedance
 
-    d_omega = tan - 2*1j*left + 1j*right
-    d_gamma = 1j*tan + 2*left - right
+    Returns
+    -------
+    func : array, double
+        The complex transcendental equation
+    """
+    zeta_prod = zeta[0]*zeta[1]
+    zeta_sum = zeta[0]+zeta[1]
 
-    return [[d_omega.real, d_gamma.real], [d_omega.imag, d_gamma.imag]]
+    tan = L * (np.tan(L * k_n)**2 + 1)
+    denom = (k_n**2 * ((k/k_n)**2 + zeta_prod))
+    left = k**3 / denom**2
+    right = k / denom
+
+    d_k_n = tan + (-2*left + right)*zeta_sum*1j
+    return d_k_n
 
 
 def initial_solution_transcendental_equation(k, L, zeta):
@@ -236,7 +299,7 @@ def initial_solution_transcendental_equation(k, L, zeta):
     return k_0
 
 
-def eigenfrequencies_rectangular_room_1d_jac(
+def eigenfrequencies_rectangular_room_1d_newton_grad(
         L_l, ks, k_max, zeta):
     """Estimates the complex eigenvalues in the wavenumber domain for one
     dimension by numerically solving for the roots of the transcendental
@@ -275,15 +338,16 @@ def eigenfrequencies_rectangular_room_1d_jac(
         idx_n = 0
         while k_n_init.real < k_max:
             args_costfun = (k, L_l, zeta)
-            kk_n = optimize.fsolve(
-                transcendental_equation_eigenfrequencies_impedance,
-                (k_n_init.real, k_n_init.imag),
+            kk_n = optimize.newton(
+                transcendental_equation_eigenfrequencies_impedance_newton,
+                k_n_init,
                 fprime=gradient_trancendental_equation_eigenfrequencies_impedance,
                 args=args_costfun)
-            if kk_n[0] > k_max:
+            if kk_n.real > k_max:
                 break
             else:
-                kk_n_cplx = kk_n[0] + 1j*kk_n[1]
+                # kk_n_cplx = kk_n[0] + 1j*kk_n[1]
+                kk_n_cplx = kk_n
                 k_ns_l[idx_n, idx_k] = kk_n_cplx
                 k_n_init = (kk_n_cplx*L_l + np.pi) / L_l
                 idx_n += 1
@@ -349,12 +413,76 @@ def eigenfrequencies_rectangular_room_1d(
     return k_ns_l
 
 
+def eigenfrequencies_rectangular_room_1d_newton(
+        L_l, ks, k_max, zeta, gradient=True):
+    """Estimates the complex eigenvalues in the wavenumber domain for one
+    dimension by numerically solving for the roots of the transcendental
+    equation. A initial approximation to the zeroth order mode is applied to
+    improve the conditioning of the problem.
+
+    Parameters
+    ----------
+    L_l : double
+        The dimension in m
+    ks : array, double
+        The wave numbers for which the eigenvalues are to be solved.
+    k_max : double
+        The real part of the largest eigenvalue. This solves as a stopping
+        criterion independent from the real wave number k.
+    zeta : array, double
+        The normalized specific impedance on the boundaries.
+    gradient : boolean, optional (True)
+        Use the analytic gradient of the transcendental equation instead
+        of an numerical approximation in the solver
+
+    Returns
+    -------
+    k_ns : array, complex
+        The complex eigenvalues for each wavenumber
+
+    Note
+    ----
+    This function assumes that the real part of the largest eigenvalue may be
+    calculated using the approximation for rigid walls.
+
+    """
+    ks = np.atleast_1d(ks)
+    n_l_max = int(np.ceil(k_max/np.pi*L_l))
+
+    if gradient:
+        fprime = gradient_trancendental_equation_eigenfrequencies_impedance
+    else:
+        fprime = False
+
+    k_ns_l = np.zeros((n_l_max, len(ks)), dtype=np.complex64)
+    k_n_init = initial_solution_transcendental_equation(ks[0], L_l, zeta)
+    for idx_k, k in enumerate(ks):
+        idx_n = 0
+        while k_n_init.real < k_max:
+            args_costfun = (k, L_l, zeta)
+            kk_n = optimize.newton(
+                transcendental_equation_eigenfrequencies_impedance_newton,
+                k_n_init,
+                fprime=fprime,
+                args=args_costfun)
+            if kk_n.real > k_max:
+                break
+            else:
+                k_ns_l[idx_n, idx_k] = kk_n
+                k_n_init = (kk_n*L_l + np.pi) / L_l
+                idx_n += 1
+
+        k_n_init = k_ns_l[0, idx_k]
+
+    return k_ns_l
+
+
 def normal_eigenfrequencies_rectangular_room_impedance(
         L, ks, k_max, zeta):
 
     k_ns = []
     for dim, L_l, zeta_l in zip(count(), L, zeta):
-        k_ns_l = eigenfrequencies_rectangular_room_1d(
+        k_ns_l = eigenfrequencies_rectangular_room_1d_newton(
             L_l, ks, k_max, zeta_l)
         k_ns.append(k_ns_l)
     return k_ns
