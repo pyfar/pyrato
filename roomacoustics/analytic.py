@@ -520,6 +520,7 @@ def pressure_modal_superposition(
         ks, omegas, k_ns, mode_indices, r_R, r_S, L, zeta):
 
     zeta_0 = zeta[:, 0]
+    r_R = np.atleast_2d(r_R)
 
     kk_ns = np.sqrt(
         k_ns[0][mode_indices[:, 0]]**2 +
@@ -533,17 +534,24 @@ def pressure_modal_superposition(
         ])
 
     phi = np.arctanh(ks/(zeta_0 * k_ns_xyz.T).T)
-    p_ns_r = np.prod(np.cosh(1j * r_R * k_ns_xyz.T + phi.T).T, axis=0)
-    p_ns_s = np.prod(np.cosh(1j * r_S * k_ns_xyz.T + phi.T).T, axis=0)
-
     K_n_sc = \
         np.sinh(1j * k_ns_xyz.T * L) * \
         np.cosh(1j * k_ns_xyz.T * L + 2*phi.T)
 
     K_n = np.prod((L/2 * (1 + 1/(1j*k_ns_xyz.T * L) * K_n_sc)).T, axis=0)
-
-    nom = 1j*omegas*1.2*p_ns_r*p_ns_s
     denom = K_n * (kk_ns**2 - ks**2)
-    spec = np.sum(nom / denom, axis=0)
+
+    p_ns_s = np.prod(np.cosh(1j * r_S * k_ns_xyz.T + phi.T).T, axis=0)
+
+    spec = np.zeros((r_R.shape[0], ks.size), dtype=np.complex)
+    for idx_R in range(r_R.shape[0]):
+        p_ns_r = np.prod(
+            np.cosh(1j * r_R[idx_R, :] * k_ns_xyz.T + phi.T).T, axis=0)
+
+        nom = 1j*omegas*1.2*p_ns_r*p_ns_s
+
+        spec[idx_R, :] = np.sum(nom / denom, axis=0)
+
+    spec = np.squeeze(spec)
 
     return spec

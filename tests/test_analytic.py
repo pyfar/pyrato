@@ -275,3 +275,54 @@ def test_analytic_pressure_shoebox_impedance():
         dtype=np.complex)
 
     npt.assert_allclose(p_x, truth, atol=1e-6, rtol=1e-6)
+
+
+def test_analytic_pressure_shoebox_impedance_multi_R():
+
+    # import matplotlib.pyplot as plt
+
+    L = np.array([8, 5, 3])/10
+    zetas = np.ones((3, 2)) * 1e10
+
+    c = 343.9
+
+    k_max = 1e3*2*np.pi/c
+    k_min = 150*2*np.pi/c
+    k = np.linspace(k_min, k_max*1.1, 2**10)
+
+    k_ns_x = np.loadtxt(
+        'tests/data/analytic_impedance/k_ns_x.csv',
+        delimiter=',',
+        dtype=np.complex)
+    k_ns_y = np.loadtxt(
+        'tests/data/analytic_impedance/k_ns_y.csv',
+        delimiter=',',
+        dtype=np.complex)
+    k_ns_z = np.loadtxt(
+        'tests/data/analytic_impedance/k_ns_z.csv',
+        delimiter=',',
+        dtype=np.complex)
+
+    k_ns = list((k_ns_x, k_ns_y, k_ns_z))
+
+    mode_indices = np.loadtxt(
+        'tests/data/analytic_impedance/mode_indices.csv',
+        delimiter=',',
+        dtype=int)
+
+    r_R = np.array([
+        [3.3, 1.6, 1.8],
+        [3.3, 1.6, 1.8]])/10
+    r_S = np.array([5.3, 3.6, 1.2])/10
+
+    p_x = analytic.pressure_modal_superposition(
+        k, k*c, k_ns, mode_indices, r_R, r_S, L, zetas)
+
+    truth = np.loadtxt(
+        'tests/data/analytic_impedance/p_x.csv',
+        delimiter=',',
+        dtype=np.complex)
+
+    truth = np.vstack((truth, truth))
+
+    npt.assert_allclose(p_x, truth, atol=1e-6, rtol=1e-6)
