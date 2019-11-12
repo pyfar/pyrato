@@ -28,8 +28,8 @@ def eigenfrequencies_rectangular_room_rigid(
 
     References
     ----------
-    .. [1]  H. Kuttruff, Room acoustics, pp. 64-66, 4th Ed. Taylor & Francis,
-            2009.
+    ..  [2] H. Kuttruff, Room acoustics, pp. 64-66, 4th Ed. Taylor & Francis,
+        2009.
     """
     c = speed_of_sound
     L = np.asarray(dimensions)
@@ -82,8 +82,12 @@ def rectangular_room_rigid_walls(dimensions,
                                  samplingrate=44100,
                                  speed_of_sound=343.9,
                                  n_samples=2**18):
-    """Calculate the transfer function of a rectangular room based on the
-    analytic model.
+    r"""Calculate the transfer function of a rectangular room based on the
+    analytic model as given in [2]_ . The model is based on the solution
+    for a room with rigid walls. The damping of the modes is included as
+    a damping in the medium, not as a damping caused by the boundary.
+    Consequently, all modes share the same damping factor calculated from
+    the reverberation time as :math:`\delta = \frac{3\log(10)}{T_{60}}`.
 
     Parameters
     ----------
@@ -113,8 +117,8 @@ def rectangular_room_rigid_walls(dimensions,
 
     References
     ----------
-    .. [1]  H. Kuttruff, Room acoustics, pp. 64-66, 4th Ed. Taylor & Francis,
-            2009.
+    ..  [2] H. Kuttruff, Room acoustics, pp. 64-66, 4th Ed. Taylor & Francis,
+        2009.
 
 
     """
@@ -501,7 +505,6 @@ def eigenfrequencies_rectangular_room_impedance(
         np.atleast_2d(mask_perms).T,
         (len(mask_perms), len(ks)))
 
-    # TODO: Document this!
     if only_normal:
         kk_ns = k_ns
     else:
@@ -512,8 +515,36 @@ def eigenfrequencies_rectangular_room_impedance(
     return kk_ns, mode_indices
 
 
-def pressure_mode_solution(position, eigenvals, phase_shift):
-    return np.cosh(1j*eigenvals * position + phase_shift)
+def mode_function_impedance(position, eigenvalue, phase):
+    r""" The modal function for a room with boundary impedances [4]_ .
+
+    .. math::
+
+        p_{n,i}(x_i) = \cosh(x_i k_{n,i} + \phi_{n,i})
+
+    Parameters
+    ----------
+    position : ndarray, double, (3,)
+        The position in Cartesian coordinates
+    eigenvalue : ndarray, complex, (3, N, n_bins)
+        The N complex eigenvalues in x,y,z coordinates for each
+        frequency bin (wavenumber)
+    phase : ndarray, complex, (3, N, n_bins)
+        The phase shift introduced by the boundary impedance
+
+    Returns
+    -------
+    p_n : ndarray, complex, (3, N, n_bins)
+        The modal function
+
+    References
+    ----------
+    ..  [4] M. Nolan and J. L. Davy, “Two definitions of the inner product of
+        modes and their use in calculating non-diffuse reverberant sound
+        fields,” The Journal of the Acoustical Society of America, vol.
+        145, no. 6, pp. 3330–3340, Jun. 2019.
+    """
+    return np.cosh(1j*eigenvalue * position + phase)
 
 
 def pressure_modal_superposition(
@@ -541,12 +572,14 @@ def pressure_modal_superposition(
     K_n = np.prod((L/2 * (1 + 1/(1j*k_ns_xyz.T * L) * K_n_sc)).T, axis=0)
     denom = K_n * (kk_ns**2 - ks**2)
 
-    p_ns_s = np.prod(np.cosh(1j * r_S * k_ns_xyz.T + phi.T).T, axis=0)
+    p_ns_s = np.prod(mode_function_impedance(r_S, k_ns_xyz.T, phi.T).T, axis=0)
 
     spec = np.zeros((r_R.shape[0], ks.size), dtype=np.complex)
     for idx_R in range(r_R.shape[0]):
         p_ns_r = np.prod(
-            np.cosh(1j * r_R[idx_R, :] * k_ns_xyz.T + phi.T).T, axis=0)
+            mode_function_impedance(
+                r_R[idx_R, :], k_ns_xyz.T, phi.T).T,
+            axis=0)
 
         nom = 1j*omegas*1.2*p_ns_r*p_ns_s
 
@@ -555,3 +588,77 @@ def pressure_modal_superposition(
     spec = np.squeeze(spec)
 
     return spec
+
+
+def rectangular_room_impedance(
+        L,
+        r_S,
+        r_R,
+        normalized_impedance,
+        max_freq,
+        samplingrate=44100,
+        c=343.9,
+        n_samples=2**12,
+        remove_cavity_mode=False):
+    r""" Calculate the room impulse response and room transfer function for a
+    rectangular room with arbitrary boundary impedances.
+
+    Parameters
+    ----------
+    L : ndarray, double, (3,)
+        The room dimensions in meters
+    r_S : ndarray, double, (3)
+        The source position in Cartesian coordinates
+    r_R : ndarray, double, (3, n_receivers)
+        The receiver positions in Cartesian coordinates
+    normalized_impedance : ndarray, double, (3, 2)
+        The normalized impedance :math:`\zeta_i = \frac{Z_i}{\rho_o c}`
+        for each wall.
+    max_freq : double
+        The highest frequency to be considered for the estimation of the
+        eigenfrequencies.
+    samplingrate : int, 44100
+        The samplingrate
+    c : float, 343.9
+        The speed of sound in m/s
+    n_samples : int, 2**12
+        The number of samples for which the RIR is calculated
+    remove_cavity_mode : boolean, False
+        When true, the cavity mode (0, 0, 0) will be removed before summation
+        of all modes
+
+    Returns
+    -------
+    rir : ndarray, double, (n_receivers, n_samples)
+        The room impulse response
+    rtf : ndarray, double, (n_receivers, n_bins)
+        The room transfer function in the frequency domain
+    eigenvalues : ndarray, complex
+        The complex eigenvalues in the form
+        :math:`k_n = \omega_n / c + i \delta_n`
+    """
+
+    zeta = normalized_impedance
+    freqs = np.fft.rfftfreq(n_samples, 1/samplingrate)
+    ks = 2*np.pi*freqs/c
+
+    k_max = max_freq*2*np.pi/c
+    k_ns, mode_indices = eigenfrequencies_rectangular_room_impedance(
+        L, ks, k_max, zeta, only_normal=True)
+
+    if remove_cavity_mode:
+        mask = np.prod(np.array([0, 0, 0]) == mode_indices, axis=-1) == 1
+        mode_indices = mode_indices[~mask]
+
+    spectrum = pressure_modal_superposition(
+        ks, freqs*2*np.pi, k_ns, mode_indices, r_R, r_S, L, zeta)
+
+    rir = np.fft.irfft(spectrum)
+
+    k_ns_xyz = np.array([
+        k_ns[0][mode_indices[:, 0]],
+        k_ns[1][mode_indices[:, 1]],
+        k_ns[2][mode_indices[:, 2]]
+        ])
+
+    return rir, spectrum, k_ns_xyz

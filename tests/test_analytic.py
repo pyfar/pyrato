@@ -396,3 +396,67 @@ def test_analytic_pressure_shoebox_impedance_zeta15():
         dtype=np.complex)
 
     npt.assert_allclose(p_x, truth, atol=1e-4, rtol=1e-4)
+
+
+def test_analytic_shoebox_spec_impedance():
+    L = np.array([8, 5, 3])/10
+    zetas = np.ones((3, 2)) * 100
+
+    c = 343.9
+
+    r_R = np.array([3.3, 1.6, 1.8])/10
+    r_S = np.array([5.3, 3.6, 1.2])/10
+
+    f_max = 1e3
+
+    samplingrate = 2200
+    n_samples = 2**10
+
+    rir, spec, k_ns = analytic.rectangular_room_impedance(
+        L,
+        r_S,
+        r_R,
+        zetas,
+        f_max,
+        samplingrate,
+        c,
+        n_samples,
+        remove_cavity_mode=False)
+
+    truth_rtf = np.load('tests/data/analytic_rtf_impedance.npy')
+    truth_rir = np.load('tests/data/analytic_rir_impedance.npy')
+
+    npt.assert_allclose(spec, truth_rtf)
+    npt.assert_allclose(rir, truth_rir)
+
+
+def test_analytic_shoebox_spec_impedance_no_cavity_mode():
+    L = np.array([8, 5, 3])/10
+    zetas = np.ones((3, 2)) * 100
+
+    c = 343.9
+
+    r_R = np.array([3.3, 1.6, 1.8])/10
+    r_S = np.array([5.3, 3.6, 1.2])/10
+
+    f_max = 1e3
+
+    samplingrate = 2200
+    n_samples = 2**10
+
+    rir, spec, k_ns = analytic.rectangular_room_impedance(
+        L,
+        r_S,
+        r_R,
+        zetas,
+        f_max,
+        samplingrate,
+        c,
+        n_samples,
+        remove_cavity_mode=True)
+
+    truth_rtf = np.load('tests/data/analytic_rtf_impedance_no_cav.npy')
+    truth_rir = np.load('tests/data/analytic_rir_impedance_no_cav.npy')
+
+    npt.assert_allclose(spec, truth_rtf)
+    npt.assert_allclose(rir, truth_rir)
