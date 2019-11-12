@@ -95,7 +95,7 @@ def test_eigenfreq_impedance_1d_real_jac():
     k = [0.1]
     k_max = 1e3*2*np.pi/c
 
-    k_ns = analytic.eigenfrequencies_rectangular_room_1d_newton(
+    k_ns = analytic.eigenfrequencies_rectangular_room_1d(
         L, k, k_max, zeta, gradient=True
     )
 

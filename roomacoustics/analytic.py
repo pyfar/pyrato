@@ -304,62 +304,6 @@ def initial_solution_transcendental_equation(k, L, zeta):
 
 
 def eigenfrequencies_rectangular_room_1d(
-        L_l, ks, k_max, zeta):
-    """Estimates the complex eigenvalues in the wavenumber domain for one
-    dimension by numerically solving for the roots of the transcendental
-    equation. A initial approximation to the zeroth order mode is applied to
-    improve the conditioning of the problem.
-
-    Parameters
-    ----------
-    L_l : double
-        The dimension in m
-    ks : array, double
-        The wave numbers for which the eigenvalues are to be solved.
-    k_max : double
-        The real part of the largest eigenvalue. This solves as a stopping
-        criterion independent from the real wave number k.
-    zeta : array, double
-        The normalized specific impedance on the boundaries.
-
-    Returns
-    -------
-    k_ns : array, complex
-        The complex eigenvalues for each wavenumber
-
-    Note
-    ----
-    This function assumes that the real part of the largest eigenvalue may be
-    calculated using the approximation for rigid walls.
-
-    """
-    ks = np.atleast_1d(ks)
-    n_l_max = int(np.ceil(k_max/np.pi*L_l))
-
-    k_ns_l = np.zeros((n_l_max, len(ks)), dtype=np.complex64)
-    k_n_init = initial_solution_transcendental_equation(ks[0], L_l, zeta)
-    for idx_k, k in enumerate(ks):
-        idx_n = 0
-        while k_n_init.real < k_max:
-            args_costfun = (k, L_l, zeta)
-            kk_n = optimize.fsolve(
-                transcendental_equation_eigenfrequencies_impedance,
-                (k_n_init.real, k_n_init.imag),
-                args=args_costfun)
-            if kk_n[0] > k_max:
-                break
-            else:
-                kk_n_cplx = kk_n[0] + 1j*kk_n[1]
-                k_ns_l[idx_n, idx_k] = kk_n_cplx
-                k_n_init = (kk_n_cplx*L_l + np.pi) / L_l
-                idx_n += 1
-
-        k_n_init = k_ns_l[0, idx_k]
-
-    return k_ns_l
-
-
-def eigenfrequencies_rectangular_room_1d_newton(
         L_l, ks, k_max, zeta, gradient=True):
     """Estimates the complex eigenvalues in the wavenumber domain for one
     dimension by numerically solving for the roots of the transcendental
@@ -428,7 +372,7 @@ def normal_eigenfrequencies_rectangular_room_impedance(
 
     k_ns = []
     for dim, L_l, zeta_l in zip(count(), L, zeta):
-        k_ns_l = eigenfrequencies_rectangular_room_1d_newton(
+        k_ns_l = eigenfrequencies_rectangular_room_1d(
             L_l, ks, k_max, zeta_l)
         k_ns.append(k_ns_l)
     return k_ns
