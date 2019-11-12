@@ -369,7 +369,28 @@ def eigenfrequencies_rectangular_room_1d(
 
 def normal_eigenfrequencies_rectangular_room_impedance(
         L, ks, k_max, zeta):
+    r"""Caller function for the eigenvalue estimation of all room dimensions.
+    See the function `eigenfrequencies_rectangular_room_impedance` or
+    `eigenfrequencies_rectangular_room_1d` for more information.
 
+    Parameters
+    ----------
+    L : array, double
+        The dimensions in m
+    ks : array, double
+        The wave numbers for which the eigenvalues are to be solved.
+    k_max : double
+        The real part of the largest eigenvalue. This solves as a stopping
+        criterion independent from the real wave number k.
+    zeta : array, double
+        The normalized specific impedance on the boundaries.
+
+    Returns
+    -------
+    k_ns : list, complex
+        List of arrays with the complex eigenvalues for each wavenumber and
+        each room dimension.
+    """
     k_ns = []
     for dim, L_l, zeta_l in zip(count(), L, zeta):
         k_ns_l = eigenfrequencies_rectangular_room_1d(
@@ -493,6 +514,35 @@ def mode_function_impedance(position, eigenvalue, phase):
 
 def pressure_modal_superposition(
         ks, omegas, k_ns, mode_indices, r_R, r_S, L, zeta):
+    r""" Calculate modal composition for a rectangular room with arbitrary
+    boundary impedances.
+
+    Parameters
+    ----------
+    ks : ndarray, double
+        The wave number array
+    omegas : ndarray, double
+        The angular frequency array :math:`omega`
+    k_ns : list, complex
+        List containing the complex eigenvalues for each dimension and
+        wavenumber
+    r_R : ndarray, double, (3, n_receivers)
+        The receiver positions in Cartesian coordinates
+    r_S : ndarray, double, (3)
+        The source position in Cartesian coordinates
+    L : ndarray, double, (3,)
+        The room dimensions in meters
+    zeta : ndarray, double, (3, 2)
+        The normalized impedance :math:`\zeta_i = \frac{Z_i}{\rho_o c}`
+        for each wall.
+
+    Returns
+    -------
+    spec : ndarray, complex
+        The complex sum of all mode functions corresponding to the eigenvalues
+        `k_ns`
+
+    """
 
     zeta_0 = zeta[:, 0]
     r_R = np.atleast_2d(r_R)
