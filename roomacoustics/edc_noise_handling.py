@@ -311,6 +311,7 @@ def energy_decay_curve_truncation(
 
     # Recover original data shape:
     energy_decay_curve = np.reshape(energy_decay_curve, data_shape)
+    energy_decay_curve = np.squeeze(energy_decay_curve)
 
     if plot:
         plt.figure(figsize=(15, 3))
@@ -447,6 +448,7 @@ def energy_decay_curve_lundeby(
 
     # Recover original data shape:
     energy_decay_curve = np.reshape(energy_decay_curve, data_shape)
+    energy_decay_curve = np.squeeze(energy_decay_curve)
 
     return energy_decay_curve
 
@@ -558,6 +560,7 @@ def energy_decay_curve_chu(
 
     # Recover original data shape:
     energy_decay_curve = np.reshape(energy_decay_curve, data_shape)
+    energy_decay_curve = np.squeeze(energy_decay_curve)
 
     return energy_decay_curve
 
@@ -698,6 +701,7 @@ def energy_decay_curve_chu_lundeby(
 
     # Recover original data shape:
     energy_decay_curve = np.reshape(energy_decay_curve, data_shape)
+    energy_decay_curve = np.squeeze(energy_decay_curve)
 
     return energy_decay_curve
 

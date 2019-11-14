@@ -88,7 +88,7 @@ def test_substracted_2D():
 
 def test_edc_truncation_1D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'), delimiter=',')
-    expected = genfromtxt(os.path.join(test_data_path, 'edc_truncation_1D.csv'), delimiter=',')[np.newaxis]
+    expected = genfromtxt(os.path.join(test_data_path, 'edc_truncation_1D.csv'), delimiter=',')
     actual = enh.energy_decay_curve_truncation(
         rir, sampling_rate=3000, freq='broadband', is_energy=False, time_shift=True,
         channel_independent=False, normalize=True)
@@ -104,7 +104,7 @@ def test_edc_truncation_2D():
 
 def test_edc_lundeby_1D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'), delimiter=',')
-    expected = genfromtxt(os.path.join(test_data_path, 'edc_lundeby_1D.csv'), delimiter=',')[np.newaxis]
+    expected = genfromtxt(os.path.join(test_data_path, 'edc_lundeby_1D.csv'), delimiter=',')
     actual = enh.energy_decay_curve_lundeby(
         rir, sampling_rate=3000, freq='broadband', is_energy=False, time_shift=True,
         channel_independent=False, normalize=True, plot=False)
@@ -120,7 +120,7 @@ def test_edc_lundeby_2D():
 
 def test_edc_lundeby_chu_1D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'), delimiter=',')
-    expected = genfromtxt(os.path.join(test_data_path, 'edc_lundeby_chu_1D.csv'), delimiter=',')[np.newaxis]
+    expected = genfromtxt(os.path.join(test_data_path, 'edc_lundeby_chu_1D.csv'), delimiter=',')
     actual = enh.energy_decay_curve_chu_lundeby(
         rir, sampling_rate=3000, freq='broadband', is_energy=False, time_shift=True,
         channel_independent=False, normalize=True, plot=False)
@@ -136,7 +136,7 @@ def test_edc_lundeby_chu_2D():
 
 def test_edc_chu_1D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'), delimiter=',')
-    expected = genfromtxt(os.path.join(test_data_path, 'edc_chu_1D.csv'), delimiter=',')[np.newaxis]
+    expected = genfromtxt(os.path.join(test_data_path, 'edc_chu_1D.csv'), delimiter=',')
     actual = enh.energy_decay_curve_chu(
         rir, sampling_rate=3000, freq='broadband', is_energy=False, time_shift=True,
         channel_independent=False, normalize=True, plot=False)
