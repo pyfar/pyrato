@@ -12,7 +12,6 @@ def reverberation_time_energy_decay_curve(
         times,
         T='T20',
         normalize=True,
-        regression=True,
         plot=False):
     """Estimate the reverberation time from a given energy decay curve according
     to the ISO standard 3382 _[1].
@@ -24,7 +23,15 @@ def reverberation_time_energy_decay_curve(
     times : ndarray, double
         Time vector corresponding to each sample of the EDC.
     T : 'T20', 'T30', 'T40', 'T50', 'T60', 'EDT', 'LDT'
-        Decay interval to be used for the reverberation time extrapolation
+        Decay interval to be used for the reverberation time extrapolation. EDT
+        corresponds to the early decay time extrapolated from the interval
+        [0, -10] dB, LDT corresponds to the late decay time extrapolated from
+        the interval [-25, -35] dB.
+    normalize : bool, True
+        Normalize the EDC to the steady state energy level
+    plot : bool, False
+        Plot the estimated extrapolation line for visual inspection of the
+        results.
 
     Returns
     -------
@@ -37,13 +44,21 @@ def reverberation_time_energy_decay_curve(
             rooms with reference to other acoustical parameters.
 
     """
+    intervals = [20, 30, 40, 50, 60]
+
     if T == 'EDT':
-        upper = 0.
-        lower = -10.
-    if T == 'LDT':
+        upper = -1
+        lower = -10.1
+    elif T == 'LDT':
         upper = -25.
         lower = -35.
     else:
+        try:
+            (int(re.findall(r'\d+', T)[0]) in intervals)
+        except IndexError:
+            raise ValueError(
+                "{} is not a valid interval for the regression.".format(T))
+
         upper = -5
         lower = -np.double(re.findall(r'\d+', T)) + upper
 
@@ -52,23 +67,13 @@ def reverberation_time_energy_decay_curve(
 
     edc_db = 10*np.log10(np.abs(energy_decay_curve))
 
-    idx_upper = np.argmin(np.abs(upper - edc_db))
-    idx_lower = np.argmin(np.abs(lower - edc_db))
+    idx_upper = np.nanargmin(np.abs(upper - edc_db))
+    idx_lower = np.nanargmin(np.abs(lower - edc_db))
 
-    if regression:
-        A = np.vstack(
-            [times[idx_upper:idx_lower],
-             np.ones(idx_lower - idx_upper)]).T
-        gradient, const = np.linalg.lstsq(
-            A, edc_db[..., idx_upper:idx_lower], rcond=None)[0]
-    else:
-        edc_upper = edc_db[idx_upper]
-        edc_lower = edc_db[idx_lower]
-
-        time_upper = times[idx_upper]
-        time_lower = times[idx_lower]
-        gradient = ((edc_lower - edc_upper) / (time_lower - time_upper))
-        const = 0
+    A = np.vstack(
+        [times[idx_upper:idx_lower], np.ones(idx_lower - idx_upper)]).T
+    gradient, const = np.linalg.lstsq(
+        A, edc_db[..., idx_upper:idx_lower], rcond=None)[0]
 
     reverberation_time = -60 / gradient
 
