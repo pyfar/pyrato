@@ -942,9 +942,13 @@ def intersection_time_lundeby(
     if plot:
         plt.figure(figsize=(15, 3))
         plt.subplot(131)
+        max_data_db = np.max(10*np.log10(energy_data))
         plt.plot(time_vector, 10*np.log10(energy_data.T))
         plt.xlabel('Time [s]')
         plt.ylabel('Squared RIR [dB]')
+        plt.ylim(bottom=max_data_db-80+5, top=max_data_db+5)
+        plt.grid(True)
+
         plt.subplot(132)
         plt.plot(time_vector_window, 10*np.log10(time_window_data.T))
         plt.xlabel('Time [s]')
@@ -953,18 +957,28 @@ def intersection_time_lundeby(
             time_vector_window[-int(np.round(time_window_data.shape[-1]/10))],
             10*np.log10(noise_estimation[0]),
             marker='o',
-            label='noise estimation')
+            label='noise estimation',
+            linestyle='--',
+            color='C1')
+        plt.axhline(
+                10*np.log10(noise_estimation[0]),
+                color='C1',
+                linestyle='--')
         plt.plot(
             regression_time,
             regression_values,
             marker='o',
+            color='C2',
             label='regression')
         plt.plot(
             preliminary_crossing_point,
             10*np.log10(noise_estimation[idx_channel]),
             marker='o',
+            color='C3',
             label='preliminary crosspoint')
         plt.legend()
+        plt.grid(True)
+
         plt.subplot(133)
         # TO-DO: plot all channels?
         plt.plot(
@@ -976,20 +990,30 @@ def intersection_time_lundeby(
             time_vector_window_current_channel[int(idx_10dB_below_crosspoint)],
             10*np.log10(noise_estimation[0]),
             marker='o',
-            label='noise')
+            color='C1',
+            label='Noise')
+        plt.axhline(
+            10*np.log10(noise_estimation[0]),
+            color='C1',
+            linestyle='--')
         plt.plot(
             crossing_point,
             10*np.log10(noise_estimation[0]),
             marker='o',
-            label='final crosspoint')
+            color='C3',
+            label='Final crosspoint',
+            linestyle='--')
         plt.axvline(
             reverberation_time[0],
-            label=('$T_{60} = '+str(np.round(reverberation_time[0], 3)) + '$'))
+            label=('$T_{60} = '+str(np.round(reverberation_time[0], 3)) + '$'),
+            color='k')
         plt.axvline(
             intersection_time[0],
-            label=('lundeby intersection time'),
-            color='r')
+            label=('Lundeby intersection time'),
+            color='C3',
+            linestyle='--')
         plt.tight_layout()
         plt.legend()
+        plt.grid(True)
 
     return intersection_time, reverberation_time, noise_level
