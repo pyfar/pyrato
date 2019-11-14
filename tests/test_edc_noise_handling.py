@@ -2,15 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-    The test_edc_noise_handling module provides the functionallity to test
+    The test_edc_noise_handling module provides the functionality to test
     the functions of the module edc_noise_handling.
 """
-
-__author__ = "Johannes Imort"
-__version__ = "0.1.0"
-__maintainer__ = "Johannes Imort"
-__email__ = "johannes.imort@rwth-aachen.de"
-__status__ = "Development"
 
 import numpy as np
 import os
