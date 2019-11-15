@@ -48,7 +48,7 @@ def estimate_noise_energy(
     region_start_idx = np.int(energy_data.shape[-1]*interval[0])
     region_end_idx = np.int(energy_data.shape[-1]*interval[1])
     mask = np.arange(region_start_idx, region_end_idx)
-    noise_energy = np.mean(np.take(energy_data, mask, axis=-1), axis=-1)
+    noise_energy = np.nanmean(np.take(energy_data, mask, axis=-1), axis=-1)
 
     return noise_energy
 
@@ -136,17 +136,27 @@ def preprocess_rir(
 
     if time_shift:
         rir_start_idx = dsp.find_impulse_response_start(data)
-        min_shift = np.amin(rir_start_idx)
-        result = np.zeros([n_channels, n_samples])
 
         if channel_independent and not n_channels == 1:
-            # Shift each channel independently
-            for idx_channel in range(0, n_channels):
-                result[idx_channel, 0:-rir_start_idx[idx_channel]] = data[
-                    idx_channel, rir_start_idx[idx_channel]:]
+            shift_samples = -rir_start_idx
         else:
-            # Shift each channel by the earliest impulse response start.
-            result[:, :-min_shift] = data[:, min_shift:]
+            min_shift = np.amin(rir_start_idx)
+            shift_samples = np.asarray(
+                -min_shift * np.ones(n_channels), dtype=np.int)
+
+        result = dsp.time_shift(
+            data, shift_samples, circular_shift=False, keepdims=True)
+
+
+        # result = np.zeros([n_channels, n_samples])
+        # if channel_independent and not n_channels == 1:
+        #     # Shift each channel independently
+        #     for idx_channel in range(0, n_channels):
+        #         result[idx_channel, 0:-rir_start_idx[idx_channel]] = data[
+        #             idx_channel, rir_start_idx[idx_channel]:]
+        # else:
+        #     # Shift each channel by the earliest impulse response start.
+        #     result[:, :-min_shift] = data[:, min_shift:]
 
     else:
         result = data
@@ -191,7 +201,7 @@ def smooth_rir(
     n_samples_actual = int(n_blocks*n_samples_per_block)
     reshaped_array = np.reshape(data[..., :n_samples_actual],
                                 (-1, n_blocks, n_samples_per_block))
-    time_window_data = np.mean(reshaped_array, axis=-1)
+    time_window_data = np.nanmean(reshaped_array, axis=-1)
 
     time_vector_window = \
         ((0.5+np.arange(0, n_blocks)) * n_samples_per_block/sampling_rate)
@@ -520,6 +530,8 @@ def energy_decay_curve_chu(
         subtracted,
         is_energy=True)
 
+    energy_decay_curve = np.atleast_2d(energy_decay_curve)
+
     if normalize:
         # Normalize the EDC...
         if not channel_independent:
@@ -533,7 +545,7 @@ def energy_decay_curve_chu(
 
     mask = energy_decay_curve <= 0
     if np.any(mask):
-        first_zero = np.argmax(mask, axis=-1)[0]
+        first_zero = np.nanargmax(mask, axis=-1)[0]
         energy_decay_curve[..., int(first_zero):] = np.nan
 
     if plot:
@@ -795,7 +807,7 @@ def intersection_time_lundeby(
 
     for idx_channel in range(0, n_channels):
         time_window_data_current_channel = time_window_data[idx_channel]
-        start_idx = np.argmax(time_window_data_current_channel, axis=-1)
+        start_idx = np.nanargmax(time_window_data_current_channel, axis=-1)
         try:
             stop_idx = (np.argwhere(10*np.log10(
                 time_window_data_current_channel[start_idx+1:-1]) >
@@ -857,7 +869,7 @@ def intersection_time_lundeby(
                 energy_data[idx_channel], sampling_rate, window_time)
         time_window_data_current_channel = np.squeeze(
             time_window_data_current_channel)
-        idx_max = np.argmax(time_window_data_current_channel)
+        idx_max = np.nanargmax(time_window_data_current_channel)
 
         # high start value to enter while-loop
         old_crossing_point = 11+preliminary_crossing_point
@@ -868,13 +880,13 @@ def intersection_time_lundeby(
             corresponding_decay = 10  # 5...10 dB
             idx_last_10_percent = np.round(
                 time_window_data_current_channel.shape[-1]*0.9)
-            idx_10dB_below_crosspoint = np.amax([1, np.round(
+            idx_10dB_below_crosspoint = np.nanmax([1, np.round(
                 ((preliminary_crossing_point
                   - corresponding_decay / slope[1])
                  * sampling_rate / n_samples_per_block))])
 
-            noise_estimation_current_channel = np.mean(
-                time_window_data_current_channel[int(np.amin(
+            noise_estimation_current_channel = np.nanmean(
+                time_window_data_current_channel[int(np.nanmin(
                     [idx_last_10_percent, idx_10dB_below_crosspoint])):])
 
             # (8) ESTIMATE LATE DECAY SLOPE
@@ -936,13 +948,13 @@ def intersection_time_lundeby(
         noise_level[idx_channel] = noise_estimation_current_channel
         intersection_time[idx_channel] = crossing_point
         noise_peak_level[idx_channel] = 10 * np.log10(
-            np.amax(time_window_data_current_channel[int(np.amin(
+            np.nanmax(time_window_data_current_channel[int(np.nanmin(
                 [idx_last_10_percent, idx_10dB_below_crosspoint])):]))
 
     if plot:
         plt.figure(figsize=(15, 3))
         plt.subplot(131)
-        max_data_db = np.max(10*np.log10(energy_data))
+        max_data_db = np.nanmax(10*np.log10(energy_data))
         plt.plot(time_vector, 10*np.log10(energy_data.T))
         plt.xlabel('Time [s]')
         plt.ylabel('Squared RIR [dB]')
