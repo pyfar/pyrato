@@ -65,7 +65,7 @@ def find_impulse_response_start(impulse_response, threshold=20):
     return np.squeeze(start_sample)
 
 
-def time_shift(signal, n_samples_shift):
+def time_shift(signal, n_samples_shift, circular_shift=True, keepdims=False):
     """Shift a signal in the time domain by n samples. This function will
     perform a circular shift. This inherently assumes that the signal is
     periodic.
@@ -92,32 +92,46 @@ def time_shift(signal, n_samples_shift):
     """
     n_samples_shift = np.asarray(n_samples_shift, dtype=np.int)
     if np.any(signal.shape[-1] < n_samples_shift):
-        warnings.warn("Shifting by more samples than length of the signal.",
-                      UserWarning)
+        msg = "Shifting by more samples than length of the signal."
+        if circular_shift:
+            warnings.warn(msg, UserWarning)
+        else:
+            raise ValueError(msg)
 
+    signal = np.atleast_2d(signal)
     n_samples = signal.shape[-1]
     signal_shape = signal.shape
     signal = np.reshape(signal, (-1, n_samples))
-    n_channels = signal.shape[0]
+    n_channels = np.prod(signal.shape[:-1])
+
     if n_samples_shift.size == 1:
         n_samples_shift = np.broadcast_to(n_samples_shift, n_channels)
     elif n_samples_shift.size == n_channels:
         n_samples_shift = np.reshape(n_samples_shift, n_channels)
     else:
-        raise ValueError("The number of shift samples has to match the number\
+        raise ValueError("The number of shift samples has to match the number \
             of signal channels.")
 
     shifted_signal = signal.copy()
     for channel in range(n_channels):
         shifted_signal[channel, :] = \
             np.roll(signal[channel, :], n_samples_shift[channel], axis=-1)
+        if not circular_shift:
+            if n_samples_shift[channel] < 0:
+                shifted_signal[channel, n_samples_shift[channel]:] = np.nan
+            else:
+                shifted_signal[channel, :n_samples_shift[channel]] = np.nan
 
-    shifted_signal = np.squeeze(np.reshape(shifted_signal, signal_shape))
+    shifted_signal = np.reshape(shifted_signal, signal_shape)
+    if not keepdims:
+        shifted_signal = np.squeeze(shifted_signal)
+
     return shifted_signal
 
 
 def center_frequencies_octaves():
-    """Return the octave center frequencies according to the IEC 61260:1:2014 standard.
+    """Return the octave center frequencies according to the IEC 61260:1:2014
+    standard.
 
     References
     ----------
@@ -151,10 +165,11 @@ def center_frequencies_third_octaves():
         third octave center frequencies
 
     """
-    nominal = np.array([25, 31.5, 40, 50, 63, 80, 100, 125, 160,
-                        200, 250, 315, 400, 500, 630, 800, 1000,
-                        1250, 1600, 2000, 2500, 3150, 4000, 5000,
-                        6300, 8000, 10000, 12500, 16000, 20000], dtype=np.float)
+    nominal = np.array([
+        25, 31.5, 40, 50, 63, 80, 100, 125, 160,
+        200, 250, 315, 400, 500, 630, 800, 1000,
+        1250, 1600, 2000, 2500, 3150, 4000, 5000,
+        6300, 8000, 10000, 12500, 16000, 20000], dtype=np.float)
 
     indices = _frequency_indices(nominal, 3)
     exact = exact_center_frequencies_fractional_octaves(indices, 3)
