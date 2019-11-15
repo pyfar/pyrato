@@ -77,11 +77,9 @@ def estimate_noise_energy_from_edc(
 
     """
     n_samples = energy_decay_curve.shape[-1]
-    if energy_decay_curve.ndim < 2:
-        n_channels = 1
-        energy_decay_curve = energy_decay_curve[np.newaxis]
-    else:
-        n_channels = energy_decay_curve.shape[-2]
+    energy_decay_curve = np.atleast_2d(energy_decay_curve)
+    n_channels = np.prod(energy_decay_curve.shape[:-1])
+
     noise_energy = np.zeros([n_channels])
     for idx_channel in range(0, n_channels):
         times = np.arange(0, n_samples) * sampling_rate
@@ -122,7 +120,7 @@ def preprocess_rir(
     Returns
     -------
     energy_data : ndarray, double
-        The preporcessed RIR
+        The preprocessed RIR
     n_channels : integer
         The number of channels of the RIR
     data_shape : list, integer
@@ -130,11 +128,9 @@ def preprocess_rir(
 
     """
     n_samples = data.shape[-1]
-    if data.ndim < 2:
-        n_channels = 1
-        data = data[np.newaxis]
-    else:
-        n_channels = data.shape[-2]
+    data = np.atleast_2d(data)
+    n_channels = np.prod(data.shape[:-1])
+
     data_shape = list(data.shape)
     data = np.reshape(data, (-1, n_samples))
 
@@ -158,6 +154,7 @@ def preprocess_rir(
         energy_data = np.abs(result)**2
     else:
         energy_data = result.copy()
+
     return energy_data, n_channels, data_shape
 
 
@@ -186,6 +183,7 @@ def smooth_rir(
         The time vector fitting the original data.
 
     """
+    data = np.atleast_2d(data)
     n_samples = data.shape[-1]
 
     n_samples_per_block = int(np.round(smooth_block_length * sampling_rate, 0))
@@ -288,7 +286,7 @@ def energy_decay_curve_truncation(
     time_vector = smooth_rir(energy_data, sampling_rate)[2]
 
     intersection_time_idx = np.rint(intersection_time * sampling_rate)
-    max_intersection_time_idx = np.amax(intersection_time_idx)
+
     energy_decay_curve = np.zeros([n_channels, n_samples])
     for idx_channel in range(0, n_channels):
         energy_decay_curve[
@@ -618,7 +616,7 @@ def energy_decay_curve_chu_lundeby(
             Measurements in Room Acoustics - ACUSTICA Vol. 81 (1995)
     ..  [2] W. T. Chu. “Comparison of reverberation measurements using
             Schroeder’s impulse method and decay-curve averaging method”. In:
-            Journal of the Acoustical   Society of America 63.5 (1978),
+            Journal of the Acoustical Society of America 63.5 (1978),
             pp. 1444–1450.
     ..  [3] M. Guski, “Influences of external error sources on measurements of
             room acoustic parameters,” 2015.
