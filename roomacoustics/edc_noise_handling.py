@@ -777,8 +777,6 @@ def intersection_time_lundeby(
     else:
         freq_dependent_window_time = (800/freq+10) / 1000
 
-    n_samples = energy_data.shape[-1]
-
     # (1) SMOOTH
     time_window_data, time_vector_window, time_vector = smooth_rir(
         energy_data, sampling_rate, freq_dependent_window_time)
@@ -800,10 +798,10 @@ def intersection_time_lundeby(
         start_idx = np.argmax(time_window_data_current_channel, axis=-1)
         try:
             stop_idx = (np.argwhere(10*np.log10(
-                time_window_data_current_channel[start_idx+1:-1]) > (10*np.log10(
-                    noise_estimation[idx_channel]) + dB_above_noise))[-1, 0]
-                        + start_idx)
-        except:
+                time_window_data_current_channel[start_idx+1:-1]) >
+                    (10*np.log10(noise_estimation[idx_channel]) +
+                        dB_above_noise))[-1, 0] + start_idx)
+        except IndexError:
             raise Exception(
                 'Regression failed: Low SNR. Estimation terminated.')
 
@@ -887,7 +885,7 @@ def intersection_time_lundeby(
                         + dB_above_noise
                         + (use_dyn_range_for_regression)[0, 0]
                         + idx_max))
-            except:
+            except TypeError:
                 start_idx_loop = 0
 
             try:
@@ -896,7 +894,7 @@ def intersection_time_lundeby(
                         10*np.log10(noise_estimation_current_channel)
                         + dB_above_noise))[0, 0]
                                  + start_idx_loop)
-            except:
+            except IndexError:
                 raise Exception(
                     'Regression failed: Low SNR. Estimation terminated.')
 
