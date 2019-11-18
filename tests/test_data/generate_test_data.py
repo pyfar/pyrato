@@ -14,9 +14,10 @@ __status__ = "Development"
 
 import numpy as np
 import roomacoustics.edc_noise_handling as nh
-from roomacoustics import test_edc_noise_handling as test_enh
+# from roomacoustics import test_edc_noise_handling as test_enh
 import roomacoustics as ra
 from roomacoustics import analytic
+
 
 def generate_test_data():
     sampling_rate = 3000
@@ -104,10 +105,10 @@ def generate_test_data():
         rir_array, sampling_rate, freq='broadband', is_energy=False, time_shift=False,
         channel_independent=False, plot=False)
 
-    noise_energy_from_edc_1D = nh.estimate_noise_energy_from_edc(
-        edc_lundeby_chu_1D, intersection_time_1D[0], sampling_rate)
-    noise_energy_from_edc_2D = nh.estimate_noise_energy_from_edc(
-        edc_lundeby_chu_2D, intersection_time_2D[0], sampling_rate)
+    # noise_energy_from_edc_1D = nh.estimate_noise_energy_from_edc(
+    #     edc_lundeby_chu_1D, intersection_time_1D[0], sampling_rate)
+    # noise_energy_from_edc_2D = nh.estimate_noise_energy_from_edc(
+    #     edc_lundeby_chu_2D, intersection_time_2D[0], sampling_rate)
 
 
     np.savetxt("analytic_rir_psnr50_1D.csv", rir_array[0], delimiter=",")
@@ -146,5 +147,5 @@ def generate_test_data():
     np.savetxt("intersection_time_1D.csv", intersection_time_1D, delimiter=",")
     np.savetxt("intersection_time_2D.csv", intersection_time_2D, delimiter=",")
 
-    np.savetxt("noise_energy_from_edc_1D.csv", noise_energy_from_edc_1D, delimiter=",")
-    np.savetxt("noise_energy_from_edc_2D.csv", noise_energy_from_edc_2D, delimiter=",")
+#     np.savetxt("noise_energy_from_edc_1D.csv", noise_energy_from_edc_1D, delimiter=",")
+#     np.savetxt("noise_energy_from_edc_2D.csv", noise_energy_from_edc_2D, delimiter=",")
