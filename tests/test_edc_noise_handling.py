@@ -14,11 +14,13 @@ from numpy import genfromtxt
 from pathlib import Path
 test_data_path = os.path.join(os.path.dirname(__file__), 'test_data')
 
+
 def test_noise_energy_1D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'), delimiter=',')
     expected = genfromtxt(os.path.join(test_data_path, 'noise_energy_1D.csv'), delimiter=',')
     actual = enh.estimate_noise_energy(rir, interval=[0.9, 1.0], is_energy=False)
     npt.assert_allclose(actual, expected)
+
 
 def test_noise_energy_2D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'), delimiter=',')
@@ -26,11 +28,13 @@ def test_noise_energy_2D():
     actual = enh.estimate_noise_energy(rir, interval=[0.9, 1.0], is_energy=False)
     npt.assert_allclose(actual, expected)
 
+
 def test_preprocessing_1D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'), delimiter=',')
     expected = genfromtxt(os.path.join(test_data_path, 'preprocessing_1D.csv'), delimiter=',')[np.newaxis]
     actual = enh.preprocess_rir(rir, is_energy=False, time_shift=False, channel_independent=False)[0]
     npt.assert_allclose(actual, expected)
+
 
 def test_preprocessing_2D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'), delimiter=',')
@@ -38,11 +42,13 @@ def test_preprocessing_2D():
     actual = enh.preprocess_rir(rir, is_energy=False, time_shift=False, channel_independent=False)[0]
     npt.assert_allclose(actual, expected)
 
+
 def test_preprocessing_time_shift_1D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'), delimiter=',')
     expected = genfromtxt(os.path.join(test_data_path, 'preprocessing_time_shift_1D.csv'), delimiter=',')[np.newaxis]
     actual = enh.preprocess_rir(rir, is_energy=False, time_shift=True, channel_independent=False)[0]
     npt.assert_allclose(actual, expected)
+
 
 def test_preprocessing_time_shift_2D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'), delimiter=',')
@@ -50,11 +56,13 @@ def test_preprocessing_time_shift_2D():
     actual = enh.preprocess_rir(rir, is_energy=False, time_shift=True, channel_independent=False)[0]
     npt.assert_allclose(actual, expected)
 
+
 def test_preprocessing_time_shift_channel_independent_1D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'), delimiter=',')
     expected = genfromtxt(os.path.join(test_data_path, 'preprocessing_time_shift_channel_independent_1D.csv'), delimiter=',')[np.newaxis]
     actual = enh.preprocess_rir(rir, is_energy=False, time_shift=True, channel_independent=True)[0]
     npt.assert_allclose(actual, expected)
+
 
 def test_preprocessing_time_shift_channel_independent_2D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'), delimiter=',')
@@ -62,11 +70,13 @@ def test_preprocessing_time_shift_channel_independent_2D():
     actual = enh.preprocess_rir(rir, is_energy=False, time_shift=True, channel_independent=True)[0]
     npt.assert_allclose(actual, expected)
 
+
 def test_smoothed_rir_1D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'), delimiter=',')
     expected = genfromtxt(os.path.join(test_data_path, 'smoothed_rir_1D.csv'), delimiter=',')[np.newaxis]
     actual = enh.smooth_rir(rir, sampling_rate=3000, smooth_block_length=0.075)[0]
     npt.assert_allclose(actual, expected)
+
 
 def test_smoothed_rir_2D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'), delimiter=',')
@@ -74,17 +84,20 @@ def test_smoothed_rir_2D():
     actual = enh.smooth_rir(rir, sampling_rate=3000, smooth_block_length=0.075)[0]
     npt.assert_allclose(actual, expected)
 
+
 def test_substracted_1D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'), delimiter=',')
     expected = genfromtxt(os.path.join(test_data_path, 'substracted_1D.csv'), delimiter=',')
     actual = enh.subtract_noise_from_squared_rir(rir**2)
     npt.assert_allclose(actual, expected)
 
+
 def test_substracted_2D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'), delimiter=',')
     expected = genfromtxt(os.path.join(test_data_path, 'substracted_2D.csv'), delimiter=',')
     actual = enh.subtract_noise_from_squared_rir(rir**2)
     npt.assert_allclose(actual, expected)
+
 
 def test_edc_truncation_1D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'), delimiter=',')
@@ -94,6 +107,7 @@ def test_edc_truncation_1D():
         channel_independent=False, normalize=True)
     npt.assert_allclose(actual, expected)
 
+
 def test_edc_truncation_2D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'), delimiter=',')
     expected = genfromtxt(os.path.join(test_data_path, 'edc_truncation_2D.csv'), delimiter=',')
@@ -101,6 +115,7 @@ def test_edc_truncation_2D():
         rir, sampling_rate=3000, freq='broadband', is_energy=False, time_shift=True,
         channel_independent=False, normalize=True)
     npt.assert_allclose(actual, expected)
+
 
 def test_edc_lundeby_1D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'), delimiter=',')
@@ -110,6 +125,7 @@ def test_edc_lundeby_1D():
         channel_independent=False, normalize=True, plot=False)
     npt.assert_allclose(actual, expected)
 
+
 def test_edc_lundeby_2D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'), delimiter=',')
     expected = genfromtxt(os.path.join(test_data_path, 'edc_lundeby_2D.csv'), delimiter=',')
@@ -117,6 +133,7 @@ def test_edc_lundeby_2D():
         rir, sampling_rate=3000, freq='broadband', is_energy=False, time_shift=True,
         channel_independent=False, normalize=True, plot=False)
     npt.assert_allclose(actual, expected)
+
 
 def test_edc_lundeby_chu_1D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'), delimiter=',')
@@ -126,6 +143,7 @@ def test_edc_lundeby_chu_1D():
         channel_independent=False, normalize=True, plot=False)
     npt.assert_allclose(actual, expected)
 
+
 def test_edc_lundeby_chu_2D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'), delimiter=',')
     expected = genfromtxt(os.path.join(test_data_path, 'edc_lundeby_chu_2D.csv'), delimiter=',')
@@ -133,6 +151,7 @@ def test_edc_lundeby_chu_2D():
         rir, sampling_rate=3000, freq='broadband', is_energy=False, time_shift=True,
         channel_independent=False, normalize=True, plot=False)
     npt.assert_allclose(actual, expected)
+
 
 def test_edc_chu_1D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'), delimiter=',')
@@ -142,6 +161,7 @@ def test_edc_chu_1D():
         channel_independent=False, normalize=True, plot=False)
     npt.assert_allclose(actual, expected)
 
+
 def test_edc_chu_2D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'), delimiter=',')
     expected = genfromtxt(os.path.join(test_data_path, 'edc_chu_2D.csv'), delimiter=',')
@@ -149,6 +169,7 @@ def test_edc_chu_2D():
         rir, sampling_rate=3000, freq='broadband', is_energy=False, time_shift=True,
         channel_independent=False, normalize=True, plot=False)
     npt.assert_allclose(actual, expected)
+
 
 def test_intersection_time_1D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'), delimiter=',')
@@ -158,6 +179,7 @@ def test_intersection_time_1D():
         channel_independent=False, plot=False)
     npt.assert_allclose(actual, expected)
 
+
 def test_intersection_time_2D():
     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'), delimiter=',')
     expected = genfromtxt(os.path.join(test_data_path, 'intersection_time_2D.csv'), delimiter=',')
@@ -166,28 +188,32 @@ def test_intersection_time_2D():
         channel_independent=False, plot=False)
     npt.assert_allclose(actual, expected)
 
-def test_noise_energy_from_edc_1D():
-    rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'), delimiter=',')
-    expected = genfromtxt(os.path.join(test_data_path, 'noise_energy_from_edc_1D.csv'), delimiter=',')[np.newaxis]
-    edc_lundeby_chu_1D = enh.energy_decay_curve_chu_lundeby(
-        rir, sampling_rate=3000, freq='broadband', is_energy=False, time_shift=True,
-        channel_independent=False, normalize=True, plot=False)
-    intersection_time_1D = enh.intersection_time_lundeby(
-        rir, sampling_rate=3000, freq='broadband', is_energy=False, time_shift=False,
-        channel_independent=False, plot=False)
-    actual = enh.estimate_noise_energy_from_edc(
-        edc_lundeby_chu_1D, intersection_time_1D[0], sampling_rate=3000)
-    npt.assert_allclose(actual, expected)
 
-def test_noise_energy_from_edc_2D():
-    rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'), delimiter=',')
-    expected = genfromtxt(os.path.join(test_data_path, 'noise_energy_from_edc_2D.csv'), delimiter=',')
-    edc_lundeby_chu_2D = enh.energy_decay_curve_chu_lundeby(
-        rir, sampling_rate=3000, freq='broadband', is_energy=False, time_shift=True,
-        channel_independent=False, normalize=True, plot=False)
-    intersection_time_2D = enh.intersection_time_lundeby(
-        rir, sampling_rate=3000, freq='broadband', is_energy=False, time_shift=False,
-        channel_independent=False, plot=False)
-    actual = enh.estimate_noise_energy_from_edc(
-        edc_lundeby_chu_2D, intersection_time_2D[0], sampling_rate=3000)
-    npt.assert_allclose(actual, expected)
+# def test_noise_energy_from_edc_1D():
+#     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'), delimiter=',')
+#     expected = genfromtxt(os.path.join(test_data_path, 'noise_energy_from_edc_1D.csv'), delimiter=',')[np.newaxis]
+#     edc_lundeby_chu_1D = ra.schroeder_integration(rir)
+#     # = enh.energy_decay_curve_chu_lundeby(
+#     #     rir, sampling_rate=3000, freq='broadband', is_energy=False, time_shift=True,
+#     #     channel_independent=False, normalize=True, plot=False)
+#     intersection_time_1D = enh.intersection_time_lundeby(
+#         rir, sampling_rate=3000, freq='broadband', is_energy=False, time_shift=False,
+#         channel_independent=False, plot=False)
+#     actual = enh.estimate_noise_energy_from_edc(
+#         edc_lundeby_chu_1D, intersection_time_1D[0], sampling_rate=3000)
+#     npt.assert_allclose(actual, expected)
+
+# import roomacoustics as ra
+# def test_noise_energy_from_edc_2D():
+#     rir = genfromtxt(os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'), delimiter=',')
+#     expected = genfromtxt(os.path.join(test_data_path, 'noise_energy_from_edc_2D.csv'), delimiter=',')
+#     edc_lundeby_chu_2D = ra.schroeder_integration(rir)
+#     # enh.energy_decay_curve_chu_lundeby(
+#     #     rir, sampling_rate=3000, freq='broadband', is_energy=False, time_shift=True,
+#     #     channel_independent=False, normalize=True, plot=False)
+#     intersection_time_2D = enh.intersection_time_lundeby(
+#         rir, sampling_rate=3000, freq='broadband', is_energy=False, time_shift=False,
+#         channel_independent=False, plot=False)
+#     actual = enh.estimate_noise_energy_from_edc(
+#         edc_lundeby_chu_2D, intersection_time_2D[0], sampling_rate=3000)
+#     npt.assert_allclose(actual, expected)

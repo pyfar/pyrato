@@ -53,47 +53,47 @@ def estimate_noise_energy(
     return noise_energy
 
 
-def estimate_noise_energy_from_edc(
-        energy_decay_curve,
-        intersection_time,
-        sampling_rate):
-    """Estimate the noise energy from the differential of the energy decay
-    curve. The interval used ranges from the intersection time to the end of
-    the decay curve. The noise is assumed to be Gaussian.
+# def estimate_noise_energy_from_edc(
+#         energy_decay_curve,
+#         intersection_time,
+#         sampling_rate):
+#     """Estimate the noise energy from the differential of the energy decay
+#     curve. The interval used ranges from the intersection time to the end of
+#     the decay curve. The noise is assumed to be Gaussian.
 
-    Parameters
-    ----------
-    energy_decay_curve : ndarray, double
-        The energy decay curve
-    intersection_time : double
-        The intersection time between decay curve and noise
-    sampling_rate : int
-        The sampling rate
+#     Parameters
+#     ----------
+#     energy_decay_curve : ndarray, double
+#         The energy decay curve
+#     intersection_time : double
+#         The intersection time between decay curve and noise
+#     sampling_rate : int
+#         The sampling rate
 
-    Returns
-    -------
-    noise_energy : double
-        The energy of the additive Gaussian noise
+#     Returns
+#     -------
+#     noise_energy : double
+#         The energy of the additive Gaussian noise
 
-    """
-    n_samples = energy_decay_curve.shape[-1]
-    energy_decay_curve = np.atleast_2d(energy_decay_curve)
-    n_channels = np.prod(energy_decay_curve.shape[:-1])
+#     """
+#     n_samples = energy_decay_curve.shape[-1]
+#     energy_decay_curve = np.atleast_2d(energy_decay_curve)
+#     n_channels = np.prod(energy_decay_curve.shape[:-1])
 
-    noise_energy = np.zeros([n_channels])
-    for idx_channel in range(0, n_channels):
-        times = np.arange(0, n_samples) * sampling_rate
-        mask_second = times > intersection_time[idx_channel]
-        mask = times > intersection_time[idx_channel]
-        mask_first = np.concatenate((mask[1:], [False]))
-        intersection_sample = int(np.ceil(
-            intersection_time[idx_channel]*sampling_rate))
-        factor = 1/(n_samples - intersection_sample)
-        noise_energy[idx_channel] = factor * np.nansum(
-            energy_decay_curve[idx_channel, mask_first]
-            - energy_decay_curve[idx_channel, mask_second])
+#     noise_energy = np.zeros([n_channels])
+#     for idx_channel in range(0, n_channels):
+#         times = np.arange(0, n_samples) * sampling_rate
+#         mask_second = times > intersection_time[idx_channel]
+#         mask = times > intersection_time[idx_channel]
+#         mask_first = np.concatenate((mask[1:], [False]))
+#         intersection_sample = int(np.ceil(
+#             intersection_time[idx_channel]*sampling_rate))
+#         factor = 1/(n_samples - intersection_sample)
+#         noise_energy[idx_channel] = factor * np.nansum(
+#             energy_decay_curve[idx_channel, mask_first]
+#             - energy_decay_curve[idx_channel, mask_second])
 
-    return noise_energy
+#     return noise_energy
 
 
 def preprocess_rir(
@@ -147,17 +147,6 @@ def preprocess_rir(
         result = dsp.time_shift(
             data, shift_samples, circular_shift=False, keepdims=True)
 
-
-        # result = np.zeros([n_channels, n_samples])
-        # if channel_independent and not n_channels == 1:
-        #     # Shift each channel independently
-        #     for idx_channel in range(0, n_channels):
-        #         result[idx_channel, 0:-rir_start_idx[idx_channel]] = data[
-        #             idx_channel, rir_start_idx[idx_channel]:]
-        # else:
-        #     # Shift each channel by the earliest impulse response start.
-        #     result[:, :-min_shift] = data[:, min_shift:]
-
     else:
         result = data
     if not is_energy:
@@ -195,15 +184,19 @@ def smooth_rir(
     """
     data = np.atleast_2d(data)
     n_samples = data.shape[-1]
-    n_samples_nan = int(np.count_nonzero(np.isnan(data), axis=-1))
+    n_samples_nan = np.count_nonzero(np.isnan(data), axis=-1)
 
     n_samples_per_block = int(np.round(smooth_block_length * sampling_rate, 0))
-    n_blocks = int(np.floor((n_samples-n_samples_nan)/n_samples_per_block))
+    n_blocks = np.asarray(
+        np.floor((n_samples-n_samples_nan)/n_samples_per_block),
+        dtype=np.int)
+
     n_blocks_min = int(np.min(n_blocks))
     n_samples_actual = int(n_blocks_min*n_samples_per_block)
-    reshaped_array = np.reshape(data[..., :n_samples_actual],
-                                (-1, n_blocks_min, n_samples_per_block))
-    time_window_data = np.nanmean(reshaped_array, axis=-1)
+    reshaped_array = np.reshape(
+        data[..., :n_samples_actual],
+        (-1, n_blocks_min, n_samples_per_block))
+    time_window_data = np.mean(reshaped_array, axis=-1)
 
     # Use average time instances corresponding to the average energy level
     # instead of time for the first sample of the block
@@ -232,9 +225,10 @@ def subtract_noise_from_squared_rir(data, noise_level='auto'):
 
     """
     if noise_level == "auto":
-        noise_level = estimate_noise_energy(data,
-                                            is_energy=True,
-                                            interval=[0.9, 1.0])
+        noise_level = estimate_noise_energy(
+            data,
+            is_energy=True,
+            interval=[0.9, 1.0])
     return (data.T - noise_level).T
 
 
@@ -802,9 +796,8 @@ def intersection_time_lundeby(
 
     # (2) ESTIMATE NOISE
     if initial_noise_power == 'auto':
-        mask = np.isnan(energy_data)
         noise_estimation = estimate_noise_energy(
-            energy_data[~mask], is_energy=True)
+            energy_data, is_energy=True)
     else:
         noise_estimation = initial_noise_power.copy()
 

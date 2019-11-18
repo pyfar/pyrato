@@ -45,7 +45,7 @@ def find_impulse_response_start(impulse_response, threshold=20):
 
     if np.any(max_value < 10**(threshold/10) * noise) or np.any(max_sample > mask_start):
         raise ValueError("The SNR is lower than the defined threshold. Check \
-                if this is a valid impulse resonse with sufficient SNR.")
+                if this is a valid impulse response with sufficient SNR.")
 
     start_sample_shape = max_sample.shape
     n_samples = ir_squared.shape[-1]

@@ -101,7 +101,6 @@ def test_time_shift_left():
     npt.assert_allclose(ir_shifted, ir_truth)
 
 
-
 def test_time_shift_non_circular_right():
     shift_samples = 10
     n_samples = 2**9
