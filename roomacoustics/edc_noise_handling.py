@@ -195,17 +195,23 @@ def smooth_rir(
     """
     data = np.atleast_2d(data)
     n_samples = data.shape[-1]
+    n_samples_nan = int(np.count_nonzero(np.isnan(data), axis=-1))
 
     n_samples_per_block = int(np.round(smooth_block_length * sampling_rate, 0))
-    n_blocks = int(np.floor(n_samples/n_samples_per_block))
-    n_samples_actual = int(n_blocks*n_samples_per_block)
+    n_blocks = int(np.floor((n_samples-n_samples_nan)/n_samples_per_block))
+    n_blocks_min = int(np.min(n_blocks))
+    n_samples_actual = int(n_blocks_min*n_samples_per_block)
     reshaped_array = np.reshape(data[..., :n_samples_actual],
-                                (-1, n_blocks, n_samples_per_block))
+                                (-1, n_blocks_min, n_samples_per_block))
     time_window_data = np.nanmean(reshaped_array, axis=-1)
 
+    # Use average time instances corresponding to the average energy level
+    # instead of time for the first sample of the block
     time_vector_window = \
-        ((0.5+np.arange(0, n_blocks)) * n_samples_per_block/sampling_rate)
-    time_vector = (0.5+np.arange(0, n_samples))/sampling_rate
+        ((0.5+np.arange(0, n_blocks_min)) * n_samples_per_block/sampling_rate)
+
+    # Use the time corresponding to the sampling of the original data
+    time_vector = (np.arange(0, n_samples))/sampling_rate
 
     return time_window_data, time_vector_window, time_vector
 
@@ -288,7 +294,7 @@ def energy_decay_curve_truncation(
         energy_data,
         sampling_rate=sampling_rate,
         freq=freq,
-        noise_level=noise_level,
+        initial_noise_power=noise_level,
         is_energy=True,
         time_shift=False,
         channel_independent=False,
@@ -400,7 +406,7 @@ def energy_decay_curve_lundeby(
             energy_data,
             sampling_rate=sampling_rate,
             freq=freq,
-            noise_level=noise_level,
+            initial_noise_power=noise_level,
             is_energy=True,
             time_shift=False,
             channel_independent=False,
@@ -641,15 +647,16 @@ def energy_decay_curve_chu_lundeby(
         channel_independent=channel_independent)
     n_samples = energy_data.shape[-1]
 
-    subtraction = subtract_noise_from_squared_rir(energy_data,
-                                                  noise_level=noise_level)
+    subtraction = subtract_noise_from_squared_rir(
+        energy_data,
+        noise_level=noise_level)
 
     intersection_time, late_reveberation_time, noise_level = \
         intersection_time_lundeby(
             energy_data,
             sampling_rate=sampling_rate,
             freq=freq,
-            noise_level=noise_level,
+            initial_noise_power=noise_level,
             is_energy=True,
             time_shift=False,
             channel_independent=False,
@@ -720,7 +727,7 @@ def intersection_time_lundeby(
         data,
         sampling_rate,
         freq='broadband',
-        noise_level='auto',
+        initial_noise_power='auto',
         is_energy=False,
         time_shift=False,
         channel_independent=False,
@@ -794,10 +801,12 @@ def intersection_time_lundeby(
         energy_data, sampling_rate, freq_dependent_window_time)
 
     # (2) ESTIMATE NOISE
-    if noise_level == 'auto':
-        noise_estimation = estimate_noise_energy(energy_data, is_energy=True)
+    if initial_noise_power == 'auto':
+        mask = np.isnan(energy_data)
+        noise_estimation = estimate_noise_energy(
+            energy_data[~mask], is_energy=True)
     else:
-        noise_estimation = noise_level
+        noise_estimation = initial_noise_power.copy()
 
     # (3) REGRESSION
     reverberation_time = np.zeros(n_channels)
@@ -827,7 +836,6 @@ def intersection_time_lundeby(
         # regression_matrix*slope = edc
         regression_matrix = np.vstack((np.ones(
             [stop_idx-start_idx]), time_vector_window[start_idx:stop_idx]))
-        # TO-DO: least-squares solution necessary?
         slope = np.linalg.lstsq(
             regression_matrix.T,
             10*np.log10(time_window_data_current_channel[start_idx:stop_idx]),
@@ -846,7 +854,6 @@ def intersection_time_lundeby(
                 + slope[1]*time_vector_window[stop_idx])])
 
         # (4) PRELIMINARY CROSSING POINT
-
         preliminary_crossing_point = \
             (10*np.log10(noise_estimation[idx_channel]) - slope[0]) / slope[1]
 
@@ -861,8 +868,8 @@ def intersection_time_lundeby(
             [start_idx, stop_idx])) / n_blocks_in_decay * sampling_rate)
 
         window_time = n_samples_per_block/sampling_rate
-        # (6) AVERAGE
 
+        # (6) AVERAGE
         time_window_data_current_channel, \
             time_vector_window_current_channel, \
             time_vector_current_channel = smooth_rir(
@@ -912,7 +919,6 @@ def intersection_time_lundeby(
 
             # regression_matrix*slope = edc
             # regression_matrix = 0
-
             regression_matrix = np.vstack((np.ones(
                 [stop_idx_loop-start_idx_loop]),
                 time_vector_window_current_channel[

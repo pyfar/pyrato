@@ -115,7 +115,10 @@ def time_shift(signal, n_samples_shift, circular_shift=True, keepdims=False):
     shifted_signal = signal.copy()
     for channel in range(n_channels):
         shifted_signal[channel, :] = \
-            np.roll(signal[channel, :], n_samples_shift[channel], axis=-1)
+            np.roll(
+                shifted_signal[channel, :],
+                n_samples_shift[channel],
+                axis=-1)
         if not circular_shift:
             if n_samples_shift[channel] < 0:
                 shifted_signal[channel, n_samples_shift[channel]:] = np.nan
