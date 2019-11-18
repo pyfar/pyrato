@@ -75,7 +75,7 @@ def test_start_ir_multidim():
     npt.assert_allclose(start_sample_est, start_samples)
 
 
-def test_time_shift():
+def test_time_shift_right():
     shift_samples = 10
     n_samples = 2**9
     ir = np.zeros(n_samples, dtype=np.double)
@@ -87,11 +87,47 @@ def test_time_shift():
 
     npt.assert_allclose(ir_shifted, ir_truth)
 
+
+def test_time_shift_left():
+    shift_samples = 10
+    n_samples = 2**9
+    ir = np.zeros(n_samples, dtype=np.double)
+    ir[20] = 1
+
     ir_truth = np.zeros(n_samples, dtype=np.double)
     ir_truth[20-shift_samples] = 1
     ir_shifted = dsp.time_shift(ir, -shift_samples)
 
     npt.assert_allclose(ir_shifted, ir_truth)
+
+
+
+def test_time_shift_non_circular_right():
+    shift_samples = 10
+    n_samples = 2**9
+    ir = np.zeros(n_samples, dtype=np.double)
+    ir[20] = 1
+
+    ir_truth = np.zeros(n_samples, dtype=np.double)
+    ir_truth[20+shift_samples] = 1
+    ir_truth[:shift_samples] = np.nan
+    ir_shifted = dsp.time_shift(ir, shift_samples, circular_shift=False)
+
+    npt.assert_allclose(ir_shifted, ir_truth, equal_nan=True)
+
+
+def test_time_shift_non_circular_left():
+    shift_samples = 10
+    n_samples = 2**9
+    ir = np.zeros(n_samples, dtype=np.double)
+    ir[20] = 1
+
+    ir_truth = np.zeros(n_samples, dtype=np.double)
+    ir_truth[20-shift_samples] = 1
+    ir_truth[n_samples-shift_samples:] = np.nan
+    ir_shifted = dsp.time_shift(ir, -shift_samples, circular_shift=False)
+
+    npt.assert_allclose(ir_shifted, ir_truth, equal_nan=True)
 
 
 def test_time_shift_multitim():

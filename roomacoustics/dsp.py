@@ -121,8 +121,12 @@ def time_shift(signal, n_samples_shift, circular_shift=True, keepdims=False):
                 axis=-1)
         if not circular_shift:
             if n_samples_shift[channel] < 0:
+                # index is negative, so index will reference from the
+                # end of the array
                 shifted_signal[channel, n_samples_shift[channel]:] = np.nan
             else:
+                # index is positive, so index will reference from the
+                # start of the array
                 shifted_signal[channel, :n_samples_shift[channel]] = np.nan
 
     shifted_signal = np.reshape(shifted_signal, signal_shape)
