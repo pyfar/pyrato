@@ -132,12 +132,12 @@ def schroeder_integration(impulse_response, is_energy=False):
     if not is_energy:
         data = np.abs(impulse_response)**2
     else:
-        data = np.abs(impulse_response)
+        data = impulse_response.copy()
 
     if data.ndim >= 2:
-        energy_decay_curve = np.fliplr(np.cumsum(np.fliplr(data), axis=-1))
+        energy_decay_curve = np.fliplr(np.nancumsum(np.fliplr(data), axis=-1))
     else:
-        energy_decay_curve = np.flipud(np.cumsum(np.flipud(data)))
+        energy_decay_curve = np.flipud(np.nancumsum(np.flipud(data)))
 
     return energy_decay_curve
 
