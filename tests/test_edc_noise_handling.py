@@ -9,9 +9,8 @@
 import numpy as np
 import os
 import numpy.testing as npt
-from roomacoustics import edc_noise_handling as enh
+from roomacoustics import edc as enh
 from numpy import genfromtxt
-from pathlib import Path
 test_data_path = os.path.join(os.path.dirname(__file__), 'test_data')
 
 
