@@ -53,58 +53,19 @@ def estimate_noise_energy(
     return noise_energy
 
 
-# def estimate_noise_energy_from_edc(
-#         energy_decay_curve,
-#         intersection_time,
-#         sampling_rate):
-#     """Estimate the noise energy from the differential of the energy decay
-#     curve. The interval used ranges from the intersection time to the end of
-#     the decay curve. The noise is assumed to be Gaussian.
-
-#     Parameters
-#     ----------
-#     energy_decay_curve : ndarray, double
-#         The energy decay curve
-#     intersection_time : double
-#         The intersection time between decay curve and noise
-#     sampling_rate : int
-#         The sampling rate
-
-#     Returns
-#     -------
-#     noise_energy : double
-#         The energy of the additive Gaussian noise
-
-#     """
-#     n_samples = energy_decay_curve.shape[-1]
-#     energy_decay_curve = np.atleast_2d(energy_decay_curve)
-#     n_channels = np.prod(energy_decay_curve.shape[:-1])
-
-#     noise_energy = np.zeros([n_channels])
-#     for idx_channel in range(0, n_channels):
-#         times = np.arange(0, n_samples) * sampling_rate
-#         mask_second = times > intersection_time[idx_channel]
-#         mask = times > intersection_time[idx_channel]
-#         mask_first = np.concatenate((mask[1:], [False]))
-#         intersection_sample = int(np.ceil(
-#             intersection_time[idx_channel]*sampling_rate))
-#         factor = 1/(n_samples - intersection_sample)
-#         noise_energy[idx_channel] = factor * np.nansum(
-#             energy_decay_curve[idx_channel, mask_first]
-#             - energy_decay_curve[idx_channel, mask_second])
-
-#     return noise_energy
-
-
 def preprocess_rir(
         data,
         is_energy=False,
         time_shift=False,
         channel_independent=False):
     """ Preprocess the room impulse response for further processing:
-        - square data
-        - remove silence at the beginning, if necessary
-        - the time shift can be done channel-independent or not.
+        - Square data
+        - Shift the RIR to the first sample of the array, compensating for the
+          delay of the time of arrival of the direct sound. The time shift is
+          performed as a non-cyclic shift, adding numpy.nan values in the end
+          of the RIR corresponding to the number of samples the data is
+          shifted by.
+        - The time shift can be done channel-independent or not.
 
     Parameters
     ----------
@@ -395,7 +356,7 @@ def energy_decay_curve_lundeby(
         time_shift=time_shift,
         channel_independent=channel_independent)
     n_samples = energy_data.shape[-1]
-    intersection_time, late_reveberation_time, noise_estimation = \
+    intersection_time, late_reverberation_time, noise_estimation = \
         intersection_time_lundeby(
             energy_data,
             sampling_rate=sampling_rate,
@@ -417,7 +378,7 @@ def energy_decay_curve_lundeby(
         # Calculate correction term according to DIN EN ISO 3382
         # TO-DO: check reference!
         correction = (p_square_at_intersection
-                      * late_reveberation_time[idx_channel]
+                      * late_reverberation_time[idx_channel]
                       * (1 / (6*np.log(10)))
                       * sampling_rate)
 
@@ -645,7 +606,7 @@ def energy_decay_curve_chu_lundeby(
         energy_data,
         noise_level=noise_level)
 
-    intersection_time, late_reveberation_time, noise_level = \
+    intersection_time, late_reverberation_time, noise_level = \
         intersection_time_lundeby(
             energy_data,
             sampling_rate=sampling_rate,
@@ -670,7 +631,7 @@ def energy_decay_curve_chu_lundeby(
 
         # calculate correction term according to DIN EN ISO 3382
         correction = (p_square_at_intersection
-                      * late_reveberation_time[idx_channel]
+                      * late_reverberation_time[idx_channel]
                       * (1 / (6*np.log(10)))
                       * sampling_rate)
 
@@ -911,7 +872,6 @@ def intersection_time_lundeby(
                     'Regression failed: Low SNR. Estimation terminated.')
 
             # regression_matrix*slope = edc
-            # regression_matrix = 0
             regression_matrix = np.vstack((np.ones(
                 [stop_idx_loop-start_idx_loop]),
                 time_vector_window_current_channel[

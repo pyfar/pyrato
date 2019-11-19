@@ -67,8 +67,9 @@ def find_impulse_response_start(impulse_response, threshold=20):
 
 def time_shift(signal, n_samples_shift, circular_shift=True, keepdims=False):
     """Shift a signal in the time domain by n samples. This function will
-    perform a circular shift. This inherently assumes that the signal is
-    periodic.
+    perform a circular shift by default, inherently assuming that the signal is
+    periodic. Use the option `circular_shift=False` to pad with nan values
+    instead.
 
     Notes
     -----
@@ -83,6 +84,13 @@ def time_shift(signal, n_samples_shift, circular_shift=True, keepdims=False):
         Number of samples by which the signal should be shifted. A negative
         number of samples will result in a left-shift, while a positive
         number of samples will result in a right shift of the signal.
+    circular_shift : bool, True
+        Perform a circular or non-circular shift. If a non-circular shift is
+        performed, the data will be padded with nan values at the respective
+        beginning or ending of the data, corresponding to the number of samples
+        the data is shifted.
+    keepdims : bool, False
+        Do not squeeze the data before returning.
 
     Returns
     -------
