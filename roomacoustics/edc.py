@@ -500,14 +500,15 @@ def energy_decay_curve_chu(
             energy_decay_curve = (energy_decay_curve.T
                                   / energy_decay_curve[..., 0]).T
         else:
-            # ...by the maximum first element of each channel.
+            # ...by the maximum first element of all channels.
             max_start_value = np.amax(energy_decay_curve[..., 0])
             energy_decay_curve /= max_start_value
 
-    mask = energy_decay_curve <= 0
+    mask = energy_decay_curve <= 2*np.finfo(np.double).eps
     if np.any(mask):
-        first_zero = np.nanargmax(mask, axis=-1)[0]
-        energy_decay_curve[..., int(first_zero):] = np.nan
+        first_zero = np.nanargmax(mask, axis=-1)
+        for channel in range(n_channels):
+            energy_decay_curve[channel, first_zero[channel]:] = np.nan
 
     if plot:
         time_vector = (0.5+np.arange(0, energy_data.shape[-1]))/sampling_rate
