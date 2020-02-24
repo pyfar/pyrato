@@ -3,7 +3,6 @@
 import pytest
 import numpy as np
 import numpy.testing as npt
-import scipy.signal as ssignal
 import roomacoustics.dsp as dsp
 
 
@@ -164,7 +163,10 @@ def test_time_shift_multitim_multishift():
     ir[[0, 1, 2], start_sample] = 1
 
     ir_truth = np.zeros((n_channels, n_samples), dtype=np.double)
-    start_sample_truth = [24+shift_samples[0], 5+shift_samples[1], 13+shift_samples[2]]
+    start_sample_truth = [
+        24+shift_samples[0],
+        5+shift_samples[1],
+        13+shift_samples[2]]
     ir_truth[[0, 1, 2], start_sample_truth] = 1
 
     ir_shifted = dsp.time_shift(ir, shift_samples)
@@ -172,7 +174,10 @@ def test_time_shift_multitim_multishift():
     npt.assert_allclose(ir_shifted, ir_truth)
 
     ir_truth = np.zeros((n_channels, n_samples), dtype=np.double)
-    start_sample_truth = [24-shift_samples[0], 5-shift_samples[1], 13-shift_samples[2]]
+    start_sample_truth = [
+        24-shift_samples[0],
+        5-shift_samples[1],
+        13-shift_samples[2]]
     ir_truth[[0, 1, 2], start_sample_truth] = 1
 
     ir_shifted = dsp.time_shift(ir, -np.array(shift_samples, dtype=np.int))
