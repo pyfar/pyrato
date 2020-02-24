@@ -15,6 +15,14 @@ from numpy import genfromtxt
 test_data_path = os.path.join(os.path.dirname(__file__), 'test_data')
 
 
+def mock_shift_samples_1d(*args, **kwargs):
+    return np.array([76])
+
+
+def mock_shift_samples_2d(*args, **kwargs):
+    return np.array([76, 76])
+
+
 def test_noise_energy_1D():
     rir = genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
@@ -81,13 +89,10 @@ def test_preprocessing_time_shift_1D(monkeypatch):
         os.path.join(test_data_path, 'preprocessing_time_shift_1D.csv'),
         delimiter=',')[np.newaxis]
 
-    def mock_shift_samples(*args, **kwargs):
-        return np.array([76])
-
     monkeypatch.setattr(
         dsp,
         "find_impulse_response_start",
-        mock_shift_samples)
+        mock_shift_samples_1d)
 
     actual = enh.preprocess_rir(
         rir,
@@ -105,13 +110,10 @@ def test_preprocessing_time_shift_2D(monkeypatch):
         os.path.join(test_data_path, 'preprocessing_time_shift_2D.csv'),
         delimiter=',')
 
-    def mock_shift_samples(*args, **kwargs):
-        return np.array([76, 76])
-
     monkeypatch.setattr(
         dsp,
         "find_impulse_response_start",
-        mock_shift_samples)
+        mock_shift_samples_2d)
 
     actual = enh.preprocess_rir(
         rir,
@@ -131,13 +133,10 @@ def test_preprocessing_time_shift_channel_independent_1D(monkeypatch):
             'preprocessing_time_shift_channel_independent_1D.csv'),
         delimiter=',')[np.newaxis]
 
-    def mock_shift_samples(*args, **kwargs):
-        return np.array([76])
-
     monkeypatch.setattr(
         dsp,
         "find_impulse_response_start",
-        mock_shift_samples)
+        mock_shift_samples_1d)
 
     actual = enh.preprocess_rir(
         rir,
@@ -157,13 +156,10 @@ def test_preprocessing_time_shift_channel_independent_2D(monkeypatch):
             'preprocessing_time_shift_channel_independent_2D.csv'),
         delimiter=',')
 
-    def mock_shift_samples(*args, **kwargs):
-        return np.array([76, 76])
-
     monkeypatch.setattr(
         dsp,
         "find_impulse_response_start",
-        mock_shift_samples)
+        mock_shift_samples_2d)
 
     actual = enh.preprocess_rir(
         rir,
@@ -231,13 +227,10 @@ def test_edc_truncation_1D(monkeypatch):
         os.path.join(test_data_path, 'edc_truncation_1D.csv'),
         delimiter=',')
 
-    def mock_shift_samples(*args, **kwargs):
-        return np.array([76])
-
     monkeypatch.setattr(
         dsp,
         "find_impulse_response_start",
-        mock_shift_samples)
+        mock_shift_samples_1d)
 
     actual = enh.energy_decay_curve_truncation(
         rir,
@@ -258,13 +251,10 @@ def test_edc_truncation_2D(monkeypatch):
         os.path.join(test_data_path, 'edc_truncation_2D.csv'),
         delimiter=',')
 
-    def mock_shift_samples(*args, **kwargs):
-        return np.array([76, 76])
-
     monkeypatch.setattr(
         dsp,
         "find_impulse_response_start",
-        mock_shift_samples)
+        mock_shift_samples_2d)
 
     actual = enh.energy_decay_curve_truncation(
         rir,
@@ -285,13 +275,10 @@ def test_edc_lundeby_1D(monkeypatch):
         os.path.join(test_data_path, 'edc_lundeby_1D.csv'),
         delimiter=',')
 
-    def mock_shift_samples(*args, **kwargs):
-        return np.array([76])
-
     monkeypatch.setattr(
         dsp,
         "find_impulse_response_start",
-        mock_shift_samples)
+        mock_shift_samples_1d)
 
     actual = enh.energy_decay_curve_lundeby(
         rir,
@@ -313,13 +300,10 @@ def test_edc_lundeby_2D(monkeypatch):
         os.path.join(test_data_path, 'edc_lundeby_2D.csv'),
         delimiter=',')
 
-    def mock_shift_samples(*args, **kwargs):
-        return np.array([76, 76])
-
     monkeypatch.setattr(
         dsp,
         "find_impulse_response_start",
-        mock_shift_samples)
+        mock_shift_samples_2d)
 
     actual = enh.energy_decay_curve_lundeby(
         rir,
@@ -341,13 +325,10 @@ def test_edc_lundeby_chu_1D(monkeypatch):
         os.path.join(test_data_path, 'edc_lundeby_chu_1D.csv'),
         delimiter=',')
 
-    def mock_shift_samples(*args, **kwargs):
-        return np.array([76])
-
     monkeypatch.setattr(
         dsp,
         "find_impulse_response_start",
-        mock_shift_samples)
+        mock_shift_samples_1d)
 
     actual = enh.energy_decay_curve_chu_lundeby(
         rir,
@@ -369,13 +350,10 @@ def test_edc_lundeby_chu_2D(monkeypatch):
         os.path.join(test_data_path, 'edc_lundeby_chu_2D.csv'),
         delimiter=',')
 
-    def mock_shift_samples(*args, **kwargs):
-        return np.array([76, 76])
-
     monkeypatch.setattr(
         dsp,
         "find_impulse_response_start",
-        mock_shift_samples)
+        mock_shift_samples_2d)
 
     actual = enh.energy_decay_curve_chu_lundeby(
         rir,
@@ -397,13 +375,10 @@ def test_edc_chu_1D(monkeypatch):
         os.path.join(test_data_path, 'edc_chu_1D.csv'),
         delimiter=',')
 
-    def mock_shift_samples(*args, **kwargs):
-        return np.array([76])
-
     monkeypatch.setattr(
         dsp,
         "find_impulse_response_start",
-        mock_shift_samples)
+        mock_shift_samples_1d)
 
     actual = enh.energy_decay_curve_chu(
         rir,
@@ -425,13 +400,10 @@ def test_edc_chu_2D(monkeypatch):
         os.path.join(test_data_path, 'edc_chu_2D.csv'),
         delimiter=',')
 
-    def mock_shift_samples(*args, **kwargs):
-        return np.array([76, 76])
-
     monkeypatch.setattr(
         dsp,
         "find_impulse_response_start",
-        mock_shift_samples)
+        mock_shift_samples_2d)
 
     actual = enh.energy_decay_curve_chu(
         rir,
@@ -453,13 +425,10 @@ def test_intersection_time_1D(monkeypatch):
         os.path.join(test_data_path, 'intersection_time_1D.csv'),
         delimiter=',')[np.newaxis].T
 
-    def mock_shift_samples(*args, **kwargs):
-        return np.array([76])
-
     monkeypatch.setattr(
         dsp,
         "find_impulse_response_start",
-        mock_shift_samples)
+        mock_shift_samples_1d)
 
     actual = enh.intersection_time_lundeby(
         rir,
@@ -480,13 +449,10 @@ def test_intersection_time_2D(monkeypatch):
         os.path.join(test_data_path, 'intersection_time_2D.csv'),
         delimiter=',')
 
-    def mock_shift_samples(*args, **kwargs):
-        return np.array([76, 76])
-
     monkeypatch.setattr(
         dsp,
         "find_impulse_response_start",
-        mock_shift_samples)
+        mock_shift_samples_2d)
 
     actual = enh.intersection_time_lundeby(
         rir,
