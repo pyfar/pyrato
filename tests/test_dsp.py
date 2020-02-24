@@ -40,6 +40,18 @@ def test_start_ir():
     assert start_sample_est == start_sample - 1
 
 
+def test_start_ir_thresh():
+    n_samples = 2**10
+    ir = np.zeros(n_samples)
+
+    start_sample = 24
+    ir[start_sample] = 1
+    ir[start_sample-4:start_sample] = 10**(-5/10)
+
+    start_sample_est = dsp.find_impulse_response_start(ir, threshold=20)
+    assert start_sample_est == start_sample - 4 - 1
+
+
 def test_start_ir_multidim():
     n_samples = 2**10
     n_channels = 3

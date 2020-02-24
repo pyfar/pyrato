@@ -75,14 +75,20 @@ def find_impulse_response_start(
                 ir_before_max < 10**(-threshold/10))[-1]
 
             idx_6dB_above_threshold = np.argwhere(
-                ir_before_max[:start_sample[idx]+1] <
-                10**((-threshold+6)/10))[-1]
-            if np.any(idx_6dB_above_threshold):
-                start_sample[idx] = idx_6dB_above_threshold
-            else:
-                warnings.warn('Oscillations detected in the impulse respose. \
-                    No clear starting sample found, defaulting to 0')
-                start_sample[idx] = 0
+                ir_before_max[:start_sample[idx]+1] >
+                10**((-threshold+6)/10))
+            if idx_6dB_above_threshold.size > 0:
+                idx_6dB_above_threshold = idx_6dB_above_threshold[-1]
+                tmp = np.argwhere(
+                    ir_before_max[:idx_6dB_above_threshold+1] <
+                    10**(-threshold/10))
+                if tmp.size == 0:
+                    start_sample[idx] = tmp[-1]
+                else:
+                    start_sample[idx] = 0
+                    warnings.warn(
+                        'Oscillations detected in the impulse respose. \
+                        No clear starting sample found, defaulting to 0')
 
     start_sample = np.reshape(start_sample, start_sample_shape)
 
