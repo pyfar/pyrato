@@ -34,18 +34,17 @@ def test_start_ir():
     ir[start_sample] = 1
 
     start_sample_est = dsp.find_impulse_response_start(ir)
-    assert start_sample_est == start_sample
+    assert start_sample_est == start_sample - 1
 
     ir_awgn = ir + noise
     start_sample_est = dsp.find_impulse_response_start(ir_awgn)
-    assert start_sample_est == start_sample
+    assert start_sample_est == start_sample - 1
 
 
 def test_start_ir_multidim():
     n_samples = 2**10
     n_channels = 3
     ir = np.zeros((n_channels, n_samples))
-
 
     snr = 60
 
@@ -57,7 +56,7 @@ def test_start_ir_multidim():
     ir_awgn = ir + noise
     start_sample_est = dsp.find_impulse_response_start(ir_awgn)
 
-    npt.assert_allclose(start_sample_est, start_sample)
+    npt.assert_allclose(start_sample_est, np.array(start_sample) - 1)
 
     ir = np.zeros((2, n_channels, n_samples))
     noise = np.random.randn(2, n_channels, n_samples) * 10**(-snr/20)
@@ -72,7 +71,7 @@ def test_start_ir_multidim():
     ir_awgn = ir + noise
     start_sample_est = dsp.find_impulse_response_start(ir_awgn)
 
-    npt.assert_allclose(start_sample_est, start_samples)
+    npt.assert_allclose(start_sample_est, start_samples - 1)
 
 
 def test_time_shift_right():

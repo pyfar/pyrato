@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Main module."""
+"""Signal processing related functions."""
 
 import warnings
 
@@ -8,9 +8,16 @@ import numpy as np
 import scipy.signal as spsignal
 
 
-def find_impulse_response_start(impulse_response, threshold=20):
+def find_impulse_response_start(
+        impulse_response,
+        threshold=20,
+        noise_energy='auto'):
     """Find the first sample of an impulse response in a accordance with the
-    ISO standard ISO 3382.
+    ISO standard ISO 3382. The start sample is identified as the first sample
+    that varies significantly from the noise floor but still has a level of
+    at least 20 dB below the maximum of the impulse response. The function
+    further tries to consider oscilations before the time below the threshold
+    value.
 
     Parameters
     ----------
@@ -30,20 +37,23 @@ def find_impulse_response_start(impulse_response, threshold=20):
 
     References
     ----------
-    .. [1]  ISO 3382, Acoustics - Measurement of the reverberation time of rooms
-            with reference to other acoustical parameters.
-
+    .. [1]  ISO 3382-1:2009-10, Acoustics - Measurement of the reverberation
+            time of rooms with reference to other acoustical parameters. pp. 22
     """
     ir_squared = np.abs(impulse_response)**2
 
     mask_start = np.int(0.9*ir_squared.shape[-1])
-    mask = np.arange(mask_start, ir_squared.shape[-1])
-    noise = np.mean(np.take(ir_squared, mask, axis=-1), axis=-1)
+    if noise_energy == 'auto':
+        mask = np.arange(mask_start, ir_squared.shape[-1])
+        noise = np.mean(np.take(ir_squared, mask, axis=-1), axis=-1)
+    else:
+        noise = noise_energy
 
     max_sample = np.argmax(ir_squared, axis=-1)
     max_value = np.max(ir_squared, axis=-1)
 
-    if np.any(max_value < 10**(threshold/10) * noise) or np.any(max_sample > mask_start):
+    if np.any(max_value < 10**(threshold/10) * noise) or \
+            np.any(max_sample > mask_start):
         raise ValueError("The SNR is lower than the defined threshold. Check \
                 if this is a valid impulse response with sufficient SNR.")
 
@@ -54,11 +64,25 @@ def find_impulse_response_start(impulse_response, threshold=20):
     max_sample = np.reshape(max_sample, n_channels)
     max_value = np.reshape(max_value, n_channels)
 
-    start_sample = max_sample
+    start_sample = max_sample.copy()
     for idx in range(0, n_channels):
-        if start_sample[idx] != 0:
-            ir_before_max = ir_squared[idx, :max_sample[idx]+1] / max_value[idx]
-            start_sample[idx] = np.argwhere(ir_before_max < 10**(threshold/10))[-1]
+        # Only look for the start sample if the maximum index is bigger than 0
+        if start_sample[idx] > 0:
+            ir_before_max = ir_squared[idx, :max_sample[idx]+1] \
+                / max_value[idx]
+            # Last value before peak lower than the peak/threshold
+            start_sample[idx] = np.argwhere(
+                ir_before_max < 10**(-threshold/10))[-1]
+
+            idx_6dB_above_threshold = np.argwhere(
+                ir_before_max[:start_sample[idx]+1] <
+                10**((-threshold+6)/10))[-1]
+            if np.any(idx_6dB_above_threshold):
+                start_sample[idx] = idx_6dB_above_threshold
+            else:
+                warnings.warn('Oscillations detected in the impulse respose. \
+                    No clear starting sample found, defaulting to 0')
+                start_sample[idx] = 0
 
     start_sample = np.reshape(start_sample, start_sample_shape)
 
