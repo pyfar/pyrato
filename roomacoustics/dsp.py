@@ -24,6 +24,7 @@ def find_impulse_response_start(
     impulse_response : ndarray, double
         The impulse response
     threshold : double, optional
+        Threshold according to ISO3382 in dB
 
     Returns
     -------
@@ -71,24 +72,31 @@ def find_impulse_response_start(
             ir_before_max = ir_squared[idx, :max_sample[idx]+1] \
                 / max_value[idx]
             # Last value before peak lower than the peak/threshold
-            start_sample[idx] = np.argwhere(
-                ir_before_max < 10**(-threshold/10))[-1]
+            idx_last_below_thresh = np.argwhere(
+                ir_before_max < 10**(-threshold/10))
+            if idx_last_below_thresh.size > 0:
+                start_sample[idx] = idx_last_below_thresh[-1]
+            else:
+                start_sample[idx] = 0
+                warnings.warn(
+                    'No values below threshold found before the maximum value,\
+                    defaulting to 0')
 
             idx_6dB_above_threshold = np.argwhere(
                 ir_before_max[:start_sample[idx]+1] >
                 10**((-threshold+6)/10))
             if idx_6dB_above_threshold.size > 0:
-                idx_6dB_above_threshold = idx_6dB_above_threshold[-1]
+                idx_6dB_above_threshold = int(idx_6dB_above_threshold[0])
                 tmp = np.argwhere(
                     ir_before_max[:idx_6dB_above_threshold+1] <
                     10**(-threshold/10))
                 if tmp.size == 0:
-                    start_sample[idx] = tmp[-1]
-                else:
                     start_sample[idx] = 0
                     warnings.warn(
-                        'Oscillations detected in the impulse respose. \
+                        'Oscillations detected in the impulse response. \
                         No clear starting sample found, defaulting to 0')
+                else:
+                    start_sample[idx] = tmp[-1]
 
     start_sample = np.reshape(start_sample, start_sample_shape)
 
