@@ -103,6 +103,51 @@ def find_impulse_response_start(
     return np.squeeze(start_sample)
 
 
+def find_impulse_response_maximum(
+        impulse_response,
+        threshold=20,
+        noise_energy='auto'):
+    """Find the maximum of an impulse response as argmax(h(t)).
+    Performs an initial SNR check according to a defined threshold level in dB.
+
+    Parameters
+    ----------
+    impulse_response : ndarray, double
+        The impulse response
+    threshold : double, optional
+        Threshold SNR value in dB
+
+    Returns
+    -------
+    max_sample : int
+        Sample at which the impulse response starts
+
+    Note
+    ----
+    The function tries to estimate the SNR in the IR based on the signal energy
+    in the last 10 percent of the IR.
+
+    """
+    ir_squared = np.abs(impulse_response)**2
+
+    mask_start = np.int(0.9*ir_squared.shape[-1])
+    if noise_energy == 'auto':
+        mask = np.arange(mask_start, ir_squared.shape[-1])
+        noise = np.mean(np.take(ir_squared, mask, axis=-1), axis=-1)
+    else:
+        noise = noise_energy
+
+    max_sample = np.argmax(ir_squared, axis=-1)
+    max_value = np.max(ir_squared, axis=-1)
+
+    if np.any(max_value < 10**(threshold/10) * noise) or \
+            np.any(max_sample > mask_start):
+        raise ValueError("The SNR is lower than the defined threshold. Check \
+                if this is a valid impulse response with sufficient SNR.")
+
+    return np.squeeze(max_sample)
+
+
 def time_shift(signal, n_samples_shift, circular_shift=True, keepdims=False):
     """Shift a signal in the time domain by n samples. This function will
     perform a circular shift by default, inherently assuming that the signal is
