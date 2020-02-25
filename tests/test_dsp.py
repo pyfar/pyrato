@@ -252,3 +252,22 @@ def test_start_ir_thresh_invalid_osci():
 
     start_sample_est = dsp.find_impulse_response_start(ir, threshold=20)
     assert start_sample_est == 0
+
+
+def test_max_ir():
+    n_samples = 2**10
+    ir = np.zeros(n_samples)
+
+    snr = 60
+
+    noise = np.random.randn(n_samples) * 10**(-snr/20)
+
+    start_sample = 24
+    ir[start_sample] = 1
+
+    start_sample_est = dsp.find_impulse_response_maximum(ir)
+    assert start_sample_est == start_sample
+
+    ir_awgn = ir + noise
+    start_sample_est = dsp.find_impulse_response_maximum(ir_awgn)
+    assert start_sample_est == start_sample
