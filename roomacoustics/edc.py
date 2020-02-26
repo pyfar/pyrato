@@ -719,10 +719,10 @@ def intersection_time_lundeby(
 
     Returns
     -------
-    reverberation_time: ndarray, float
-        Returns the Lundeby reverberation time for each channel.
     intersection_time: ndarray, float
         Returns the Lundeby intersection time for each channel.
+    reverberation_time: ndarray, float
+        Returns the Lundeby reverberation time for each channel.
     noise_level: ndarray, float
         Returns the noise level estimation for each channel.
 
