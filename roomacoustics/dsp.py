@@ -231,10 +231,6 @@ def center_frequencies_octaves():
     """Return the octave center frequencies according to the IEC 61260:1:2014
     standard.
 
-    References
-    ----------
-    TODO: Add these here
-
     Returns
     -------
     frequencies : ndarray, float
@@ -252,10 +248,6 @@ def center_frequencies_octaves():
 def center_frequencies_third_octaves():
     """Return the third octave center frequencies according
     to the ICE 61260:1:2014 standard.
-
-    References
-    ----------
-    TODO: Add these here
 
     Returns
     -------
@@ -291,7 +283,11 @@ def exact_center_frequencies_fractional_octaves(indices, num_fractions):
 
     Parameters
     ----------
-    num_fractions : TODO
+    indices : array
+        The indices for which the center frequencies are calculated.
+    num_fractions : 1, 3
+        The number of octave fractions. 1 returns octave center frequencies,
+        3 returns third octave center frequencies.
 
     Returns
     -------
@@ -319,11 +315,16 @@ def _frequency_indices(frequencies, num_fractions):
 
     Parameters
     ----------
-    frequencies : TODO
+    frequencies : array
+        The nominal frequencies for which the indices for exact center
+        frequency calculation are to be calculated.
+    num_fractions : 1, 3
+        Number of fractional bands
 
     Returns
     -------
-    TODO
+    indices : array
+        The indices for exact center frequency calculation.
 
     """
     reference_freq = 1e3
@@ -331,11 +332,13 @@ def _frequency_indices(frequencies, num_fractions):
 
     iseven = np.mod(num_fractions, 2) == 0
     if ~iseven:
-        indices = np.around(num_fractions * np.log(frequencies/reference_freq) \
-                / np.log(octave_ratio))
+        indices = np.around(
+            num_fractions * np.log(frequencies/reference_freq)
+            / np.log(octave_ratio))
     else:
-        indices = np.around(2.0*num_fractions * \
-                np.log(frequencies/reference_freq) / np.log(octave_ratio) - 1)/2
+        indices = np.around(
+            2.0*num_fractions *
+            np.log(frequencies/reference_freq) / np.log(octave_ratio) - 1)/2
 
     return indices
 
@@ -369,7 +372,7 @@ def filter_fractional_octave_bands(signal, samplingrate, num_fractions,
 
     """
 
-    if not num_fractions in (1, 3):
+    if num_fractions not in (1, 3):
         raise ValueError("This currently supports only octave and third \
                 octave band filters.")
 
@@ -394,7 +397,7 @@ def filter_fractional_octave_bands(signal, samplingrate, num_fractions,
 
         # normalize interval such that the Nyquist frequency is 1
         Wn = np.array([freq_lower, freq_upper]) / samplingrate * 2
-        # in case the upper frequency limit is above Nyquist, do a highpass here
+        # in case the upper frequency limit is above Nyquist, use a highpass
         if Wn[-1] > 1:
             warnings.warn('Your upper frequency limit [{}] is above the \
                 Nyquist frequency. Using a highpass filter instead of a \
