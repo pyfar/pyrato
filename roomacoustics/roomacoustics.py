@@ -47,7 +47,7 @@ def reverberation_time_energy_decay_curve(
     intervals = [20, 30, 40, 50, 60]
 
     if T == 'EDT':
-        upper = -1
+        upper = -0.1
         lower = -10.1
     elif T == 'LDT':
         upper = -25.
@@ -93,7 +93,7 @@ def reverberation_time_energy_decay_curve(
 
         reverberation_time = -60 / gradient
 
-        ax.set_xlim((-0.05*reverberation_time, 2*reverberation_time))
+        ax.set_xlim((-0.05, 2*reverberation_time))
         plt.grid(True)
         plt.legend()
         ax.set_ylabel('EDC [dB]')
