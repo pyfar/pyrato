@@ -8,5 +8,6 @@ __version__ = '0.2.1'
 
 
 from .roomacoustics import *
+from .analytic import *
 from .dsp import *
 from .edc import *

@@ -5,6 +5,8 @@
 import re
 import numpy as np
 import matplotlib.pyplot as plt
+import pyfar.signal as pysi
+from matplotlib import axes, pyplot as plt
 
 
 def reverberation_time_energy_decay_curve(
@@ -100,6 +102,38 @@ def reverberation_time_energy_decay_curve(
         ax.set_xlabel('Time [s]')
 
     return reverberation_time
+
+def strength_energy_decay_curve(impulse_response_source, impulse_response_10meters, is_energy_source=False, is_energy_10meters=False):
+    """Calculate the Strength/Gain of a room impulse response _[3]. The
+    result is the energy decay curve for the given room impulse response.
+
+    Parameters
+    ----------
+    impulse_response_source : ndarray, double
+        Room impulse response at the source as array
+    impulse_response_10meters : ndarray, double
+        Room impulse response 10 meters away from the source as array
+    is_energy_source : boolean, optional
+        Whether the input (source signal) represents energy data or sound pressure values.
+    is_energy_10meters : boolean, optional
+        Whether the input (10meters away from source signal) represents energy data or sound pressure values.
+
+    Returns
+    -------
+    strength : double [dB] ?? (Sollte hier nicht ein array rauskommen? ich will eine Zahl eigentlich)
+        Measure of the room's contribution to the sound or noise level from a sound source.
+
+
+    Reference
+    ---------
+    """
+
+    energy_decay_source = schroeder_integration(impulse_response_source, is_energy_source)
+    energy_decay_10meters = schroeder_integration(impulse_response_10meters, is_energy_10meters)
+
+    strength = 10*np.log10(np.divide(energy_decay_source,energy_decay_10meters))
+
+    return strength
 
 
 def schroeder_integration(impulse_response, is_energy=False):
@@ -273,3 +307,22 @@ def air_attenuation_coefficient(
         )* (20.0 / np.log(10.0)) / ((np.log10(np.exp(1.0))) * 10.0)) # Neper/m -> dB/m
 
     return airAbsorptionCoeff
+
+
+def plot_time(data, sampling_rate, log=True, log_prefix=20, *args, **kwargs):
+    n_samples = data.shape[-1]
+    times = np.arange(n_samples)/sampling_rate
+    if log:
+        data_db = log_prefix*np.log10(np.abs(data))
+        plt.plot(times, data_db.T, *args, **kwargs)
+        max_db = np.nanmax(data_db)
+        ax = plt.gca()
+        ax.set_ylim((max_db-80+5, max_db+5))
+        ax.set_ylabel('Amplitude [dB re 1]')
+    else:
+        plt.plot(times, data.T, *args, **kwargs)
+        ax.set_ylabel('Amplitude [re 1]')
+        
+    ax.set_xlabel('Time [s]')
+    plt.grid(True)
+    plt.legend()
