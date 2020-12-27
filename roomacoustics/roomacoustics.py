@@ -135,6 +135,20 @@ def strength_energy_decay_curve(impulse_response_source, impulse_response_10mete
 
     return strength
 
+def centre_time(sampling_rate,impulse_response, is_energy=False):
+    n_samples = impulse_response.shape[-1]
+    times = np.arange(n_samples)/sampling_rate
+    
+    if not is_energy:
+        data = np.abs(impulse_response)**2
+        new_impulse_response = np.multiply(data, times)
+    else:
+        new_impulse_response = np.multiply(impulse_response, times)
+
+    nom = schroeder_integration(new_impulse_response, True)
+    denom = schroeder_integration(impulse_response, is_energy)
+    centre_time = np.divide(nom, denom)
+    return centre_time
 
 def schroeder_integration(impulse_response, is_energy=False):
     """Calculate the Schroeder integral of a room impulse response _[3]. The
