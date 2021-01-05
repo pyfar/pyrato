@@ -5,6 +5,7 @@
 import re
 import numpy as np
 import matplotlib.pyplot as plt
+from numpy.core.numeric import Inf
 import pyfar.signal as pysi
 from matplotlib import axes, pyplot as plt
 
@@ -104,8 +105,7 @@ def reverberation_time_energy_decay_curve(
     return reverberation_time
 
 def strength_energy_decay_curve(impulse_response_source, impulse_response_10meters, is_energy_source=False, is_energy_10meters=False):
-    """Calculate the Strength/Gain of a room impulse response _[3]. The
-    result is the energy decay curve for the given room impulse response.
+    """Calculate the Strength/Gain of a room impulse response.
 
     Parameters
     ----------
@@ -136,6 +136,25 @@ def strength_energy_decay_curve(impulse_response_source, impulse_response_10mete
     return strength
 
 def centre_time(sampling_rate,impulse_response, is_energy=False):
+    """Centre Time Ts of a room impulse response.
+
+    Parameters
+    ----------
+    sampling_rate : double (44100?)
+        Sampling rate for the times array
+    impulse_response : ndarray, double
+        Room impulse response as array
+    is_energy : boolean, optional
+        Whether the input represents energy data or sound pressure values.
+
+    Returns
+    -------
+    centre_time : double [dB] ?? (Sollte ich hier den Mittelwert bilden? ich will hier auch eine Zahl, aber bekomme eher ein array raus)
+       
+    Reference
+    ---------
+    """
+
     n_samples = impulse_response.shape[-1]
     times = np.arange(n_samples)/sampling_rate
     
@@ -149,6 +168,34 @@ def centre_time(sampling_rate,impulse_response, is_energy=False):
     denom = schroeder_integration(impulse_response, is_energy)
     centre_time = np.divide(nom, denom)
     return centre_time
+
+"""def clarity(early_time_limit=0.05, impulse_response, is_energy=False):
+    Calculate the clarity of a room impulse response.
+
+    Parameters
+    ----------
+    early_time_limit (te): scalar, double, [seconds]
+        Early time limit to calculate the clarity as a scalar in seconds
+    impulse_response : ndarray, double
+        Room impulse response as array
+    is_energy : boolean, optional
+        Whether the input represents energy data or sound pressure values.
+
+    Returns
+    -------
+    clarity : double [dB] ?? 
+        Early-to-Late Index of the incoming Energy
+
+    Reference
+    ---------
+    
+
+    energy_decay_0_to_etl = schroeder_integration(impulse_response_0_to_te, is_energy) 
+    energy_decay_etl_to_inf = schroeder_integration(impulse_response_te_to_inf, is_energy)
+
+    clarity = 10*np.log10(np.divide(energy_decay_0_to_etl,energy_decay_etl_to_inf))
+    return clarity
+"""
 
 def schroeder_integration(impulse_response, is_energy=False):
     """Calculate the Schroeder integral of a room impulse response _[3]. The
