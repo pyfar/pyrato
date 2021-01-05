@@ -169,8 +169,8 @@ def centre_time(sampling_rate,impulse_response, is_energy=False):
     centre_time = np.divide(nom, denom)
     return centre_time
 
-"""def clarity(early_time_limit=0.05, impulse_response, is_energy=False):
-    Calculate the clarity of a room impulse response.
+def clarity(impulse_response, sampling_rate, early_time_limit=0.05, is_energy=False):
+    """Calculate the clarity of a room impulse response.
 
     Parameters
     ----------
@@ -188,14 +188,17 @@ def centre_time(sampling_rate,impulse_response, is_energy=False):
 
     Reference
     ---------
-    
+    """
+    samples_0_to_te = early_time_limit*sampling_rate
+    impulse_response_0_to_te = impulse_response[0,samples_0_to_te]
+    impulse_response_te_to_inf = impulse_response[samples_0_to_te,len(impulse_response)]
 
     energy_decay_0_to_etl = schroeder_integration(impulse_response_0_to_te, is_energy) 
     energy_decay_etl_to_inf = schroeder_integration(impulse_response_te_to_inf, is_energy)
 
     clarity = 10*np.log10(np.divide(energy_decay_0_to_etl,energy_decay_etl_to_inf))
     return clarity
-"""
+
 
 def schroeder_integration(impulse_response, is_energy=False):
     """Calculate the Schroeder integral of a room impulse response _[3]. The
