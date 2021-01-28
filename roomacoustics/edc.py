@@ -198,6 +198,7 @@ def energy_decay_curve_truncation(
         sampling_rate,
         freq='broadband',
         noise_level='auto',
+        level_above_noise=0,
         is_energy=False,
         time_shift=True,
         channel_independent=False,
@@ -245,7 +246,7 @@ def energy_decay_curve_truncation(
         channel_independent=channel_independent)
     n_samples = energy_data.shape[-1]
 
-    intersection_time = intersection_time_lundeby(
+    intersection_time, _, noise_est = intersection_time_lundeby(
         energy_data,
         sampling_rate=sampling_rate,
         freq=freq,
@@ -258,29 +259,37 @@ def energy_decay_curve_truncation(
 
     intersection_time_idx = np.rint(intersection_time * sampling_rate)
 
-    energy_decay_curve = np.zeros([n_channels, n_samples])
+    edc = np.zeros([n_channels, n_samples])
     for idx_channel in range(0, n_channels):
-        energy_decay_curve[
-            idx_channel, :int(intersection_time_idx[idx_channel])] = \
-                ra.schroeder_integration(
-                    energy_data[
-                        idx_channel, :int(intersection_time_idx[idx_channel])],
-                    is_energy=True)
+        edc[idx_channel, :int(intersection_time_idx[idx_channel])] = \
+            ra.schroeder_integration(
+                energy_data[
+                    idx_channel, :int(intersection_time_idx[idx_channel])],
+                is_energy=True)
+
+    if level_above_noise ~= 0:
+        psnr = np.max(np.abs(data)**2, axis=-1) / noise_est
+        trunc_levels = 10*np.log10((psnr)) - level_above_noise
+
+        energy = edc.T[0]
+        thresh = energy / 10**(trunc_levels/10)
+        mask = edc.T < np.broadcast_to(thresh, edc.T.shape)
+        edc = edc.copy()
+        edc[mask.T] = np.nan
 
     if normalize:
         # Normalize the EDC...
         if not channel_independent:
             # ...by the first element of each channel.
-            energy_decay_curve = (energy_decay_curve.T /
-                                  energy_decay_curve[..., 0]).T
+            edc = (edc.T / edc[..., 0]).T
         else:
             # ...by the maximum first element of each channel.
-            max_start_value = np.amax(energy_decay_curve[..., 0])
-            energy_decay_curve /= max_start_value
+            max_start_value = np.amax(edc[..., 0])
+            edc /= max_start_value
 
     # Recover original data shape:
-    energy_decay_curve = np.reshape(energy_decay_curve, data_shape)
-    energy_decay_curve = np.squeeze(energy_decay_curve)
+    edc = np.reshape(edc, data_shape)
+    edc = np.squeeze(edc)
 
     if plot:
         plt.figure(figsize=(15, 3))
@@ -289,13 +298,13 @@ def energy_decay_curve_truncation(
         plt.xlabel('Time [s]')
         plt.ylabel('Squared IR [dB]')
         plt.subplot(122)
-        plt.plot(time_vector[0:energy_decay_curve.shape[-1]], 10*np.log10(
-            energy_decay_curve.T))
+        plt.plot(time_vector[0:edc.shape[-1]], 10*np.log10(
+            edc.T))
         plt.xlabel('Time [s]')
         plt.ylabel('EDC: Truncation method [dB]')
         plt.tight_layout()
 
-    return energy_decay_curve
+    return edc
 
 
 def energy_decay_curve_lundeby(
