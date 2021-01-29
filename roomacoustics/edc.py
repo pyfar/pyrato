@@ -254,7 +254,7 @@ def energy_decay_curve_truncation(
         is_energy=True,
         time_shift=False,
         channel_independent=False,
-        plot=False)[0]
+        plot=False)
     time_vector = smooth_rir(energy_data, sampling_rate)[2]
 
     intersection_time_idx = np.rint(intersection_time * sampling_rate)
@@ -267,7 +267,7 @@ def energy_decay_curve_truncation(
                     idx_channel, :int(intersection_time_idx[idx_channel])],
                 is_energy=True)
 
-    if level_above_noise ~= 0:
+    if level_above_noise != 0:
         psnr = np.max(np.abs(data)**2, axis=-1) / noise_est
         trunc_levels = 10*np.log10((psnr)) - level_above_noise
 
