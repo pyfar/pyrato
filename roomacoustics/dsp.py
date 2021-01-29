@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Main module."""
+"""Signal processing related functions."""
 
 import warnings
 
@@ -8,15 +8,23 @@ import numpy as np
 import scipy.signal as spsignal
 
 
-def find_impulse_response_start(impulse_response, threshold=20):
+def find_impulse_response_start(
+        impulse_response,
+        threshold=20,
+        noise_energy='auto'):
     """Find the first sample of an impulse response in a accordance with the
-    ISO standard ISO 3382.
+    ISO standard ISO 3382. The start sample is identified as the first sample
+    that varies significantly from the noise floor but still has a level of
+    at least 20 dB below the maximum of the impulse response. The function
+    further tries to consider oscilations before the time below the threshold
+    value.
 
     Parameters
     ----------
     impulse_response : ndarray, double
         The impulse response
     threshold : double, optional
+        Threshold according to ISO3382 in dB
 
     Returns
     -------
@@ -30,22 +38,25 @@ def find_impulse_response_start(impulse_response, threshold=20):
 
     References
     ----------
-    .. [1]  ISO 3382, Acoustics - Measurement of the reverberation time of rooms
-            with reference to other acoustical parameters.
-
+    .. [1]  ISO 3382-1:2009-10, Acoustics - Measurement of the reverberation
+            time of rooms with reference to other acoustical parameters. pp. 22
     """
     ir_squared = np.abs(impulse_response)**2
 
     mask_start = np.int(0.9*ir_squared.shape[-1])
-    mask = np.arange(mask_start, ir_squared.shape[-1])
-    noise = np.mean(np.take(ir_squared, mask, axis=-1), axis=-1)
+    if noise_energy == 'auto':
+        mask = np.arange(mask_start, ir_squared.shape[-1])
+        noise = np.mean(np.take(ir_squared, mask, axis=-1), axis=-1)
+    else:
+        noise = noise_energy
 
     max_sample = np.argmax(ir_squared, axis=-1)
     max_value = np.max(ir_squared, axis=-1)
 
-    if np.any(max_value < 10**(threshold/10) * noise) or np.any(max_sample > mask_start):
+    if np.any(max_value < 10**(threshold/10) * noise) or \
+            np.any(max_sample > mask_start):
         raise ValueError("The SNR is lower than the defined threshold. Check \
-                if this is a valid impulse resonse with sufficient SNR.")
+                if this is a valid impulse response with sufficient SNR.")
 
     start_sample_shape = max_sample.shape
     n_samples = ir_squared.shape[-1]
@@ -54,21 +65,94 @@ def find_impulse_response_start(impulse_response, threshold=20):
     max_sample = np.reshape(max_sample, n_channels)
     max_value = np.reshape(max_value, n_channels)
 
-    start_sample = max_sample
+    start_sample = max_sample.copy()
     for idx in range(0, n_channels):
-        if start_sample[idx] != 0:
-            ir_before_max = ir_squared[idx, :max_sample[idx]+1] / max_value[idx]
-            start_sample[idx] = np.argwhere(ir_before_max < 10**(threshold/10))[-1]
+        # Only look for the start sample if the maximum index is bigger than 0
+        if start_sample[idx] > 0:
+            ir_before_max = ir_squared[idx, :max_sample[idx]+1] \
+                / max_value[idx]
+            # Last value before peak lower than the peak/threshold
+            idx_last_below_thresh = np.argwhere(
+                ir_before_max < 10**(-threshold/10))
+            if idx_last_below_thresh.size > 0:
+                start_sample[idx] = idx_last_below_thresh[-1]
+            else:
+                start_sample[idx] = 0
+                warnings.warn(
+                    'No values below threshold found before the maximum value,\
+                    defaulting to 0')
+
+            idx_6dB_above_threshold = np.argwhere(
+                ir_before_max[:start_sample[idx]+1] >
+                10**((-threshold+6)/10))
+            if idx_6dB_above_threshold.size > 0:
+                idx_6dB_above_threshold = int(idx_6dB_above_threshold[0])
+                tmp = np.argwhere(
+                    ir_before_max[:idx_6dB_above_threshold+1] <
+                    10**(-threshold/10))
+                if tmp.size == 0:
+                    start_sample[idx] = 0
+                    warnings.warn(
+                        'Oscillations detected in the impulse response. \
+                        No clear starting sample found, defaulting to 0')
+                else:
+                    start_sample[idx] = tmp[-1]
 
     start_sample = np.reshape(start_sample, start_sample_shape)
 
     return np.squeeze(start_sample)
 
 
-def time_shift(signal, n_samples_shift):
+def find_impulse_response_maximum(
+        impulse_response,
+        threshold=20,
+        noise_energy='auto'):
+    """Find the maximum of an impulse response as argmax(h(t)).
+    Performs an initial SNR check according to a defined threshold level in dB.
+
+    Parameters
+    ----------
+    impulse_response : ndarray, double
+        The impulse response
+    threshold : double, optional
+        Threshold SNR value in dB
+
+    Returns
+    -------
+    max_sample : int
+        Sample at which the impulse response starts
+
+    Note
+    ----
+    The function tries to estimate the SNR in the IR based on the signal energy
+    in the last 10 percent of the IR.
+
+    """
+    ir_squared = np.abs(impulse_response)**2
+
+    mask_start = np.int(0.9*ir_squared.shape[-1])
+    if noise_energy == 'auto':
+        mask = np.arange(mask_start, ir_squared.shape[-1])
+        noise = np.mean(np.take(ir_squared, mask, axis=-1), axis=-1)
+    else:
+        noise = noise_energy
+
+    max_sample = np.argmax(ir_squared, axis=-1)
+    max_value = np.max(ir_squared, axis=-1)
+
+    if np.any(max_value < 10**(threshold/10) * noise) or \
+            np.any(max_sample > mask_start):
+        raise ValueError("The SNR is lower than the defined threshold. Check \
+                if this is a valid impulse response with sufficient SNR.")
+
+    return np.squeeze(max_sample)
+
+
+def time_shift(signal, n_samples_shift, circular_shift=True, keepdims=False):
     """Shift a signal in the time domain by n samples. This function will
-    perform a circular shift. This inherently assumes that the signal is
-    periodic.
+    perform a circular shift by default, inherently assuming that the signal is
+    periodic. Use the option `circular_shift=False` to pad with nan values
+    instead.
 
     Notes
     -----
@@ -83,6 +167,13 @@ def time_shift(signal, n_samples_shift):
         Number of samples by which the signal should be shifted. A negative
         number of samples will result in a left-shift, while a positive
         number of samples will result in a right shift of the signal.
+    circular_shift : bool, True
+        Perform a circular or non-circular shift. If a non-circular shift is
+        performed, the data will be padded with nan values at the respective
+        beginning or ending of the data, corresponding to the number of samples
+        the data is shifted.
+    keepdims : bool, False
+        Do not squeeze the data before returning.
 
     Returns
     -------
@@ -92,36 +183,53 @@ def time_shift(signal, n_samples_shift):
     """
     n_samples_shift = np.asarray(n_samples_shift, dtype=np.int)
     if np.any(signal.shape[-1] < n_samples_shift):
-        warnings.warn("Shifting by more samples than length of the signal.",
-                      UserWarning)
+        msg = "Shifting by more samples than length of the signal."
+        if circular_shift:
+            warnings.warn(msg, UserWarning)
+        else:
+            raise ValueError(msg)
 
+    signal = np.atleast_2d(signal)
     n_samples = signal.shape[-1]
     signal_shape = signal.shape
     signal = np.reshape(signal, (-1, n_samples))
-    n_channels = signal.shape[0]
+    n_channels = np.prod(signal.shape[:-1])
+
     if n_samples_shift.size == 1:
         n_samples_shift = np.broadcast_to(n_samples_shift, n_channels)
     elif n_samples_shift.size == n_channels:
         n_samples_shift = np.reshape(n_samples_shift, n_channels)
     else:
-        raise ValueError("The number of shift samples has to match the number\
+        raise ValueError("The number of shift samples has to match the number \
             of signal channels.")
 
     shifted_signal = signal.copy()
     for channel in range(n_channels):
         shifted_signal[channel, :] = \
-            np.roll(signal[channel, :], n_samples_shift[channel], axis=-1)
+            np.roll(
+                shifted_signal[channel, :],
+                n_samples_shift[channel],
+                axis=-1)
+        if not circular_shift:
+            if n_samples_shift[channel] < 0:
+                # index is negative, so index will reference from the
+                # end of the array
+                shifted_signal[channel, n_samples_shift[channel]:] = np.nan
+            else:
+                # index is positive, so index will reference from the
+                # start of the array
+                shifted_signal[channel, :n_samples_shift[channel]] = np.nan
 
-    shifted_signal = np.squeeze(np.reshape(shifted_signal, signal_shape))
+    shifted_signal = np.reshape(shifted_signal, signal_shape)
+    if not keepdims:
+        shifted_signal = np.squeeze(shifted_signal)
+
     return shifted_signal
 
 
 def center_frequencies_octaves():
-    """Return the octave center frequencies according to the IEC 61260:1:2014 standard.
-
-    References
-    ----------
-    TODO: Add these here
+    """Return the octave center frequencies according to the IEC 61260:1:2014
+    standard.
 
     Returns
     -------
@@ -141,20 +249,17 @@ def center_frequencies_third_octaves():
     """Return the third octave center frequencies according
     to the ICE 61260:1:2014 standard.
 
-    References
-    ----------
-    TODO: Add these here
-
     Returns
     -------
     frequencies : ndarray, float
         third octave center frequencies
 
     """
-    nominal = np.array([25, 31.5, 40, 50, 63, 80, 100, 125, 160,
-                        200, 250, 315, 400, 500, 630, 800, 1000,
-                        1250, 1600, 2000, 2500, 3150, 4000, 5000,
-                        6300, 8000, 10000, 12500, 16000, 20000], dtype=np.float)
+    nominal = np.array([
+        25, 31.5, 40, 50, 63, 80, 100, 125, 160,
+        200, 250, 315, 400, 500, 630, 800, 1000,
+        1250, 1600, 2000, 2500, 3150, 4000, 5000,
+        6300, 8000, 10000, 12500, 16000, 20000], dtype=np.float)
 
     indices = _frequency_indices(nominal, 3)
     exact = exact_center_frequencies_fractional_octaves(indices, 3)
@@ -178,7 +283,11 @@ def exact_center_frequencies_fractional_octaves(indices, num_fractions):
 
     Parameters
     ----------
-    num_fractions : TODO
+    indices : array
+        The indices for which the center frequencies are calculated.
+    num_fractions : 1, 3
+        The number of octave fractions. 1 returns octave center frequencies,
+        3 returns third octave center frequencies.
 
     Returns
     -------
@@ -206,11 +315,16 @@ def _frequency_indices(frequencies, num_fractions):
 
     Parameters
     ----------
-    frequencies : TODO
+    frequencies : array
+        The nominal frequencies for which the indices for exact center
+        frequency calculation are to be calculated.
+    num_fractions : 1, 3
+        Number of fractional bands
 
     Returns
     -------
-    TODO
+    indices : array
+        The indices for exact center frequency calculation.
 
     """
     reference_freq = 1e3
@@ -218,11 +332,13 @@ def _frequency_indices(frequencies, num_fractions):
 
     iseven = np.mod(num_fractions, 2) == 0
     if ~iseven:
-        indices = np.around(num_fractions * np.log(frequencies/reference_freq) \
-                / np.log(octave_ratio))
+        indices = np.around(
+            num_fractions * np.log(frequencies/reference_freq)
+            / np.log(octave_ratio))
     else:
-        indices = np.around(2.0*num_fractions * \
-                np.log(frequencies/reference_freq) / np.log(octave_ratio) - 1)/2
+        indices = np.around(
+            2.0*num_fractions *
+            np.log(frequencies/reference_freq) / np.log(octave_ratio) - 1)/2
 
     return indices
 
@@ -256,7 +372,7 @@ def filter_fractional_octave_bands(signal, samplingrate, num_fractions,
 
     """
 
-    if not num_fractions in (1, 3):
+    if num_fractions not in (1, 3):
         raise ValueError("This currently supports only octave and third \
                 octave band filters.")
 
@@ -281,7 +397,7 @@ def filter_fractional_octave_bands(signal, samplingrate, num_fractions,
 
         # normalize interval such that the Nyquist frequency is 1
         Wn = np.array([freq_lower, freq_upper]) / samplingrate * 2
-        # in case the upper frequency limit is above Nyquist, do a highpass here
+        # in case the upper frequency limit is above Nyquist, use a highpass
         if Wn[-1] > 1:
             warnings.warn('Your upper frequency limit [{}] is above the \
                 Nyquist frequency. Using a highpass filter instead of a \

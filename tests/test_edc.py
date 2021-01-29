@@ -17,7 +17,7 @@ def test_edc_eyring():
     volume = 2*2*2
     times = np.linspace(0, 0.25, 50)
     edc = ra.energy_decay_curve_analytic(
-        surfaces, alphas, volume, times, method='eyring')
+        surfaces, alphas, volume, times, method='eyring', air_absorption=False)
 
     truth = array([1.00000000e+00, 8.39817186e-01, 7.05292906e-01, 5.92317103e-01,
                    4.97438083e-01, 4.17757051e-01, 3.50839551e-01, 2.94641084e-01,
@@ -42,7 +42,7 @@ def test_edc_sabine():
     volume = 2*2*2
     times = np.linspace(0, 0.25, 50)
     edc = ra.energy_decay_curve_analytic(
-        surfaces, alphas, volume, times, method='sabine')
+        surfaces, alphas, volume, times, method='sabine', air_absorption=False)
 
     truth = array([1.00000000e+00, 8.57869258e-01, 7.35939663e-01, 6.31340013e-01,
                    5.41607188e-01, 4.64628156e-01, 3.98590212e-01, 3.41938289e-01,
