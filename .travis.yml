@@ -1,41 +1,18 @@
-[tox]
-envlist = py36, py37, py38, py39, flake8, examples
+# Config file for automatic testing at travis-ci.org
 
-[travis]
-python =
-    3.9: py39
-    3.8: py38
-    3.7: py37, flake8, examples
-    3.6: py36
+dist: bionic
+language: python
+python:
+  - 3.6
+  - 3.7
+  - 3.8
+  - 3.9
 
-# Test examples notebook
-[testenv:examples]
-basepython = python
-deps = nbmake
-commands = pytest --nbmake examples/energy_decay_curves_and_reverberation_time.ipynb
+# Command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
+install:
+    - pip install -U pip
+    - pip install -U tox-travis
 
-
-[testenv:flake8]
-basepython = python
-deps = flake8
-commands = flake8 roomacoustics
-
-# Release tooling
-[testenv:build]
-basepython = python3
-skip_install = true
-deps =
-    wheel
-    setuptools
-commands =
-	python setup.py -q sdist bdist_wheel
-
-
-[testenv]
-setenv =
-    PYTHONPATH = {toxinidir}
-deps =
-    -r{toxinidir}/requirements_dev.txt
-commands =
-    pip install -U pip
-    py.test --basetemp={envtmpdir}
+# Command to run tests, e.g. python setup.py test
+script:
+    - tox
