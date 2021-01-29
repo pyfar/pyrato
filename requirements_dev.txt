@@ -10,6 +10,7 @@ twine==1.12.1
 pytest
 pytest-runner
 pytest-cov
+nbmake
 numpy
 scipy
 matplotlib
