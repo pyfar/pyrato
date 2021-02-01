@@ -66,7 +66,7 @@ def test_analytic_shoebox_rir():
 
 def test_eigenfreq_impedance_1d_real():
     L = 8/10
-    zeta = np.ones(2) * 1e10
+    zeta = np.ones((2, 1)) * 1e10
     c = 343.9
 
     k = [0.1]
@@ -89,7 +89,7 @@ def test_eigenfreq_impedance_1d_real():
 
 def test_eigenfreq_impedance_1d_real_jac():
     L = 8/10
-    zeta = np.ones(2) * 1e10
+    zeta = np.ones((2, 1)) * 1e10
     c = 343.9
 
     k = [0.1]
@@ -264,13 +264,14 @@ def test_analytic_eigenfrequencies_impedance_zeta15():
 
 def test_analytic_pressure_shoebox_impedance():
     L = np.array([8, 5, 3])/10
-    zetas = np.ones((3, 2)) * 1e10
+    n_bins = 2**10
+    zetas = np.ones((3, 2, n_bins)) * 1e10
 
     c = 343.9
 
     k_max = 1e3*2*np.pi/c
     k_min = 150*2*np.pi/c
-    k = np.linspace(k_min, k_max*1.1, 2**10)
+    k = np.linspace(k_min, k_max*1.1, n_bins)
 
     k_ns_x = np.loadtxt(
         'tests/data/analytic_impedance/k_ns_x.csv',
@@ -308,13 +309,14 @@ def test_analytic_pressure_shoebox_impedance():
 
 def test_analytic_pressure_shoebox_impedance_multi_R():
     L = np.array([8, 5, 3])/10
-    zetas = np.ones((3, 2)) * 1e10
+    n_bins = 2**10
+    zetas = np.ones((3, 2, n_bins)) * 1e10
 
     c = 343.9
 
     k_max = 1e3*2*np.pi/c
     k_min = 150*2*np.pi/c
-    k = np.linspace(k_min, k_max*1.1, 2**10)
+    k = np.linspace(k_min, k_max*1.1, n_bins)
 
     k_ns_x = np.loadtxt(
         'tests/data/analytic_impedance/k_ns_x.csv',
@@ -356,13 +358,14 @@ def test_analytic_pressure_shoebox_impedance_multi_R():
 
 def test_analytic_pressure_shoebox_impedance_zeta15():
     L = np.array([8, 5, 3])/10
-    zetas = np.ones((3, 2)) * 15
+    n_bins = 2**10
+    zetas = np.ones((3, 2, n_bins)) * 15
 
     c = 343.9
 
     k_max = 1e3*2*np.pi/c
     k_min = 150*2*np.pi/c
-    k = np.linspace(k_min, k_max*1.1, 2**10)
+    k = np.linspace(k_min, k_max*1.1, n_bins)
 
     k_ns_x = np.loadtxt(
         'tests/data/analytic_impedance/k_ns_x_zeta15.csv',

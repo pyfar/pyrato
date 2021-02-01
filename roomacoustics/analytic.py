@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
-from itertools import count
+import multiprocessing
 
 import numpy as np
 from scipy import optimize
+from joblib import Parallel, delayed
+
+from tqdm import tqdm
 
 
 def eigenfrequencies_rectangular_room_rigid(
@@ -345,11 +348,11 @@ def eigenfrequencies_rectangular_room_1d(
         fprime = False
 
     k_ns_l = np.zeros((n_l_max, len(ks)), dtype=np.complex64)
-    k_n_init = initial_solution_transcendental_equation(ks[0], L_l, zeta)
+    k_n_init = initial_solution_transcendental_equation(ks[0], L_l, zeta[:, 0])
     for idx_k, k in enumerate(ks):
         idx_n = 0
         while k_n_init.real < k_max:
-            args_costfun = (k, L_l, zeta)
+            args_costfun = (k, L_l, zeta[:, idx_k])
             kk_n = optimize.newton(
                 transcendental_equation_eigenfrequencies_impedance_newton,
                 k_n_init,
@@ -391,11 +394,22 @@ def normal_eigenfrequencies_rectangular_room_impedance(
         List of arrays with the complex eigenvalues for each wavenumber and
         each room dimension.
     """
-    k_ns = []
-    for dim, L_l, zeta_l in zip(count(), L, zeta):
+    n_dims = len(L)
+    k_ns = [None] * n_dims
+
+    n_jobs = int(np.min([multiprocessing.cpu_count(), n_dims]))
+
+    zetas = [zeta[0], zeta[1], zeta[2]]
+
+    def parallel_eigenfunctions_helper(dim):
+        L_l = L[dim]
+        zeta_l = zetas[dim]
         k_ns_l = eigenfrequencies_rectangular_room_1d(
             L_l, ks, k_max, zeta_l)
-        k_ns.append(k_ns_l)
+        return k_ns_l
+
+    k_ns = Parallel(n_jobs=n_jobs)(delayed(
+        parallel_eigenfunctions_helper)(dim) for dim in range(n_dims))
     return k_ns
 
 
@@ -444,8 +458,16 @@ def eigenfrequencies_rectangular_room_impedance(
     ks = np.atleast_1d(ks)
     mask = ks >= 0.02
     ks_search = ks[mask]
+    if zeta.ndim < 3:
+        zeta_search = np.broadcast_to(
+            np.atleast_3d(zeta),
+            (*zeta.shape, ks.size))
+    else:
+        zeta_search = zeta
+    zeta_search = zeta_search[..., mask]
+
     k_ns = normal_eigenfrequencies_rectangular_room_impedance(
-        L, ks_search, k_max, zeta
+        L, ks_search, k_max, zeta_search
     )
     for idx in range(0, len(L)):
         k_ns[idx] = np.hstack((
@@ -459,12 +481,16 @@ def eigenfrequencies_rectangular_room_impedance(
     combs = np.meshgrid(n_x, n_y, n_z)
     perms = np.array(combs).T.reshape(-1, 3)
 
-    kk_ns = np.sqrt(
-        k_ns[0][perms[:, 0]]**2 +
-        k_ns[1][perms[:, 1]]**2 +
-        k_ns[2][perms[:, 2]]**2)
+    mask_perms = np.empty(perms.shape[0], dtype=bool)
+    for idx in range(perms.shape[0]):
+        kk_ns_temp = np.sqrt(
+            k_ns[0][perms[idx, 0]]**2 +
+            k_ns[1][perms[idx, 1]]**2 +
+            k_ns[2][perms[idx, 2]]**2)
 
-    mask_perms = (kk_ns[:, -1].real < k_max)
+        # check if real part of the wave number at the highest frequency
+        # is above the wave number set as stop criterion
+        mask_perms[idx] = (kk_ns_temp[-1].real < k_max)
 
     mask_bc = np.broadcast_to(
         np.atleast_2d(mask_perms).T,
@@ -473,6 +499,10 @@ def eigenfrequencies_rectangular_room_impedance(
     if only_normal:
         kk_ns = k_ns
     else:
+        kk_ns = np.sqrt(
+            k_ns[0][perms[:, 0]]**2 +
+            k_ns[1][perms[:, 1]]**2 +
+            k_ns[2][perms[:, 2]]**2)
         kk_ns = kk_ns[mask_bc].reshape(-1, len(ks))
 
     mode_indices = perms[mask_bc[:, 0]]
@@ -509,11 +539,31 @@ def mode_function_impedance(position, eigenvalue, phase):
         fields,” The Journal of the Acoustical Society of America, vol.
         145, no. 6, pp. 3330–3340, Jun. 2019.
     """
-    return np.cosh(1j*eigenvalue * position + phase)
+
+    position = np.atleast_2d(position)
+    n_points = position.shape[0]
+    n_dims = position.shape[1]
+    # n_modes = eigenvalue.shape[0]
+    position = np.reshape(
+        position[np.newaxis, np.newaxis],
+        (n_points, 1, 1, n_dims))
+    arg_eigen = np.broadcast_to(
+        1j*eigenvalue[np.newaxis],
+        (n_points, *eigenvalue.shape))
+    phase = np.broadcast_to(
+        phase[np.newaxis],
+        (n_points, *phase.shape))
+
+    arg = arg_eigen * position
+    arg_phase = arg + phase
+    cosh = np.cosh(arg_phase)
+    p_n = np.prod(cosh, axis=-1)
+    return p_n
 
 
 def pressure_modal_superposition(
-        ks, omegas, k_ns, mode_indices, r_R, r_S, L, zeta):
+        ks, omegas, k_ns, mode_indices, r_R, r_S, L, zeta, chunk_size=100,
+        verbose=False):
     r""" Calculate modal composition for a rectangular room with arbitrary
     boundary impedances.
 
@@ -543,45 +593,72 @@ def pressure_modal_superposition(
         `k_ns`
 
     """
-
-    zeta_0 = zeta[:, 0]
+    num_cores = multiprocessing.cpu_count()
+    n_modes = mode_indices.shape[0]
+    zeta_0 = zeta[:, 0, :]
     r_R = np.atleast_2d(r_R)
+    n_receiver = r_R.shape[0]
 
-    kk_ns = np.sqrt(
-        k_ns[0][mode_indices[:, 0]]**2 +
-        k_ns[1][mode_indices[:, 1]]**2 +
-        k_ns[2][mode_indices[:, 2]]**2)
+    omegas_2d = np.atleast_2d(omegas).T
+    n_chunks = int(np.ceil(n_modes/chunk_size))
 
-    k_ns_xyz = np.array([
-        k_ns[0][mode_indices[:, 0]],
-        k_ns[1][mode_indices[:, 1]],
-        k_ns[2][mode_indices[:, 2]]
-        ])
+    def parallel_func(idx_modes):
+        chunk_start = chunk_size*idx_modes
+        chunk_end = np.min([chunk_size*idx_modes + chunk_size, n_modes])
+        chunk = np.arange(chunk_start, chunk_end)
 
-    phi = np.arctanh(ks/(zeta_0 * k_ns_xyz.T).T)
-    K_n_sc = \
-        np.sinh(1j * k_ns_xyz.T * L) * \
-        np.cosh(1j * k_ns_xyz.T * L + 2*phi.T)
+        mode_indices_chunk = mode_indices[chunk, :]
 
-    K_n = np.prod((L/2 * (1 + 1/(1j*k_ns_xyz.T * L) * K_n_sc)).T, axis=0)
-    denom = K_n * (kk_ns**2 - ks**2)
+        kk_ns = np.sqrt(
+            k_ns[0][mode_indices_chunk[:, 0]]**2 +
+            k_ns[1][mode_indices_chunk[:, 1]]**2 +
+            k_ns[2][mode_indices_chunk[:, 2]]**2)
 
-    p_ns_s = np.prod(mode_function_impedance(r_S, k_ns_xyz.T, phi.T).T, axis=0)
+        k_ns_xyz = np.array([
+            k_ns[0][mode_indices_chunk[:, 0]],
+            k_ns[1][mode_indices_chunk[:, 1]],
+            k_ns[2][mode_indices_chunk[:, 2]]
+            ])
 
-    spec = np.zeros((r_R.shape[0], ks.size), dtype=np.complex)
-    for idx_R in range(r_R.shape[0]):
-        p_ns_r = np.prod(
-            mode_function_impedance(
-                r_R[idx_R, :], k_ns_xyz.T, phi.T).T,
-            axis=0)
+        zeta_0_chunk = np.broadcast_to(
+            np.transpose(np.atleast_3d(zeta_0), (0, -1, 1)),
+            (zeta_0.shape[0], len(chunk), zeta_0.shape[-1]))
+        phi = np.arctanh(ks/(zeta_0_chunk.T * k_ns_xyz.T).T)
+        K_n_sc = \
+            np.sinh(1j * k_ns_xyz.T * L) * \
+            np.cosh(1j * k_ns_xyz.T * L + 2*phi.T)
 
-        nom = 1j*omegas*1.2*p_ns_r*p_ns_s
+        K_n = np.prod((L/2 * (1 + 1/(1j*k_ns_xyz.T * L) * K_n_sc)), axis=-1)
+        denom = (K_n * (kk_ns**2 - ks**2).T)
 
-        spec[idx_R, :] = np.sum(nom / denom, axis=0)
+        p_ns_s = mode_function_impedance(r_S, k_ns_xyz.T, phi.T)
 
-    spec = np.squeeze(spec)
+        spec_chunk = np.zeros(
+            (n_receiver, ks.size),
+            dtype=np.complex)
 
-    return spec
+        for idx_R, r_R_i in enumerate(r_R):
+            p_ns_r = mode_function_impedance(
+                r_R_i, k_ns_xyz.T, phi.T)
+
+            nom = 1j*omegas_2d*1.2*p_ns_r*p_ns_s
+
+            spec_chunk[idx_R, :] = np.sum(nom / denom, axis=-1)
+
+        return spec_chunk
+
+    if verbose:
+        iterator = tqdm(range(n_chunks))
+    else:
+        iterator = range(n_chunks)
+    spec = Parallel(n_jobs=num_cores, verbose=False)(
+        delayed(parallel_func)(idx_modes) for idx_modes in iterator)
+
+    spec = np.asarray(spec)
+    if n_chunks > 1:
+        spec = np.sum(spec, axis=0)
+
+    return np.squeeze(spec)
 
 
 def rectangular_room_impedance(
@@ -631,10 +708,13 @@ def rectangular_room_impedance(
         The complex eigenvalues in the form
         :math:`k_n = \omega_n / c + i \delta_n`
     """
-
-    zeta = normalized_impedance
     freqs = np.fft.rfftfreq(n_samples, 1/samplingrate)
     ks = 2*np.pi*freqs/c
+    zeta = np.asarray(normalized_impedance)
+    if zeta.ndim < 3:
+        zeta = np.broadcast_to(
+            np.atleast_3d(zeta),
+            (*zeta.shape, ks.size))
 
     k_max = max_freq*2*np.pi/c
     k_ns, mode_indices = eigenfrequencies_rectangular_room_impedance(

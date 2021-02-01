@@ -14,3 +14,4 @@ nbmake
 numpy
 scipy
 matplotlib
+joblib
