@@ -269,13 +269,7 @@ def energy_decay_curve_truncation(
 
     if level_above_noise != 0:
         psnr = np.max(np.abs(data)**2, axis=-1) / noise_est
-        trunc_levels = 10*np.log10((psnr)) - level_above_noise
-
-        energy = edc.T[0]
-        thresh = energy / 10**(trunc_levels/10)
-        mask = edc.T < np.broadcast_to(thresh, edc.T.shape)
-        edc = edc.copy()
-        edc[mask.T] = np.nan
+        edc = truncate_edc_at_pnr(edc, psnr, headroom=level_above_noise)
 
     if normalize:
         # Normalize the EDC...
@@ -305,6 +299,43 @@ def energy_decay_curve_truncation(
         plt.tight_layout()
 
     return edc
+
+
+def truncate_edc_at_pnr(energy_decay_curve, peak_noise_ratio, headroom):
+    """Truncate the energy decay curve according to a respective peak-to-noise
+    ratio of the RIR, from which the decay curve is calculated. An additional
+    headroom is applied to compensate for truncation errors before applying
+    the Schroeder integral.
+
+    Parameters
+    ----------
+    energy_decay_curve : array, float
+        The decay curve
+    peak_noise_ratio : float
+        The peak-to-noise ratio of the RIR from which the decay curve is
+        calculated. Note that the PNR is a linear value.
+    headroom : float
+        The headroom in dB to compensate for noisy RIRs. When the RIR is
+        truncated before integration, a headroom of 15 dB is recommended.
+        When subtracting the noise power as used in Chu's method, a headroom
+        of 10 dB is recommended.
+
+    Returns
+    -------
+    edc : array, float
+        The truncated energy decay curve
+    """
+
+    trunc_levels = 10*np.log10((peak_noise_ratio)) - headroom
+
+    energy = energy_decay_curve.T[0]
+    thresh = energy / 10**(trunc_levels/10)
+    mask = energy_decay_curve.T < np.broadcast_to(
+        thresh, energy_decay_curve.T.shape)
+    edc_trunc = energy_decay_curve.copy()
+    edc_trunc[mask.T] = np.nan
+
+    return edc_trunc
 
 
 def energy_decay_curve_lundeby(
