@@ -103,38 +103,6 @@ def reverberation_time_energy_decay_curve(
 
     return reverberation_time
 
-def strength_energy_decay_curve(impulse_response_source, impulse_response_10meters, is_energy_source=False, is_energy_10meters=False):
-    """Calculate the Strength/Gain of a room impulse response _[3]. The
-    result is the energy decay curve for the given room impulse response.
-
-    Parameters
-    ----------
-    impulse_response_source : ndarray, double
-        Room impulse response at the source as array
-    impulse_response_10meters : ndarray, double
-        Room impulse response 10 meters away from the source as array
-    is_energy_source : boolean, optional
-        Whether the input (source signal) represents energy data or sound pressure values.
-    is_energy_10meters : boolean, optional
-        Whether the input (10meters away from source signal) represents energy data or sound pressure values.
-
-    Returns
-    -------
-    strength : double [dB] ?? (Sollte hier nicht ein array rauskommen? ich will eine Zahl eigentlich)
-        Measure of the room's contribution to the sound or noise level from a sound source.
-
-
-    Reference
-    ---------
-    """
-
-    energy_decay_source = schroeder_integration(impulse_response_source, is_energy_source)
-    energy_decay_10meters = schroeder_integration(impulse_response_10meters, is_energy_10meters)
-
-    strength = 10*np.log10(np.divide(energy_decay_source,energy_decay_10meters))
-
-    return strength
-
 def center_time(sampling_rate, impulse_response, is_energy=False):
     """Calculate the center time of a room impulse response _[3]. The center time
     avoids the discrete separation of the impulse response into early and late periods 
@@ -166,7 +134,7 @@ def center_time(sampling_rate, impulse_response, is_energy=False):
 
     edc_time = schroeder_integration(new_impulse_response, True)
     edc_without_time = schroeder_integration(impulse_response, is_energy)
-    center_time = np.divide(edc_time[0], edc_without_time[0])
+    center_time = edc_time[0]/edc_without_time[0]
     return center_time
 
 def schroeder_integration(impulse_response, is_energy=False):
