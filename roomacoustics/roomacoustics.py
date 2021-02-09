@@ -135,7 +135,26 @@ def strength_energy_decay_curve(impulse_response_source, impulse_response_10mete
 
     return strength
 
-def centre_time(sampling_rate,impulse_response, is_energy=False):
+def center_time(sampling_rate, impulse_response, is_energy=False):
+    """Calculate the center time of a room impulse response _[3]. The center time
+    avoids the discrete separation of the impulse response into early and late periods 
+
+    Parameters
+    ----------
+    sampling_rate : scalar, double in [Hz]
+    impulse_response : ndarray, double
+        Room impulse response as an array
+    is_energy_source : boolean, optional
+        Whether the input (source signal) represents energy data or sound pressure values.
+    
+    Returns
+    -------
+    center_time : scalar, double in [s] 
+       
+    Reference
+    ---------
+    ISO3382-1 : Annex A
+    """
     n_samples = impulse_response.shape[-1]
     times = np.arange(n_samples)/sampling_rate
     
@@ -145,10 +164,10 @@ def centre_time(sampling_rate,impulse_response, is_energy=False):
     else:
         new_impulse_response = np.multiply(impulse_response, times)
 
-    nom = schroeder_integration(new_impulse_response, True)
-    denom = schroeder_integration(impulse_response, is_energy)
-    centre_time = np.divide(nom, denom)
-    return centre_time
+    edc_time = schroeder_integration(new_impulse_response, True)
+    edc_without_time = schroeder_integration(impulse_response, is_energy)
+    center_time = np.divide(edc_time[0], edc_without_time[0])
+    return center_time
 
 def schroeder_integration(impulse_response, is_energy=False):
     """Calculate the Schroeder integral of a room impulse response _[3]. The
