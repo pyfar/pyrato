@@ -110,7 +110,7 @@ def strength(energy_decay_mesured_room, energy_decay_free_field):
     ----------
     energy_decay_mesured_room : ndarray, double
         Energy decay curve (10 meters) away from the source in the room 
-        where we want to mesure the gain
+        where we want to measure the gain
     energy_decay_free_field : ndarray, double
         Energy decay curve (10 meters) away from the source in the free
         field (isolated room with same dimensions)
