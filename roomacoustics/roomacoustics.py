@@ -5,6 +5,7 @@
 import re
 import numpy as np
 import matplotlib.pyplot as plt
+import pyfar.signal as pysi
 
 
 def reverberation_time_energy_decay_curve(
@@ -100,6 +101,41 @@ def reverberation_time_energy_decay_curve(
         ax.set_xlabel('Time [s]')
 
     return reverberation_time
+
+
+def definition(energy_decay, sampling_rate=44100, early_time_limit=0.05):
+    """Calculate the definition of a signal in a room. The definition parameter is 
+    calculated at 50ms and describes the energy in early sound reflections relative
+    to all reflections. 
+
+    Parameters
+    ----------
+    early_time_limit (te): scalar, double, [seconds]
+        Early time limit to calculate the definition as a scalar in seconds. 
+        Most of the time, definition is measured at 50ms
+    energy_decay : ndarray, double
+        Energy decay curve of a rir
+    sampling_rate : double in [Hz]
+
+    Returns
+    -------
+    definition : scalar, double
+        Definition parameter (no unit)
+
+    Reference
+    ---------
+    ISO3382-1 : Annex A
+    """
+
+    #Find the index with function of Signal Class
+    pyfar_signal = pysi.Signal(energy_decay, sampling_rate)
+    index = pyfar_signal.find_nearest_time(early_time_limit)
+
+    #Take just the first samples between 0 and index
+    edc_0_to_te = energy_decay[0] - energy_decay[index] 
+    
+    definition = edc_0_to_te / energy_decay[0]
+    return definition
 
 
 def schroeder_integration(impulse_response, is_energy=False):
