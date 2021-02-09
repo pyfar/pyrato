@@ -103,35 +103,33 @@ def reverberation_time_energy_decay_curve(
 
     return reverberation_time
 
-def strength_energy_decay_curve(impulse_response_source, impulse_response_10meters, is_energy_source=False, is_energy_10meters=False):
+def strength_energy_decay_curve(energy_decay_mesured_room, energy_decay_free_field):
     """Calculate the Strength/Gain of a room impulse response _[3]. The
     result is the energy decay curve for the given room impulse response.
 
     Parameters
     ----------
-    impulse_response_source : ndarray, double
-        Room impulse response at the source as array
-    impulse_response_10meters : ndarray, double
-        Room impulse response 10 meters away from the source as array
-    is_energy_source : boolean, optional
-        Whether the input (source signal) represents energy data or sound pressure values.
-    is_energy_10meters : boolean, optional
-        Whether the input (10meters away from source signal) represents energy data or sound pressure values.
+    energy_decay_mesured_room : ndarray, double
+        Energy decay curve (10 meters) away from the source in the room 
+        where we want to mesure the gain
+    energy_decay_free_field : ndarray, double
+        Energy decay curve (10 meters) away from the source in the free
+        field (isolated room with same dimensions)
+    
 
     Returns
     -------
-    strength : double [dB] ?? (Sollte hier nicht ein array rauskommen? ich will eine Zahl eigentlich)
-        Measure of the room's contribution to the sound or noise level from a sound source.
+    strength : double [dB]  
+        Measure of the room's contribution to the sound?noise level, in 
+        comparison to an isolated room with same dimensions
 
 
     Reference
     ---------
+    ISO3382-1 : Annexe A
     """
 
-    energy_decay_source = schroeder_integration(impulse_response_source, is_energy_source)
-    energy_decay_10meters = schroeder_integration(impulse_response_10meters, is_energy_10meters)
-
-    strength = 10*np.log10(np.divide(energy_decay_source,energy_decay_10meters))
+    strength = 10*np.log10(energy_decay_mesured_room[0]/energy_decay_free_field[0])
 
     return strength
 
