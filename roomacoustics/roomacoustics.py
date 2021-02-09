@@ -5,6 +5,7 @@
 import re
 import numpy as np
 import matplotlib.pyplot as plt
+import pyfar.signal as pysi
 
 
 def reverberation_time_energy_decay_curve(
@@ -101,6 +102,72 @@ def reverberation_time_energy_decay_curve(
 
     return reverberation_time
 
+def early_lateral_energy(energy_decay_gradient_microfon, energy_decay_measure_place, sampling_rate):
+    """Calculate the early reflected lateral energy fraction in a room. 
+    Parameters
+    ----------
+    energy_decay_gradient_microfon : ndarray, double
+        Energy decay curve of a rir measured with a gradient microfon
+    energy_decay_measure_place : ndarray, double
+        Energy decay curve of a rir at the measured place (?)
+    sampling_rate : double in [Hz]
+    Returns
+    -------
+    early_lateral_energy : scalar, double [no unit] 
+        Early refracted energy fraction coming from the sides
+    Reference
+    ---------
+    ISO3382-1 : Annex A
+    """
+
+    #Gradient microfon measurement indexes
+    pyfar_signal_grad = pysi.Signal(energy_decay_gradient_microfon, sampling_rate)
+    index_grad_1 = pyfar_signal_grad.find_nearest_time(0.005)
+    index_grad_2 = pyfar_signal_grad.find_nearest_time(0.08)
+
+    #Normal measurement indexes
+    pyfar_signal_normal = pysi.Signal(energy_decay_measure_place, sampling_rate)
+    index_normal = pyfar_signal_normal.find_nearest_time(0.08)
+
+    #Take only samples between 0.005s and 0.08s from gradient microfon measurement
+    edc_grad = energy_decay_gradient_microfon[index_grad_1] - energy_decay_gradient_microfon[index_grad_2] 
+    #Take only samples from 0 to 0.08s from normal measurement
+    edc_normal = energy_decay_measure_place[0] - energy_decay_measure_place[index_normal]
+
+    early_lateral_energy = edc_grad / edc_normal
+    return early_lateral_energy
+
+def late_lateral_energy(energy_decay_gradient_microfon, energy_decay_free_field, sampling_rate):
+    """Calculate the relativ sound level of the late reflected lateral energy fraction 
+    in a room in comparison to a free field. 
+    Parameters
+    ----------
+    energy_decay_gradient_microfon : ndarray, double
+        Energy decay curve of a rir measured with a gradient microfon
+    energy_decay_free_field : ndarray, double
+        Energy decay curve of a rir measured 10 meters away fron the source in a 
+        free field/isolated room.
+    sampling_rate : double in [Hz]
+    Returns
+    -------
+    late_lateral_energy : scalar, double [dB] 
+        Relative sound level of the late refracted energy fraction coming from the sides in decibel
+    Reference
+    ---------
+    ISO3382-1 : Annex A
+    """
+
+    #Gradient microfon measurement index
+    pyfar_signal_grad = pysi.Signal(energy_decay_gradient_microfon, sampling_rate)
+    index_grad = pyfar_signal_grad.find_nearest_time(0.08)
+
+    #Take only samples after 0.08s from gradient microfon measurement
+    edc_grad = energy_decay_gradient_microfon[index_grad] 
+    #Take all samples
+    edc_free_field = energy_decay_free_field[0]
+
+    late_lateral_energy = 10*np.log10(edc_grad / edc_free_field)
+    return late_lateral_energy
 
 def schroeder_integration(impulse_response, is_energy=False):
     """Calculate the Schroeder integral of a room impulse response _[3]. The
