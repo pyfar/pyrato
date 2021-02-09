@@ -5,9 +5,9 @@
 import re
 import numpy as np
 import matplotlib.pyplot as plt
-from numpy.core.numeric import Inf
 import pyfar.signal as pysi
 from matplotlib import axes, pyplot as plt
+import pyfar.signal as pysi
 
 
 def reverberation_time_energy_decay_curve(
@@ -104,99 +104,40 @@ def reverberation_time_energy_decay_curve(
 
     return reverberation_time
 
-def strength_energy_decay_curve(impulse_response_source, impulse_response_10meters, is_energy_source=False, is_energy_10meters=False):
-    """Calculate the Strength/Gain of a room impulse response.
-
-    Parameters
-    ----------
-    impulse_response_source : ndarray, double
-        Room impulse response at the source as array
-    impulse_response_10meters : ndarray, double
-        Room impulse response 10 meters away from the source as array
-    is_energy_source : boolean, optional
-        Whether the input (source signal) represents energy data or sound pressure values.
-    is_energy_10meters : boolean, optional
-        Whether the input (10meters away from source signal) represents energy data or sound pressure values.
-
-    Returns
-    -------
-    strength : double [dB] ?? (Sollte hier nicht ein array rauskommen? ich will eine Zahl eigentlich)
-        Measure of the room's contribution to the sound or noise level from a sound source.
-
-
-    Reference
-    ---------
-    """
-
-    energy_decay_source = schroeder_integration(impulse_response_source, is_energy_source)
-    energy_decay_10meters = schroeder_integration(impulse_response_10meters, is_energy_10meters)
-
-    strength = 10*np.log10(np.divide(energy_decay_source,energy_decay_10meters))
-
-    return strength
-
-def centre_time(sampling_rate,impulse_response, is_energy=False):
-    """Centre Time Ts of a room impulse response.
-
-    Parameters
-    ----------
-    sampling_rate : double (44100?)
-        Sampling rate for the times array
-    impulse_response : ndarray, double
-        Room impulse response as array
-    is_energy : boolean, optional
-        Whether the input represents energy data or sound pressure values.
-
-    Returns
-    -------
-    centre_time : double [dB] ?? (Sollte ich hier den Mittelwert bilden? ich will hier auch eine Zahl, aber bekomme eher ein array raus)
-       
-    Reference
-    ---------
-    """
-
-    n_samples = impulse_response.shape[-1]
-    times = np.arange(n_samples)/sampling_rate
-    
-    if not is_energy:
-        data = np.abs(impulse_response)**2
-        new_impulse_response = np.multiply(data, times)
-    else:
-        new_impulse_response = np.multiply(impulse_response, times)
-
-    nom = schroeder_integration(new_impulse_response, True)
-    denom = schroeder_integration(impulse_response, is_energy)
-    centre_time = np.divide(nom, denom)
-    return centre_time
-
-def clarity(impulse_response, sampling_rate, early_time_limit=0.05, is_energy=False):
-    """Calculate the clarity of a room impulse response.
+def clarity(energy_decay, sampling_rate=44100, early_time_limit=0.08):
+    """Calculate the clarity of a signal in a room. The clarity parameter is 
+    calculated with the early-to-late index at 50ms or 80ms and describes how 
+    clearly someone can hear sound and music in a room
 
     Parameters
     ----------
     early_time_limit (te): scalar, double, [seconds]
         Early time limit to calculate the clarity as a scalar in seconds
-    impulse_response : ndarray, double
-        Room impulse response as array
-    is_energy : boolean, optional
-        Whether the input represents energy data or sound pressure values.
+        Most of the time, clarity is measured at 50ms or 80ms
+    energy_decay : ndarray, double
+        Energy decay curve of a rir
+    sampling_rate : double in [44100]
 
     Returns
     -------
-    clarity : double [dB] ?? 
-        Early-to-Late Index of the incoming Energy
+    clarity : scalar, double [dB] 
+        Clarity index or early-to-Late index of the incoming energy in decibel
 
     Reference
     ---------
+    ISO3382-1 : Annex A
     """
-    samples_0_to_te = early_time_limit*sampling_rate
-    impulse_response_0_to_te = impulse_response[0,samples_0_to_te]
-    impulse_response_te_to_inf = impulse_response[samples_0_to_te,len(impulse_response)]
 
-    energy_decay_0_to_etl = schroeder_integration(impulse_response_0_to_te, is_energy) 
-    energy_decay_etl_to_inf = schroeder_integration(impulse_response_te_to_inf, is_energy)
+    #Find the index with function of Signal Class
+    pyfar_signal = pysi.Signal(energy_decay, sampling_rate)
+    index = pyfar_signal.find_nearest_time(early_time_limit)
 
-    clarity = 10*np.log10(np.divide(energy_decay_0_to_etl,energy_decay_etl_to_inf))
+    #Take just the first samples between 0 and index
+    edc_0_to_te = energy_decay[0] - energy_decay[index] 
+    #Take only samples from index to the end
+    edc_end = energy_decay[index]
+
+    clarity = 10*np.log10(edc_0_to_te/edc_end)
     return clarity
 
 
