@@ -103,9 +103,8 @@ def reverberation_time_energy_decay_curve(
 
     return reverberation_time
 
-def strength_energy_decay_curve(energy_decay_mesured_room, energy_decay_free_field):
-    """Calculate the Strength/Gain of a room impulse response _[3]. The
-    result is the energy decay curve for the given room impulse response.
+def strength(energy_decay_mesured_room, energy_decay_free_field):
+    """Calculate the Strength/Gain of a room impulse response _[3].
 
     Parameters
     ----------
@@ -120,13 +119,13 @@ def strength_energy_decay_curve(energy_decay_mesured_room, energy_decay_free_fie
     Returns
     -------
     strength : double [dB]  
-        Measure of the room's contribution to the sound?noise level, in 
+        Room's contribution to the sound/noise level, in 
         comparison to an isolated room with same dimensions
 
 
     Reference
     ---------
-    ISO3382-1 : Annexe A
+    ISO3382-1 : Annex A
     """
 
     strength = 10*np.log10(energy_decay_mesured_room[0]/energy_decay_free_field[0])
