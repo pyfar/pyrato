@@ -5,6 +5,7 @@
 import re
 import numpy as np
 import matplotlib.pyplot as plt
+import pyfar.signal as pysi
 
 
 def reverberation_time_energy_decay_curve(
@@ -101,6 +102,68 @@ def reverberation_time_energy_decay_curve(
 
     return reverberation_time
 
+def early_support(energy_decay, sampling_rate):
+    """Calculate the early support of a signal in a room. Early suppport parameter
+    compares the first 0.1s energy reflections to the direct sound.
+
+    Parameters
+    ----------
+    energy_decay : ndarray, double
+        Energy decay curve of a rir
+    sampling_rate : double in [Hz]
+
+    Returns
+    -------
+    early_support : scalar, double [dB] 
+
+    Reference
+    ---------
+    ISO3382-1 : Annex C
+    """
+
+    #Find the indexes with function of Signal Class
+    pyfar_signal = pysi.Signal(energy_decay, sampling_rate)
+    index_early_1 = pyfar_signal.find_nearest_time(0.02)
+    index_early_2 = pyfar_signal.find_nearest_time(0.1)
+    index_direct = pyfar_signal.find_nearest_time(0.01)
+
+    edc_early = energy_decay[index_early_1] - energy_decay[index_early_2]
+    edc_direct = energy_decay[0] - energy_decay[index_direct]
+
+    early_support = 10*np.log10(edc_early/edc_direct)
+    return early_support
+
+def late_support(energy_decay, sampling_rate):
+    """Calculate the late support of a signal in a room. Late suppport parameter
+    compares energy reflections after 0.1s to the direct sound.
+
+    Parameters
+    ----------
+    energy_decay : ndarray, double
+        Energy decay curve of a rir
+    sampling_rate : double [Hz]
+
+    Returns
+    -------
+    late_support : scalar, double [dB] 
+        Late support parameter describes the perceived reverberation in a room
+
+    Reference
+    ---------
+    ISO3382-1 : Annex C
+    """
+
+    #Find the indexes with function of Signal Class
+    pyfar_signal = pysi.Signal(energy_decay, sampling_rate)
+    index_late_1 = pyfar_signal.find_nearest_time(0.1)
+    index_late_2 = pyfar_signal.find_nearest_time(1)
+    index_direct = pyfar_signal.find_nearest_time(0.01)
+
+    edc_late = energy_decay[index_late_1] - energy_decay[index_late_2]
+    edc_direct = energy_decay[0] - energy_decay[index_direct]
+
+    late_support = 10*np.log10(edc_late/edc_direct)
+    return late_support
 
 def schroeder_integration(impulse_response, is_energy=False):
     """Calculate the Schroeder integral of a room impulse response _[3]. The
