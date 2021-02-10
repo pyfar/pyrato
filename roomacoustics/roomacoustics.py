@@ -5,6 +5,8 @@
 import re
 import numpy as np
 import matplotlib.pyplot as plt
+import pyfar.signal as pysi
+from math import sqrt
 
 
 def reverberation_time_energy_decay_curve(
@@ -101,6 +103,64 @@ def reverberation_time_energy_decay_curve(
 
     return reverberation_time
 
+def cross_correlation_coeff(energy_decay_left, energy_decay_right, energy_decay_left_and_right, sampling_rate, t1 = 0, t2 = -1):
+    """Calculate the inter-aural cross correlation coefficient. This parameter 
+    describes how the signals measured on an artificial head on the right and 
+    the left ear are correlated.
+
+    Parameters
+    ----------
+    energy_decay_left : ndarray, double
+        Energy decay curve of a rir measured on the left ear
+    energy_decay_right : ndarray, double
+        Energy decay curve of a rir measured on the right ear
+    energy_decay_left_and_right : ndarray, double
+        Energy decay curve of the convolution of the left and right measured signals
+    sampling_rate : double [Hz]
+    t1 : scalar, double, [seconds]
+        Lower integration limit. Set at 0 for most frequent use
+    t2 : scalar, double, [seconds]
+        Higher integration limit. Set at -1 as infinity symbol replacement, for most
+        frequent use
+
+    Returns
+    -------
+    cross_correlation_coeff : scalar, double [no unit] 
+        The cross correlation coefficient varies from -1 to 1:
+         1 = both signals are perfectly the same
+        -1 = both signals are correlated but with a difference of 180degrees in it's phase 
+         0 = gives no information about the signals
+
+    Reference
+    ---------
+    ISO3382-1 : Annex B
+    """ 
+
+    pyfar_signal_lr = pysi.Signal(energy_decay_left_and_right, sampling_rate)
+    pyfar_signal_l = pysi.Signal(energy_decay_left, sampling_rate)
+    pyfar_signal_r = pysi.Signal(energy_decay_right, sampling_rate)
+    index_lr_t1 = pyfar_signal_lr.find_nearest_time(t1)
+    index_l_t1 = pyfar_signal_l.find_nearest_time(t1)
+    index_r_t1 = pyfar_signal_r.find_nearest_time(t1)
+
+    if t2 == -1:
+        edc_lr = energy_decay_left_and_right[index_lr_t1]
+        edc_l  = energy_decay_left[index_l_t1]
+        edc_r  = energy_decay_right[index_r_t1]
+
+    else:
+        index_lr_t2 = pyfar_signal_lr.find_nearest_time(t2)
+        index_l_t2 = pyfar_signal_l.find_nearest_time(t2)
+        index_r_t2 = pyfar_signal_r.find_nearest_time(t2)
+        edc_lr = energy_decay_left_and_right[index_lr_t1] - energy_decay_left_and_right[index_lr_t2]
+        edc_l  = energy_decay_left[index_l_t1] - energy_decay_left[index_l_t2]
+        edc_r  = energy_decay_right[index_r_t1] - energy_decay_right[index_r_t2]
+    
+
+    cross_correlation_function = edc_lr / sqrt(edc_l * edc_r)
+    
+    #Wie finde ich heraus was der Max Wert zwischen -1ms und 1ms in cross_correlation_function ist?
+    return cross_correlation_coeff
 
 def schroeder_integration(impulse_response, is_energy=False):
     """Calculate the Schroeder integral of a room impulse response _[3]. The
