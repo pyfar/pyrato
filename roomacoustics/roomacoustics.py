@@ -5,7 +5,6 @@
 import re
 import numpy as np
 import matplotlib.pyplot as plt
-import pyfar.signal as pysi
 from matplotlib import axes, pyplot as plt
 import pyfar.signal as pysi
 
@@ -104,7 +103,7 @@ def reverberation_time_energy_decay_curve(
 
     return reverberation_time
 
-def clarity(energy_decay, sampling_rate=44100, early_time_limit=0.08):
+def clarity(energy_decay, early_time_limit=0.08, sampling_rate=44100):
     """Calculate the clarity of a signal in a room. The clarity parameter is 
     calculated with the early-to-late index at 50ms or 80ms and describes how 
     clearly someone can hear sound and music in a room
@@ -116,7 +115,7 @@ def clarity(energy_decay, sampling_rate=44100, early_time_limit=0.08):
         Most of the time, clarity is measured at 50ms or 80ms
     energy_decay : ndarray, double
         Energy decay curve of a rir
-    sampling_rate : double in [44100]
+    sampling_rate : double [hz]
 
     Returns
     -------
