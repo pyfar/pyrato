@@ -54,7 +54,7 @@ def sti(signal, data_type=None, gender='male', level=np.array([np.nan]),
     """
     
 
-# process signal, check input
+    # process signal, check input
     sig = signal.copy()
     #2D Signal
     sig = sig.flatten()
