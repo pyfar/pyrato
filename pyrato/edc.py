@@ -45,8 +45,8 @@ def estimate_noise_energy(
     if np.any(energy_data) < 0:
         raise ValueError("Energy is negative, check your input signal.")
 
-    region_start_idx = np.int(energy_data.shape[-1]*interval[0])
-    region_end_idx = np.int(energy_data.shape[-1]*interval[1])
+    region_start_idx = int(energy_data.shape[-1]*interval[0])
+    region_end_idx = int(energy_data.shape[-1]*interval[1])
     mask = np.arange(region_start_idx, region_end_idx)
     noise_energy = np.nanmean(np.take(energy_data, mask, axis=-1), axis=-1)
 
@@ -103,7 +103,7 @@ def preprocess_rir(
         else:
             min_shift = np.amin(rir_start_idx)
             shift_samples = np.asarray(
-                -min_shift * np.ones(n_channels), dtype=np.int)
+                -min_shift * np.ones(n_channels), dtype=int)
 
         result = dsp.time_shift(
             data, shift_samples, circular_shift=False, keepdims=True)
@@ -150,7 +150,7 @@ def smooth_rir(
     n_samples_per_block = int(np.round(smooth_block_length * sampling_rate, 0))
     n_blocks = np.asarray(
         np.floor((n_samples-n_samples_nan)/n_samples_per_block),
-        dtype=np.int)
+        dtype=int)
 
     n_blocks_min = int(np.min(n_blocks))
     n_samples_actual = int(n_blocks_min*n_samples_per_block)
@@ -504,7 +504,7 @@ def energy_decay_curve_chu(
             max_start_value = np.amax(energy_decay_curve[..., 0])
             energy_decay_curve /= max_start_value
 
-    mask = energy_decay_curve <= 2*np.finfo(np.double).eps
+    mask = energy_decay_curve <= 2*np.finfo(float).eps
     if np.any(mask):
         first_zero = np.nanargmax(mask, axis=-1)
         for channel in range(n_channels):

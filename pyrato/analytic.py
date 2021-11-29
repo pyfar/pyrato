@@ -156,7 +156,7 @@ def rectangular_room_rigid_walls(dimensions,
     omega_n = 2*np.pi*f_n
     omega_squared = omega**2
 
-    transfer_function = np.zeros(n_bins, np.complex)
+    transfer_function = np.zeros(n_bins, complex)
     for om_n, coeff_n in zip(omega_n, coeff):
         den = omega_squared - delta_n_raw**2 - om_n**2 - 2*1j*delta_n_raw*omega
         transfer_function += (coeff_n/den)
@@ -344,7 +344,7 @@ def eigenfrequencies_rectangular_room_1d(
     else:
         fprime = False
 
-    k_ns_l = np.zeros((n_l_max, len(ks)), dtype=np.complex64)
+    k_ns_l = np.zeros((n_l_max, len(ks)), dtype=complex)
     k_n_init = initial_solution_transcendental_equation(ks[0], L_l, zeta)
     for idx_k, k in enumerate(ks):
         idx_n = 0
@@ -568,7 +568,7 @@ def pressure_modal_superposition(
 
     p_ns_s = np.prod(mode_function_impedance(r_S, k_ns_xyz.T, phi.T).T, axis=0)
 
-    spec = np.zeros((r_R.shape[0], ks.size), dtype=np.complex)
+    spec = np.zeros((r_R.shape[0], ks.size), dtype=complex)
     for idx_R in range(r_R.shape[0]):
         p_ns_r = np.prod(
             mode_function_impedance(
