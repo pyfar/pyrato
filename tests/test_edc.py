@@ -8,7 +8,7 @@ from numpy import array
 
 import numpy.testing as npt
 
-import roomacoustics as ra
+import pyrato as ra
 
 
 def test_edc_eyring():

@@ -8,8 +8,8 @@
 
 import numpy as np
 from matplotlib import pyplot as plt
-from roomacoustics import dsp
-from roomacoustics import roomacoustics as ra
+from pyrato import dsp
+import pyrato as ra
 import warnings
 
 

@@ -9,8 +9,8 @@
 import numpy as np
 import os
 import numpy.testing as npt
-from roomacoustics import edc as enh
-from roomacoustics import dsp
+from pyrato import edc as enh
+from pyrato import dsp
 from numpy import genfromtxt
 test_data_path = os.path.join(os.path.dirname(__file__), 'test_data')
 

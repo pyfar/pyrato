@@ -1,16 +1,5 @@
-=============
-roomacoustics
-=============
+======
+pyrato
+======
 
-
-Collection of functions for commonly used calculcations in room acoustics
-
-
-* Free software: MIT license
-
-
-Features
---------
-
-* TODO: List the features here...
-
+Python Room Acoustics Tools - A collection of functions for commonly used operations in room acoustics

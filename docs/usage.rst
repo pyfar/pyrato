@@ -2,6 +2,6 @@
 Usage
 =====
 
-To use roomacoustics in a project::
+To use pyrato in a project::
 
-    import roomacoustics
+    import pyrato

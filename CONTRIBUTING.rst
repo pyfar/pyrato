@@ -15,7 +15,7 @@ Types of Contributions
 Report Bugs
 ~~~~~~~~~~~
 
-Report bugs at https://git.rwth-aachen.de/mbe/roomacoustics/issues.
+Report bugs at https://github.com/mberz/pyrato/issues.
 
 If you are reporting a bug, please include:
 
@@ -38,14 +38,14 @@ and "help wanted" is open to whoever wants to implement it.
 Write Documentation
 ~~~~~~~~~~~~~~~~~~~
 
-roomacoustics could always use more documentation, whether as part of the
-official roomacoustics docs, in docstrings, or even on the web in blog posts,
+pyrato could always use more documentation, whether as part of the
+official pyrato docs, in docstrings, or even on the web in blog posts,
 articles, and such.
 
 Submit Feedback
 ~~~~~~~~~~~~~~~
 
-The best way to send feedback is to file an issue at https://git.rwth-aachen.de/mbe/roomacoustics/issues.
+The best way to send feedback is to file an issue at https://github.com/mberz/pyrato/issues.
 
 If you are proposing a feature:
 
@@ -57,17 +57,17 @@ If you are proposing a feature:
 Get Started!
 ------------
 
-Ready to contribute? Here's how to set up `roomacoustics` for local development.
+Ready to contribute? Here's how to set up `pyrato` for local development.
 
-1. Fork the `roomacoustics` repo on GitLab.
+1. Fork the `pyrato` repo on GitHub.
 2. Clone your fork locally::
 
-    $ git clone https://git.rwth-aachen.de/mbe/roomacoustics.git
+    $ git clone https://github.com/mberz/pyrato.git
 
 3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
 
-    $ mkvirtualenv roomacoustics
-    $ cd roomacoustics/
+    $ mkvirtualenv pyrato
+    $ cd pyrato/
     $ python setup.py develop
 
 4. Create a branch for local development::
@@ -79,7 +79,7 @@ Ready to contribute? Here's how to set up `roomacoustics` for local development.
 5. When you're done making changes, check that your changes pass flake8 and the
    tests, including testing other Python versions with tox::
 
-    $ flake8 roomacoustics tests
+    $ flake8 pyrato tests
     $ python setup.py test or py.test
     $ tox
 
@@ -102,8 +102,8 @@ Before you submit a pull request, check that it meets these guidelines:
 2. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
-3. The pull request should work for Python 3.5 and 3.6. Check
-   https://travis-ci.org/mbe/roomacoustics/pull_requests
+3. The pull request should work for Python 3.5 to 3.9. Check
+   https://app.travis-ci.com/github/mberz/pyrato/pull_requests
    and make sure that the tests pass for all supported Python versions.
 
 Tips
@@ -111,7 +111,7 @@ Tips
 
 To run a subset of tests::
 
-$ py.test tests.test_roomacoustics
+$ py.test tests.test_dsp
 
 
 Deploying

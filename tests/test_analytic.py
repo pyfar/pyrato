@@ -1,6 +1,6 @@
 import numpy as np
 import numpy.testing as npt
-import roomacoustics.analytic as analytic
+import pyrato.analytic as analytic
 
 
 def test_analytic_shoebox_eigenfreqs():

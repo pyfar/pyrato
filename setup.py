@@ -11,7 +11,7 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = ['numpy']
+requirements = ['numpy', 'scipy', 'matplotlib']
 
 setup_requirements = ['pytest-runner', ]
 
@@ -29,19 +29,21 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
     ],
-    description="Collection of functions for commonly used calculcations in room acoustics",
+    description="Collection of functions commonly used in room acoustics",
     install_requires=requirements,
     license="MIT license",
-    long_description=readme + '\n\n' + history,
+    long_description=readme,
     include_package_data=True,
-    keywords='roomacoustics',
-    name='roomacoustics',
-    packages=find_packages(include=['roomacoustics']),
+    keywords='pyrato',
+    name='pyrato',
+    packages=find_packages(include=['pyrato']),
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
-    url='https://git.rwth-aachen.de/mbe/roomacoustics',
+    url='https://github.com/mberz/pyrato',
     version='0.2.1',
     zip_safe=False,
 )
