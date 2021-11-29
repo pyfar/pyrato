@@ -22,6 +22,7 @@ from .dsp import (
     center_frequencies_third_octaves
 )
 from .edc import (
+    preprocess_rir,
     energy_decay_curve_chu,
     energy_decay_curve_chu_lundeby,
     energy_decay_curve_lundeby,
@@ -40,9 +41,10 @@ __all__ = [
     'time_shift',
     'center_frequencies_octaves',
     'center_frequencies_third_octaves',
+    'preprocess_rir',
     'energy_decay_curve_chu',
     'energy_decay_curve_chu_lundeby',
     'energy_decay_curve_lundeby',
     'energy_decay_curve_truncation',
-    'estimate_noise_energy'
+    'estimate_noise_energy',
 ]
