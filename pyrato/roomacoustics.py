@@ -103,12 +103,13 @@ def reverberation_time_energy_decay_curve(
 
 
 def schroeder_integration(impulse_response, is_energy=False):
-    """Calculate the Schroeder integral of a room impulse response _[3]. The
+    r"""Calculate the Schroeder integral of a room impulse response _[3]. The
     result is the energy decay curve for the given room impulse response.
 
     .. math:
 
-        \\langle e^2(t) \\rangle = N\\cdot \\int_{t}^{\\infty} h^2(\\tau) \\mathrm{d} \\tau
+        \langle e^2(t) \rangle = N\cdot \int_{t}^{\infty} h^2(\tau)
+        \mathrm{d} \tau
 
     Parameters
     ----------
@@ -241,35 +242,40 @@ def air_attenuation_coefficient(
         The resulting attenuation coefficient.
 
     """
-    roomTemperatureKelvin = temperature + 273.16
-    referencePressureKPa = 101.325
-    pressureKPa = atmospheric_pressure/1000.0
+    # room temperature in Kelvin
+    t_K = temperature + 273.16
+    p_ref_kPa = 101.325
+    p_kPa = atmospheric_pressure/1000.0
 
     # determine molar concentration of water vapor
-    tmp = (( 10.79586 * (1.0 - (273.16/roomTemperatureKelvin) )) -
-        (5.02808 * np.log10((roomTemperatureKelvin/273.16)) ) +
-        (1.50474 * 0.0001 * (1.0 - 10.0 ** (-8.29692*((roomTemperatureKelvin/273.16) - 1.0)))) +
-        (0.42873 * 0.001 * (-1.0 + 10.0 ** (-4.76955*(1.0 - (273.16/roomTemperatureKelvin))))) - 2.2195983)
+    tmp = (
+        (10.79586 * (1.0 - (273.16/t_K))) -
+        (5.02808 * np.log10((t_K/273.16))) +
+        (1.50474 * 0.0001 * (1.0 - 10.0 ** (-8.29692*((t_K/273.16) - 1.0)))) +
+        (0.42873 * 0.001 * (-1.0 + 10.0 ** (-4.76955*(1.0 - (273.16/t_K))))) -
+        2.2195983)
 
-    molarConcentrationWaterVaporPercent = (humidity * 10.0 ** tmp) / (pressureKPa/referencePressureKPa)
+    # molar concentration water vapor in percent
+    molar_water_vapor = (humidity * 10.0 ** tmp) / (p_kPa/p_ref_kPa)
 
     # determine relaxation frequencies of oxygen and nitrogen
-    relaxationFrequencyOxygen = ((pressureKPa/referencePressureKPa) *
-        (24.0 + (4.04 * 10000.0 * molarConcentrationWaterVaporPercent *
-        ((0.02 + molarConcentrationWaterVaporPercent) / (0.391 + molarConcentrationWaterVaporPercent)))))
+    relax_oxygen = ((p_kPa/p_ref_kPa) * (24.0 + (
+            4.04 * 10000.0 * molar_water_vapor * (
+                (0.02 + molar_water_vapor) / (0.391 + molar_water_vapor)))))
 
-    relaxationFrequencyNitrogen = ((pressureKPa/referencePressureKPa) *
-        ((roomTemperatureKelvin / 293.16) ** (-0.5)) *
-        (9.0 + 280.0 * molarConcentrationWaterVaporPercent *
-        np.exp(-4.17 * (( (roomTemperatureKelvin / 293.16) ** (-0.3333333)) - 1.0))))
+    relax_nitrogen = ((p_kPa/p_ref_kPa) * (
+        (t_K / 293.16) ** (-0.5)) *
+        (9.0 + 280.0 * molar_water_vapor * np.exp(
+            -4.17 * (((t_K / 293.16) ** (-0.3333333)) - 1.0))))
 
-    airAbsorptionCoeff = (((frequency**2) *
-        ((1.84 * 10.0**(-11.0) * (referencePressureKPa / pressureKPa) * (roomTemperatureKelvin/293.16)**0.5) +
-        ((roomTemperatureKelvin/293.16)**(-2.5) * (
-        ((1.278 * 0.01 * np.exp( (-2239.1/roomTemperatureKelvin))) /
-        (relaxationFrequencyOxygen + ((frequency**2)/relaxationFrequencyOxygen))) +
-        ((1.068 * 0.1 * np.exp((-3352.0/roomTemperatureKelvin))/
-        (relaxationFrequencyNitrogen + ((frequency**2)/relaxationFrequencyNitrogen)))))))
-        )* (20.0 / np.log(10.0)) / ((np.log10(np.exp(1.0))) * 10.0)) # Neper/m -> dB/m
+    # Neper/m -> dB/m
+    air_abs_coeff = ((frequency**2 * (
+        (1.84 * 10.0**(-11.0) * (p_ref_kPa / p_kPa) * (t_K/293.16)**0.5) +
+        ((t_K/293.16)**(-2.5) * (
+            (1.278 * 0.01 * np.exp(-2239.1/t_K) / (
+                relax_oxygen + (frequency**2)/relax_oxygen)) +
+            (1.068 * 0.1 * np.exp((-3352.0/t_K) / (
+                relax_nitrogen + (frequency**2)/relax_nitrogen))))))
+            ) * 20.0 / np.log(10.0) / (np.log10(np.exp(1.0)) * 10.0))
 
-    return airAbsorptionCoeff
+    return air_abs_coeff

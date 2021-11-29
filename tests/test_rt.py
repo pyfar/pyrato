@@ -7,7 +7,7 @@ from pytest import raises
 import numpy as np
 import numpy.testing as npt
 
-import roomacoustics as ra
+import pyrato as ra
 
 
 def test_rt_from_edc():

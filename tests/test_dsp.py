@@ -7,14 +7,14 @@ import numpy.testing as npt
 import pytest
 from numpy import genfromtxt
 
-import roomacoustics.dsp as dsp
+import pyrato.dsp as dsp
 
 test_data_path = os.path.join(os.path.dirname(__file__), 'test_data')
 
 
 def test_start_ir_insufficient_snr():
     n_samples = 2**9
-    ir = np.zeros(n_samples, dtype=np.double)
+    ir = np.zeros(n_samples, dtype=float)
     ir[20] = 1
 
     snr = 15
@@ -94,10 +94,10 @@ def test_start_ir_multidim():
 def test_time_shift_right():
     shift_samples = 10
     n_samples = 2**9
-    ir = np.zeros(n_samples, dtype=np.double)
+    ir = np.zeros(n_samples, dtype=float)
     ir[20] = 1
 
-    ir_truth = np.zeros(n_samples, dtype=np.double)
+    ir_truth = np.zeros(n_samples, dtype=float)
     ir_truth[20+shift_samples] = 1
     ir_shifted = dsp.time_shift(ir, shift_samples)
 
@@ -107,10 +107,10 @@ def test_time_shift_right():
 def test_time_shift_left():
     shift_samples = 10
     n_samples = 2**9
-    ir = np.zeros(n_samples, dtype=np.double)
+    ir = np.zeros(n_samples, dtype=float)
     ir[20] = 1
 
-    ir_truth = np.zeros(n_samples, dtype=np.double)
+    ir_truth = np.zeros(n_samples, dtype=float)
     ir_truth[20-shift_samples] = 1
     ir_shifted = dsp.time_shift(ir, -shift_samples)
 
@@ -120,10 +120,10 @@ def test_time_shift_left():
 def test_time_shift_non_circular_right():
     shift_samples = 10
     n_samples = 2**9
-    ir = np.zeros(n_samples, dtype=np.double)
+    ir = np.zeros(n_samples, dtype=float)
     ir[20] = 1
 
-    ir_truth = np.zeros(n_samples, dtype=np.double)
+    ir_truth = np.zeros(n_samples, dtype=float)
     ir_truth[20+shift_samples] = 1
     ir_truth[:shift_samples] = np.nan
     ir_shifted = dsp.time_shift(ir, shift_samples, circular_shift=False)
@@ -134,10 +134,10 @@ def test_time_shift_non_circular_right():
 def test_time_shift_non_circular_left():
     shift_samples = 10
     n_samples = 2**9
-    ir = np.zeros(n_samples, dtype=np.double)
+    ir = np.zeros(n_samples, dtype=float)
     ir[20] = 1
 
-    ir_truth = np.zeros(n_samples, dtype=np.double)
+    ir_truth = np.zeros(n_samples, dtype=float)
     ir_truth[20-shift_samples] = 1
     ir_truth[n_samples-shift_samples:] = np.nan
     ir_shifted = dsp.time_shift(ir, -shift_samples, circular_shift=False)
@@ -154,7 +154,7 @@ def test_time_shift_multitim():
     start_sample = [24, 5, 43]
     ir[[0, 1, 2], start_sample] = 1
 
-    ir_truth = np.zeros((n_channels, n_samples), dtype=np.double)
+    ir_truth = np.zeros((n_channels, n_samples), dtype=float)
     start_sample_truth = [24+shift_samples, 5+shift_samples, 43+shift_samples]
     ir_truth[[0, 1, 2], start_sample_truth] = 1
 
@@ -162,7 +162,7 @@ def test_time_shift_multitim():
 
     npt.assert_allclose(ir_shifted, ir_truth)
 
-    ir_truth = np.zeros((n_channels, n_samples), dtype=np.double)
+    ir_truth = np.zeros((n_channels, n_samples), dtype=float)
     start_sample_truth = [24-shift_samples, 5-shift_samples, 43-shift_samples]
     ir_truth[[0, 1, 2], start_sample_truth] = 1
 
@@ -175,12 +175,12 @@ def test_time_shift_multitim_multishift():
     shift_samples = [10, 2, 4]
     n_samples = 40
     n_channels = 3
-    ir = np.zeros((n_channels, n_samples), dtype=np.double)
+    ir = np.zeros((n_channels, n_samples), dtype=float)
 
     start_sample = [24, 5, 13]
     ir[[0, 1, 2], start_sample] = 1
 
-    ir_truth = np.zeros((n_channels, n_samples), dtype=np.double)
+    ir_truth = np.zeros((n_channels, n_samples), dtype=float)
     start_sample_truth = [
         24+shift_samples[0],
         5+shift_samples[1],
@@ -191,14 +191,14 @@ def test_time_shift_multitim_multishift():
 
     npt.assert_allclose(ir_shifted, ir_truth)
 
-    ir_truth = np.zeros((n_channels, n_samples), dtype=np.double)
+    ir_truth = np.zeros((n_channels, n_samples), dtype=float)
     start_sample_truth = [
         24-shift_samples[0],
         5-shift_samples[1],
         13-shift_samples[2]]
     ir_truth[[0, 1, 2], start_sample_truth] = 1
 
-    ir_shifted = dsp.time_shift(ir, -np.array(shift_samples, dtype=np.int))
+    ir_shifted = dsp.time_shift(ir, -np.array(shift_samples, dtype=int))
 
     npt.assert_allclose(ir_shifted, ir_truth)
 

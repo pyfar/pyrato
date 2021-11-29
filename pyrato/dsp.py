@@ -43,7 +43,7 @@ def find_impulse_response_start(
     """
     ir_squared = np.abs(impulse_response)**2
 
-    mask_start = np.int(0.9*ir_squared.shape[-1])
+    mask_start = int(0.9*ir_squared.shape[-1])
     if noise_energy == 'auto':
         mask = np.arange(mask_start, ir_squared.shape[-1])
         noise = np.mean(np.take(ir_squared, mask, axis=-1), axis=-1)
@@ -130,7 +130,7 @@ def find_impulse_response_maximum(
     """
     ir_squared = np.abs(impulse_response)**2
 
-    mask_start = np.int(0.9*ir_squared.shape[-1])
+    mask_start = int(0.9*ir_squared.shape[-1])
     if noise_energy == 'auto':
         mask = np.arange(mask_start, ir_squared.shape[-1])
         noise = np.mean(np.take(ir_squared, mask, axis=-1), axis=-1)
@@ -181,7 +181,7 @@ def time_shift(signal, n_samples_shift, circular_shift=True, keepdims=False):
         Shifted input signal
 
     """
-    n_samples_shift = np.asarray(n_samples_shift, dtype=np.int)
+    n_samples_shift = np.asarray(n_samples_shift, dtype=int)
     if np.any(signal.shape[-1] < n_samples_shift):
         msg = "Shifting by more samples than length of the signal."
         if circular_shift:

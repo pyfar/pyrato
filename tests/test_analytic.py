@@ -1,6 +1,6 @@
 import numpy as np
 import numpy.testing as npt
-import roomacoustics.analytic as analytic
+import pyrato.analytic as analytic
 
 
 def test_analytic_shoebox_eigenfreqs():
@@ -215,15 +215,15 @@ def test_analytic_eigenfrequencies_impedance_cplx():
     k_ns_x = np.loadtxt(
         'tests/data/analytic_impedance/k_ns_x.csv',
         delimiter=',',
-        dtype=np.complex)
+        dtype=complex)
     k_ns_y = np.loadtxt(
         'tests/data/analytic_impedance/k_ns_y.csv',
         delimiter=',',
-        dtype=np.complex)
+        dtype=complex)
     k_ns_z = np.loadtxt(
         'tests/data/analytic_impedance/k_ns_z.csv',
         delimiter=',',
-        dtype=np.complex)
+        dtype=complex)
 
     npt.assert_allclose(k_ns[0], k_ns_x, rtol=1e-6)
     npt.assert_allclose(k_ns[1], k_ns_y, rtol=1e-6)
@@ -247,15 +247,15 @@ def test_analytic_eigenfrequencies_impedance_zeta15():
     k_ns_x = np.loadtxt(
         'tests/data/analytic_impedance/k_ns_x_zeta15.csv',
         delimiter=',',
-        dtype=np.complex)
+        dtype=complex)
     k_ns_y = np.loadtxt(
         'tests/data/analytic_impedance/k_ns_y_zeta15.csv',
         delimiter=',',
-        dtype=np.complex)
+        dtype=complex)
     k_ns_z = np.loadtxt(
         'tests/data/analytic_impedance/k_ns_z_zeta15.csv',
         delimiter=',',
-        dtype=np.complex)
+        dtype=complex)
 
     npt.assert_allclose(k_ns[0], k_ns_x, rtol=1e-6)
     npt.assert_allclose(k_ns[1], k_ns_y, rtol=1e-6)
@@ -275,15 +275,15 @@ def test_analytic_pressure_shoebox_impedance():
     k_ns_x = np.loadtxt(
         'tests/data/analytic_impedance/k_ns_x.csv',
         delimiter=',',
-        dtype=np.complex)
+        dtype=complex)
     k_ns_y = np.loadtxt(
         'tests/data/analytic_impedance/k_ns_y.csv',
         delimiter=',',
-        dtype=np.complex)
+        dtype=complex)
     k_ns_z = np.loadtxt(
         'tests/data/analytic_impedance/k_ns_z.csv',
         delimiter=',',
-        dtype=np.complex)
+        dtype=complex)
 
     k_ns = list((k_ns_x, k_ns_y, k_ns_z))
 
@@ -301,7 +301,7 @@ def test_analytic_pressure_shoebox_impedance():
     truth = np.loadtxt(
         'tests/data/analytic_impedance/p_x.csv',
         delimiter=',',
-        dtype=np.complex)
+        dtype=complex)
 
     npt.assert_allclose(p_x, truth, atol=1e-6, rtol=1e-6)
 
@@ -319,15 +319,15 @@ def test_analytic_pressure_shoebox_impedance_multi_R():
     k_ns_x = np.loadtxt(
         'tests/data/analytic_impedance/k_ns_x.csv',
         delimiter=',',
-        dtype=np.complex)
+        dtype=complex)
     k_ns_y = np.loadtxt(
         'tests/data/analytic_impedance/k_ns_y.csv',
         delimiter=',',
-        dtype=np.complex)
+        dtype=complex)
     k_ns_z = np.loadtxt(
         'tests/data/analytic_impedance/k_ns_z.csv',
         delimiter=',',
-        dtype=np.complex)
+        dtype=complex)
 
     k_ns = list((k_ns_x, k_ns_y, k_ns_z))
 
@@ -347,7 +347,7 @@ def test_analytic_pressure_shoebox_impedance_multi_R():
     truth = np.loadtxt(
         'tests/data/analytic_impedance/p_x.csv',
         delimiter=',',
-        dtype=np.complex)
+        dtype=complex)
 
     truth = np.vstack((truth, truth))
 
@@ -367,15 +367,15 @@ def test_analytic_pressure_shoebox_impedance_zeta15():
     k_ns_x = np.loadtxt(
         'tests/data/analytic_impedance/k_ns_x_zeta15.csv',
         delimiter=',',
-        dtype=np.complex)
+        dtype=complex)
     k_ns_y = np.loadtxt(
         'tests/data/analytic_impedance/k_ns_y_zeta15.csv',
         delimiter=',',
-        dtype=np.complex)
+        dtype=complex)
     k_ns_z = np.loadtxt(
         'tests/data/analytic_impedance/k_ns_z_zeta15.csv',
         delimiter=',',
-        dtype=np.complex)
+        dtype=complex)
 
     k_ns = list((k_ns_x, k_ns_y, k_ns_z))
 
@@ -393,7 +393,7 @@ def test_analytic_pressure_shoebox_impedance_zeta15():
     truth = np.loadtxt(
         'tests/data/analytic_impedance/p_x_zeta15.csv',
         delimiter=',',
-        dtype=np.complex)
+        dtype=complex)
 
     npt.assert_allclose(p_x, truth, atol=1e-4, rtol=1e-4)
 
@@ -426,8 +426,8 @@ def test_analytic_shoebox_spec_impedance():
     truth_rtf = np.load('tests/data/analytic_rtf_impedance.npy')
     truth_rir = np.load('tests/data/analytic_rir_impedance.npy')
 
-    npt.assert_allclose(spec, truth_rtf)
-    npt.assert_allclose(rir, truth_rir)
+    npt.assert_allclose(spec, truth_rtf, atol=1e-2, rtol=1e-2)
+    npt.assert_allclose(rir, truth_rir, atol=1e-2, rtol=1e-2)
 
 
 def test_analytic_shoebox_spec_impedance_no_cavity_mode():
@@ -458,5 +458,5 @@ def test_analytic_shoebox_spec_impedance_no_cavity_mode():
     truth_rtf = np.load('tests/data/analytic_rtf_impedance_no_cav.npy')
     truth_rir = np.load('tests/data/analytic_rir_impedance_no_cav.npy')
 
-    npt.assert_allclose(spec, truth_rtf)
-    npt.assert_allclose(rir, truth_rir)
+    npt.assert_allclose(spec, truth_rtf, atol=1e-2, rtol=1e-2)
+    npt.assert_allclose(rir, truth_rir, atol=1e-2, rtol=1e-2)
