@@ -1,4 +1,3 @@
-pip>=21.1
 bumpversion
 wheel
 watchdog
@@ -9,9 +8,8 @@ Sphinx
 twine
 pytest
 pytest-runner
+pytest-cov
+nbmake
 numpy>=1.14.0
 scipy>=1.5.0
 matplotlib
-insipid-sphinx-theme
-tox-wheel
-autodocsumm
