@@ -19,7 +19,7 @@ Use pip to install pyrato
 Getting Started
 ===============
 
-Check out the `examples notebook`_ for a tour of the most important pyfar
+Check out the `examples notebook`_ for a tour of the
 functionality and `read the docs`_ for the complete documentation.
 
 Contributing
