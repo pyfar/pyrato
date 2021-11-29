@@ -308,7 +308,7 @@ def energy_decay_curve_lundeby(
         channel_independent=False,
         normalize=True,
         plot=False):
-    """ Lundeby et al. [1]_ proposed a correction term to prevent the truncation
+    """ Lundeby et al. [#]_ proposed a correction term to prevent the truncation
     error. The missing signal energy from truncation time to infinity is
     estimated and added to the truncated integral.
 
@@ -346,8 +346,8 @@ def energy_decay_curve_lundeby(
 
     References
     ----------
-    ..  [1] Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of
-        Measurements in Room Acoustics - ACUSTICA Vol. 81 (1995)
+    .. [#]  Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of
+            Measurements in Room Acoustics - ACUSTICA Vol. 81 (1995)
     """
 
     energy_data, n_channels, data_shape = preprocess_rir(
@@ -433,7 +433,7 @@ def energy_decay_curve_chu(
         normalize=True,
         plot=False):
 
-    """ Implementation of the "subtraction of noise"-method after Chu [2]
+    """ Implementation of the "subtraction of noise"-method after Chu [#]
     The noise level is estimated and subtracted from the impulse response
     before backward integration.
 
@@ -471,10 +471,10 @@ def energy_decay_curve_chu(
 
     References
     ----------
-    ..  [2] W. T. Chu. “Comparison of reverberation measurements using
-        Schroeder’s impulse method and decay-curve averaging method”.
-        In: Journal of the Acoustical Society of America 63.5 (1978),
-        pp. 1444–1450.
+    .. [#]  W. T. Chu. “Comparison of reverberation measurements using
+            Schroeder’s impulse method and decay-curve averaging method”.
+            In: Journal of the Acoustical Society of America 63.5 (1978),
+            pp. 1444–1450.
     """
 
     energy_data, n_channels, data_shape = preprocess_rir(
@@ -550,7 +550,7 @@ def energy_decay_curve_chu_lundeby(
     """ This function combines Chu's and Lundeby's methods:
     The estimated noise level is subtracted before backward integration,
     the impulse response is truncated at the intersection time,
-    and the correction for the truncation is applied [1, 2, 3]_
+    and the correction for the truncation is applied [4]_, [5]_, [6]_
 
     Parameters
     ----------
@@ -586,13 +586,13 @@ def energy_decay_curve_chu_lundeby(
 
     References
     ----------
-    ..  [1] Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of
+    .. [4]  Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of
             Measurements in Room Acoustics - ACUSTICA Vol. 81 (1995)
-    ..  [2] W. T. Chu. “Comparison of reverberation measurements using
+    .. [5]  W. T. Chu. “Comparison of reverberation measurements using
             Schroeder’s impulse method and decay-curve averaging method”. In:
             Journal of the Acoustical Society of America 63.5 (1978),
             pp. 1444–1450.
-    ..  [3] M. Guski, “Influences of external error sources on measurements of
+    .. [6]  M. Guski, “Influences of external error sources on measurements of
             room acoustic parameters,” 2015.
     """
 
@@ -689,7 +689,7 @@ def intersection_time_lundeby(
         channel_independent=False,
         plot=False):
 
-    """ This function uses the algorithm after Lundeby et al. [1] to calculate
+    """ This function uses the algorithm after Lundeby et al. [#]_ to calculate
     the intersection time, lundeby reverberation time, and noise level
     estimation.
 
@@ -728,7 +728,7 @@ def intersection_time_lundeby(
 
     References
     ----------
-    ..  [1] Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of
+    .. [#]  Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of
             Measurements in Room Acoustics - ACUSTICA Vol. 81 (1995)
 
     """

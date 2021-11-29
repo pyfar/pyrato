@@ -13,10 +13,10 @@ def find_impulse_response_start(
         threshold=20,
         noise_energy='auto'):
     """Find the first sample of an impulse response in a accordance with the
-    ISO standard ISO 3382. The start sample is identified as the first sample
+    ISO standard ISO 3382 [#]_. The start sample is identified as the first sample
     that varies significantly from the noise floor but still has a level of
     at least 20 dB below the maximum of the impulse response. The function
-    further tries to consider oscilations before the time below the threshold
+    further tries to consider oscillations before the time below the threshold
     value.
 
     Parameters
@@ -38,7 +38,7 @@ def find_impulse_response_start(
 
     References
     ----------
-    .. [1]  ISO 3382-1:2009-10, Acoustics - Measurement of the reverberation
+    .. [#]  ISO 3382-1:2009-10, Acoustics - Measurement of the reverberation
             time of rooms with reference to other acoustical parameters. pp. 22
     """
     ir_squared = np.abs(impulse_response)**2
