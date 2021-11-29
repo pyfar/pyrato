@@ -28,6 +28,7 @@ from .edc import (
     energy_decay_curve_lundeby,
     energy_decay_curve_truncation,
     estimate_noise_energy,
+    intersection_time_lundeby,
 )
 
 __all__ = [
@@ -47,4 +48,5 @@ __all__ = [
     'energy_decay_curve_lundeby',
     'energy_decay_curve_truncation',
     'estimate_noise_energy',
+    'intersection_time_lundeby',
 ]
