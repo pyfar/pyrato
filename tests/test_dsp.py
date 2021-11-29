@@ -7,7 +7,7 @@ import numpy.testing as npt
 import pytest
 from numpy import genfromtxt
 
-import roomacoustics.dsp as dsp
+import pyrato.dsp as dsp
 
 test_data_path = os.path.join(os.path.dirname(__file__), 'test_data')
 

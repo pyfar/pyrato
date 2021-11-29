@@ -1,4 +1,4 @@
-Welcome to roomacoustics's documentation!
+Welcome to pyrato's documentation!
 ======================================
 
 .. toctree::

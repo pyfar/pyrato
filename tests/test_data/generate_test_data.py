@@ -13,10 +13,10 @@ __email__ = "johannes.imort@rwth-aachen.de"
 __status__ = "Development"
 
 import numpy as np
-import roomacoustics.edc_noise_handling as nh
-# from roomacoustics import test_edc_noise_handling as test_enh
-import roomacoustics as ra
-from roomacoustics import analytic
+import pyrato.edc_noise_handling as nh
+# from pyrato import test_edc_noise_handling as test_enh
+import pyrato as ra
+from pyrato import analytic
 
 
 def generate_test_data():
