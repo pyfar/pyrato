@@ -426,8 +426,8 @@ def test_analytic_shoebox_spec_impedance():
     truth_rtf = np.load('tests/data/analytic_rtf_impedance.npy')
     truth_rir = np.load('tests/data/analytic_rir_impedance.npy')
 
-    npt.assert_allclose(spec, truth_rtf)
-    npt.assert_allclose(rir, truth_rir)
+    npt.assert_allclose(spec, truth_rtf, atol=1e-2, rtol=1e-2)
+    npt.assert_allclose(rir, truth_rir, atol=1e-2, rtol=1e-2)
 
 
 def test_analytic_shoebox_spec_impedance_no_cavity_mode():
@@ -458,5 +458,5 @@ def test_analytic_shoebox_spec_impedance_no_cavity_mode():
     truth_rtf = np.load('tests/data/analytic_rtf_impedance_no_cav.npy')
     truth_rir = np.load('tests/data/analytic_rir_impedance_no_cav.npy')
 
-    npt.assert_allclose(spec, truth_rtf)
-    npt.assert_allclose(rir, truth_rir)
+    npt.assert_allclose(spec, truth_rtf, atol=1e-2, rtol=1e-2)
+    npt.assert_allclose(rir, truth_rir, atol=1e-2, rtol=1e-2)
