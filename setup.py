@@ -11,11 +11,24 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = ['numpy', 'scipy', 'matplotlib']
+requirements = [
+    'numpy>=1.14.0',
+    'scipy>=1.5.0',
+    'matplotlib']
 
 setup_requirements = ['pytest-runner', ]
 
-test_requirements = ['pytest', ]
+test_requirements = [
+    'pytest',
+    'bump2version',
+    'wheel',
+    'watchdog',
+    'flake8',
+    'tox',
+    'coverage',
+    'Sphinx',
+    'twine'
+]
 
 setup(
     author="Marco Berzborn - Institute of Technical Acoustics",
