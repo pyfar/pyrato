@@ -66,7 +66,7 @@ def find_impulse_response_start(
     max_value = np.reshape(max_value, n_channels)
 
     start_sample = max_sample.copy()
-    for idx in range(0, n_channels):
+    for idx in range(n_channels):
         # Only look for the start sample if the maximum index is bigger than 0
         if start_sample[idx] > 0:
             ir_before_max = ir_squared[idx, :max_sample[idx]+1] \
@@ -149,10 +149,10 @@ def find_impulse_response_maximum(
 
 
 def time_shift(signal, n_samples_shift, circular_shift=True, keepdims=False):
-    """Shift a signal in the time domain by n samples. This function will
-    perform a circular shift by default, inherently assuming that the signal is
-    periodic. Use the option `circular_shift=False` to pad with nan values
-    instead.
+    """Shift a signal in the time domain by n samples.
+    This function will perform a circular shift by default, inherently
+    assuming that the signal is periodic. Use the option `circular_shift=False`
+    to pad with nan values instead.
 
     Notes
     -----
@@ -305,9 +305,7 @@ def exact_center_frequencies_fractional_octaves(indices, num_fractions):
     else:
         exponent = ((2*indices + 1) / num_fractions / 2)
 
-    center_freq = reference_freq * octave_ratio**exponent
-
-    return center_freq
+    return reference_freq * octave_ratio**exponent
 
 
 def _frequency_indices(frequencies, num_fractions):
@@ -343,14 +341,12 @@ def _frequency_indices(frequencies, num_fractions):
     return indices
 
 
-def filter_fractional_octave_bands(signal, samplingrate, num_fractions,
-                                   freq_range=(20.0, 20e3), order=6):
+def filter_fractional_octave_bands(
+        signal, samplingrate, num_fractions,
+        freq_range=(20.0, 20e3), order=6):
     """Apply a fractional octave filter to a signal.
-
-    Notes
-    -----
-    This function uses second order sections of butterworth filters for
-    increased numeric accuracy and stability.
+    Filter bank implementation using second order sections of butterworth
+    filters for increased numeric accuracy and stability.
 
     Parameters
     ----------
@@ -391,7 +387,7 @@ def filter_fractional_octave_bands(signal, samplingrate, num_fractions,
     signal_out_shape = (exact.size,) + signal.shape
     signal_out = np.broadcast_to(signal, signal_out_shape).copy()
 
-    for band in range(0, exact.size):
+    for band in range(exact.size):
         freq_upper = exact[band] * octave_ratio**(1/2/num_fractions)
         freq_lower = exact[band] * octave_ratio**(-1/2/num_fractions)
 
