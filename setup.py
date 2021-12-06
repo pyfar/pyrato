@@ -31,11 +31,11 @@ test_requirements = [
 ]
 
 setup(
-    author="Marco Berzborn - Institute of Technical Acoustics",
+    author="Marco Berzborn - Institute for Hearing Technology and Acoustics",
     author_email='marco.berzborn@akustik.rwth-aachen.de',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
-        'Intended Audience :: Scientists',
+        'Development Status :: 4 - Beta',
+        'Intended Audience :: Science/Research',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
