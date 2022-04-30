@@ -21,14 +21,14 @@ def find_impulse_response_start(
 
     Parameters
     ----------
-    impulse_response : ndarray, double
+    impulse_response : pyfar.Signal
         The impulse response
     threshold : double, optional
         Threshold according to ISO3382 in dB
 
     Returns
     -------
-    start_sample : int
+    start_sample : numpy.ndarray, int
         Sample at which the impulse response starts
 
     Note
@@ -41,9 +41,10 @@ def find_impulse_response_start(
     .. [#]  ISO 3382-1:2009-10, Acoustics - Measurement of the reverberation
             time of rooms with reference to other acoustical parameters. pp. 22
     """
-    ir_squared = np.abs(impulse_response)**2
+    ir_squared = np.abs(impulse_response.time)**2
 
-    mask_start = int(0.9*ir_squared.shape[-1])
+    mask_start = np.int(0.9*ir_squared.shape[-1])
+
     if noise_energy == 'auto':
         mask = np.arange(mask_start, ir_squared.shape[-1])
         noise = np.mean(np.take(ir_squared, mask, axis=-1), axis=-1)
@@ -55,8 +56,9 @@ def find_impulse_response_start(
 
     if np.any(max_value < 10**(threshold/10) * noise) or \
             np.any(max_sample > mask_start):
-        raise ValueError("The SNR is lower than the defined threshold. Check \
-                if this is a valid impulse response with sufficient SNR.")
+        raise ValueError(
+            "The SNR is lower than the defined threshold. Check "
+            "if this is a valid impulse response with sufficient SNR.")
 
     start_sample_shape = max_sample.shape
     n_samples = ir_squared.shape[-1]
@@ -66,7 +68,7 @@ def find_impulse_response_start(
     max_value = np.reshape(max_value, n_channels)
 
     start_sample = max_sample.copy()
-    for idx in range(n_channels):
+    for idx in range(0, n_channels):
         # Only look for the start sample if the maximum index is bigger than 0
         if start_sample[idx] > 0:
             ir_before_max = ir_squared[idx, :max_sample[idx]+1] \
@@ -153,6 +155,8 @@ def time_shift(signal, n_samples_shift, circular_shift=True, keepdims=False):
     This function will perform a circular shift by default, inherently
     assuming that the signal is periodic. Use the option `circular_shift=False`
     to pad with nan values instead.
+
+    TODO:
 
     Notes
     -----
