@@ -104,6 +104,80 @@ def test_start_ir_multidim():
     npt.assert_allclose(start_sample_est, start_samples - 1)
 
 
+def test_start_room_impulse_response():
+    rir = genfromtxt(
+        os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
+        delimiter=',')
+
+    rir = pf.Signal(rir, 44100)
+
+    actual = dsp.find_impulse_response_start(rir, threshold=20)
+
+    expected = 0
+
+    npt.assert_allclose(actual, expected)
+
+
+def test_start_room_impulse_response_shfted(monkeypatch):
+    rir = genfromtxt(
+        os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
+        delimiter=',')
+
+    rir_shifted = np.roll(rir, 128, axis=-1)
+    rir_shifted = pf.Signal(rir_shifted, 44100)
+    actual = dsp.find_impulse_response_start(rir_shifted, threshold=20)
+
+    expected = 128
+
+    npt.assert_allclose(actual, expected)
+
+
+def test_start_ir_thresh_invalid():
+    n_samples = 2**10
+    ir = np.zeros(n_samples)
+
+    start_sample = 24
+    ir[start_sample] = 1
+    # ir[start_sample-4:start_sample] = 10**(-10/10)
+    ir[0:start_sample] = 10**(-5/10)
+    ir = pf.Signal(ir, 44100)
+    start_sample_est = dsp.find_impulse_response_start(ir, threshold=20)
+    assert start_sample_est == 0
+
+
+def test_start_ir_thresh_invalid_osci():
+    n_samples = 2**10
+    ir = np.zeros(n_samples)
+
+    start_sample = 24
+    ir[start_sample] = 1
+    ir[start_sample-4:start_sample] = 10**(-30/10)
+    ir[0:start_sample-4] = 10**(-5/10)
+    ir = pf.Signal(ir, 44100)
+    start_sample_est = dsp.find_impulse_response_start(ir, threshold=20)
+    assert start_sample_est == 0
+
+
+def test_max_ir():
+    n_samples = 2**10
+    ir = np.zeros(n_samples)
+
+    snr = 60
+
+    noise = pf.Signal(
+        np.random.randn(n_samples) * 10**(-snr/20), 44100)
+
+    start_sample = 24
+    ir[start_sample] = 1
+    ir = pf.Signal(ir, 44100)
+    start_sample_est = dsp.find_impulse_response_maximum(ir)
+    assert start_sample_est == start_sample
+
+    ir_awgn = ir + noise
+    start_sample_est = dsp.find_impulse_response_maximum(ir_awgn)
+    assert start_sample_est == start_sample
+
+
 def test_time_shift_right():
     shift_samples = 10
     n_samples = 2**9
@@ -214,77 +288,3 @@ def test_time_shift_multitim_multishift():
     ir_shifted = dsp.time_shift(ir, -np.array(shift_samples, dtype=int))
 
     npt.assert_allclose(ir_shifted, ir_truth)
-
-
-def test_start_room_impulse_response():
-    rir = genfromtxt(
-        os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
-        delimiter=',')
-
-    rir = pf.Signal(rir, 44100)
-
-    actual = dsp.find_impulse_response_start(rir, threshold=20)
-
-    expected = 0
-
-    npt.assert_allclose(actual, expected)
-
-
-def test_start_room_impulse_response_shfted(monkeypatch):
-    rir = genfromtxt(
-        os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
-        delimiter=',')
-
-    rir_shifted = np.roll(rir, 128, axis=-1)
-    rir_shifted = pf.Signal(rir_shifted, 44100)
-    actual = dsp.find_impulse_response_start(rir_shifted, threshold=20)
-
-    expected = 128
-
-    npt.assert_allclose(actual, expected)
-
-
-def test_start_ir_thresh_invalid():
-    n_samples = 2**10
-    ir = np.zeros(n_samples)
-
-    start_sample = 24
-    ir[start_sample] = 1
-    # ir[start_sample-4:start_sample] = 10**(-10/10)
-    ir[0:start_sample] = 10**(-5/10)
-    ir = pf.Signal(ir, 44100)
-    start_sample_est = dsp.find_impulse_response_start(ir, threshold=20)
-    assert start_sample_est == 0
-
-
-def test_start_ir_thresh_invalid_osci():
-    n_samples = 2**10
-    ir = np.zeros(n_samples)
-
-    start_sample = 24
-    ir[start_sample] = 1
-    ir[start_sample-4:start_sample] = 10**(-30/10)
-    ir[0:start_sample-4] = 10**(-5/10)
-    ir = pf.Signal(ir, 44100)
-    start_sample_est = dsp.find_impulse_response_start(ir, threshold=20)
-    assert start_sample_est == 0
-
-
-def test_max_ir():
-    n_samples = 2**10
-    ir = np.zeros(n_samples)
-
-    snr = 60
-
-    noise = pf.Signal(
-        np.random.randn(n_samples) * 10**(-snr/20), 44100)
-
-    start_sample = 24
-    ir[start_sample] = 1
-    ir = pf.Signal(ir, 44100)
-    start_sample_est = dsp.find_impulse_response_maximum(ir)
-    assert start_sample_est == start_sample
-
-    ir_awgn = ir + noise
-    start_sample_est = dsp.find_impulse_response_maximum(ir_awgn)
-    assert start_sample_est == start_sample
