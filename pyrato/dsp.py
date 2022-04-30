@@ -130,7 +130,7 @@ def find_impulse_response_maximum(
     in the last 10 percent of the IR.
 
     """
-    ir_squared = np.abs(impulse_response)**2
+    ir_squared = np.abs(impulse_response.time)**2
 
     mask_start = int(0.9*ir_squared.shape[-1])
     if noise_energy == 'auto':

@@ -276,11 +276,12 @@ def test_max_ir():
 
     snr = 60
 
-    noise = np.random.randn(n_samples) * 10**(-snr/20)
+    noise = pf.Signal(
+        np.random.randn(n_samples) * 10**(-snr/20), 44100)
 
     start_sample = 24
     ir[start_sample] = 1
-
+    ir = pf.Signal(ir, 44100)
     start_sample_est = dsp.find_impulse_response_maximum(ir)
     assert start_sample_est == start_sample
 
