@@ -13,9 +13,9 @@ def find_impulse_response_start(
         threshold=20,
         noise_energy='auto'):
     """Find the first sample of an impulse response in a accordance with the
-    ISO standard ISO 3382 [#]_. The start sample is identified as the first sample
-    that varies significantly from the noise floor but still has a level of
-    at least 20 dB below the maximum of the impulse response. The function
+    ISO standard ISO 3382 [#]_. The start sample is identified as the first
+    sample that varies significantly from the noise floor but still has a level
+    of at least 20 dB below the maximum of the impulse response. The function
     further tries to consider oscillations before the time below the threshold
     value.
 
