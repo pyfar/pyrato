@@ -10,7 +10,6 @@ __version__ = '0.3.0'
 
 from .roomacoustics import (
     reverberation_time_energy_decay_curve,
-    schroeder_integration,
     energy_decay_curve_analytic,
     air_attenuation_coefficient,
 )
@@ -23,6 +22,7 @@ from .dsp import (
     center_frequencies_third_octaves
 )
 from .edc import (
+    schroeder_integration,
     preprocess_rir,
     energy_decay_curve_chu,
     energy_decay_curve_chu_lundeby,
