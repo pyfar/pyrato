@@ -10,7 +10,8 @@ def test_analytic_shoebox_eigenfreqs():
         analytic.eigenfrequencies_rectangular_room_rigid(
             L,
             max_freq=1e3,
-            speed_of_sound=343.9)
+            speed_of_sound=343.9,
+            sort=False)
 
     f_n = np.array([
         0,

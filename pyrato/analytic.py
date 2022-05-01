@@ -6,18 +6,21 @@ from scipy import optimize
 
 
 def eigenfrequencies_rectangular_room_rigid(
-        dimensions, max_freq, speed_of_sound):
+        dimensions, max_freq, speed_of_sound=343.9, sort=True):
     """Calculate the eigenfrequencies of a rectangular room with rigid walls.
 
     Parameters
     ----------
-    dimensions : double, ndarray
+    dimensions : float, numpy.ndarray
         The dimensions of the room in the form [L_x, L_y, L_z]
-    max_freq : double
+    max_freq : float
         The maximum frequency to consider for the calculation of the
-        eigenfrequencies of the room
-    speed_of_sound : double, optional (343.9)
-        The speed of sound
+        eigenfrequencies.
+    speed_of_sound : double, optional
+        The speed of sound in meters per second. The default is 343.9
+    sort : bool, optional
+        If ``True``, the return values will be sorted with ascending
+        frequencies. By default this is ``True``.
 
     Returns
     -------
@@ -30,6 +33,32 @@ def eigenfrequencies_rectangular_room_rigid(
     ----------
     ..  [2] H. Kuttruff, Room acoustics, pp. 64-66, 4th Ed. Taylor & Francis,
         2009.
+
+    Examples
+    --------
+
+    Calculate the eigenfrequencies under 75 Hz of a small room and plot.
+
+    >>> import numpy as np
+    >>> import pyrato as ra
+    >>> import matplotlib.pyplot as plt
+    >>> from pyrato.analytic import eigenfrequencies_rectangular_room_rigid
+    ...
+    >>> L = [4, 5, 2.6]
+    >>> f_n, n = eigenfrequencies_rectangular_room_rigid(
+    ...     L, max_freq=75, speed_of_sound=343.6, sort=True)
+    ...
+    >>> ax = plt.axes()
+    >>> ax.semilogx(f_n, np.arange(f_n.size), linestyle='', marker='o')
+    >>> labels = [str(nn) for nn in n.T]
+    >>> ax.set_yticks(np.arange(f_n.size))
+    >>> ax.set_yticklabels(labels)
+    >>> ax.set_xticks([30,  40, 50, 60, 70, 80])
+    >>> ax.set_xticklabels(['30', '40', '50', '60', '70', '80'])
+    >>> ax.set_xlabel('Frequency (Hz)')
+    >>> ax.set_ylabel('Eigenfrequency index [$n_x, n_y, n_z$]')
+    >>> plt.tight_layout()
+
     """
     c = speed_of_sound
     L = np.asarray(dimensions)
@@ -49,7 +78,7 @@ def eigenfrequencies_rectangular_room_rigid(
                     (2*f_max/c)**2 - (n_x/L_x)**2 - (n_y/L_y)**2
                 ) * L_z))) + 1
 
-    n = np.zeros((3, n_modes))
+    n = np.zeros((3, n_modes), dtype=int)
 
     idx = 0
     n_x_max = int(np.floor(2*f_max/c * L_x)) + 1
@@ -70,6 +99,11 @@ def eigenfrequencies_rectangular_room_rigid(
             idx += n_z_max
 
     f_n = c/2*np.sqrt(np.sum((n/L[np.newaxis].T)**2, axis=0))
+
+    if sort is True:
+        sort_idx = np.argsort(f_n)
+        f_n = f_n[sort_idx]
+        n = n[:, sort_idx]
 
     return f_n, n
 
