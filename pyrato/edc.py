@@ -11,6 +11,7 @@ from matplotlib import pyplot as plt
 from pyrato import dsp
 import pyrato as ra
 import warnings
+import pyfar as pf
 
 
 def estimate_noise_energy(
@@ -193,7 +194,72 @@ def subtract_noise_from_squared_rir(data, noise_level='auto'):
     return (data.T - noise_level).T
 
 
-def schroeder_integration(impulse_response, is_energy=False):
+def schroeder_integration(room_impulse_response, is_energy=False):
+    r"""Calculate the Schroeder integral of a room impulse response [#]_. The
+    result is the energy decay curve for the given room impulse response.
+
+    .. math:
+
+        \langle e^2(t) \rangle = N\cdot \int_{t}^{\infty} h^2(\tau)
+        \mathrm{d} \tau
+
+    Parameters
+    ----------
+    room_impulse_response : pyfar.Signal
+        Room impulse response as array
+    is_energy : boolean, optional
+        Whether the input represents energy data or sound pressure values.
+
+    Returns
+    -------
+    energy_decay_curve : pyfar.TimeData
+        The energy decay curve
+
+    Note
+    ----
+    This function does not apply any compensation of measurement noise and
+    integrates the full length of the input signal. It should only be used
+    if no measurement noise or artifacts are present in the data.
+
+    References
+    ----------
+    .. [#]  M. R. Schroeder, “New Method of Measuring Reverberation Time,”
+            The Journal of the Acoustical Society of America, vol. 37, no. 6,
+            pp. 1187-1187, 1965.
+
+    Example
+    -------
+    Calculate the Schroeder integral of a simulated RIR and plot.
+
+    .. plot::
+
+        >>> import numpy as np
+        >>> import pyfar as pf
+        >>> import pyrato as ra
+        >>> from pyrato.analytic import rectangular_room_rigid_walls
+        ...
+        >>> L = np.array([8, 5, 3])/10
+        >>> source_pos = np.array([5, 3, 1.2])/10
+        >>> receiver_pos = np.array([1, 1, 1.2])/10
+        >>> rir, _ = rectangular_room_rigid_walls(
+        ...     L, source_pos, receiver_pos,
+        ...     reverberation_time=1, max_freq=1e3, n_samples=2**16,
+        ...     speed_of_sound=343.9)
+        >>> edc = ra.schroeder_integration(rir)
+        >>> pf.plot.time(rir/np.abs(rir.time).max(), dB=True, label='RIR')
+        >>> ax = pf.plot.time(
+        ...     edc/edc.time[..., 0], dB=True, log_prefix=10, label='EDC')
+        >>> ax.set_ylim(-65, 5)
+        >>> ax.legend()
+    """
+
+    edc = _schroeder_integration(
+        room_impulse_response.time, is_energy=is_energy)
+
+    return pf.TimeData(edc, room_impulse_response.times)
+
+
+def _schroeder_integration(impulse_response, is_energy=False):
     r"""Calculate the Schroeder integral of a room impulse response [#]_. The
     result is the energy decay curve for the given room impulse response.
 
@@ -305,7 +371,7 @@ def energy_decay_curve_truncation(
     for idx_channel in range(0, n_channels):
         energy_decay_curve[
             idx_channel, :int(intersection_time_idx[idx_channel])] = \
-                ra.schroeder_integration(
+                _schroeder_integration(
                     energy_data[
                         idx_channel, :int(intersection_time_idx[idx_channel])],
                     is_energy=True)
@@ -426,7 +492,7 @@ def energy_decay_curve_lundeby(
                       * sampling_rate)
 
         energy_decay_curve[idx_channel, :intersection_time_idx] = \
-            ra.schroeder_integration(
+            _schroeder_integration(
                 energy_data[idx_channel, :intersection_time_idx],
                 is_energy=True)
         energy_decay_curve[idx_channel] += correction
@@ -530,7 +596,7 @@ def energy_decay_curve_chu(
         energy_data,
         noise_level=noise_level)
 
-    energy_decay_curve = ra.schroeder_integration(
+    energy_decay_curve = _schroeder_integration(
         subtracted,
         is_energy=True)
 
