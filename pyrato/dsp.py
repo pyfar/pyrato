@@ -205,12 +205,11 @@ def time_shift(signal, shift, circular_shift=True, unit='samples'):
     .. plot::
 
         >>> import pyfar as pf
+        >>> import pyrato as ra
         >>> import matplotlib.pyplot as plt
-        >>> # generate and shift the impulses
         >>> impulse = pf.signals.impulse(
         ...     32, amplitude=(1, 1.5, 1), delay=(14, 15, 16))
-        >>> shifted = pf.dsp.time_shift(impulse, [-2, 0, 2])
-        >>> # time domain plot
+        >>> shifted = ra.time_shift(impulse, [-2, 0, 2])
         >>> pf.plot.use('light')
         >>> _, axs = plt.subplots(2, 1)
         >>> pf.plot.time(impulse, ax=axs[0])
@@ -219,25 +218,21 @@ def time_shift(signal, shift, circular_shift=True, unit='samples'):
         >>> axs[1].set_title('Shifted signals')
         >>> plt.tight_layout()
 
-    Perform a non-circular shift the same impulses stored in three different
-    channels and plot the resulting signals
+    Perform a non-circular shift a single impulse and plot the results.
 
     .. plot::
 
         >>> import pyfar as pf
+        >>> import pyrato as ra
         >>> import matplotlib.pyplot as plt
-        >>> # generate and shift the impulses
-        >>> impulse = pf.signals.impulse(
-        ...     32, amplitude=(1, 1.5, 1), delay=(14, 15, 16))
-        >>> shifted = pf.dsp.time_shift(
-        ...     impulse, [-2, 0, 2], circular_shift=False)
-        >>> # time domain plot
+        >>> impulse = pf.signals.impulse(32, delay=15)
+        >>> shifted = ra.time_shift(impulse, -10, circular_shift=False)
         >>> pf.plot.use('light')
         >>> _, axs = plt.subplots(2, 1)
         >>> pf.plot.time(impulse, ax=axs[0])
         >>> pf.plot.time(shifted, ax=axs[1])
-        >>> axs[0].set_title('Original signals')
-        >>> axs[1].set_title('Shifted signals')
+        >>> axs[0].set_title('Original signal')
+        >>> axs[1].set_title('Shifted signal')
         >>> plt.tight_layout()
 
     """
