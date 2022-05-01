@@ -1,6 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import pyrato.analytic as analytic
+import pyfar as pf
 
 
 def test_analytic_shoebox_eigenfreqs():
@@ -62,7 +63,9 @@ def test_analytic_shoebox_rir():
         delimiter=',',
         skiprows=1)
 
-    npt.assert_allclose(rir, ref)
+    ref = pf.Signal(ref, 44100)
+
+    npt.assert_allclose(rir.time, ref.time)
 
 
 def test_eigenfreq_impedance_1d_real():

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from itertools import count
 
+import pyfar as pf
 import numpy as np
 from scipy import optimize
 
@@ -39,25 +40,27 @@ def eigenfrequencies_rectangular_room_rigid(
 
     Calculate the eigenfrequencies under 75 Hz of a small room and plot.
 
-    >>> import numpy as np
-    >>> import pyrato as ra
-    >>> import matplotlib.pyplot as plt
-    >>> from pyrato.analytic import eigenfrequencies_rectangular_room_rigid
-    ...
-    >>> L = [4, 5, 2.6]
-    >>> f_n, n = eigenfrequencies_rectangular_room_rigid(
-    ...     L, max_freq=75, speed_of_sound=343.6, sort=True)
-    ...
-    >>> ax = plt.axes()
-    >>> ax.semilogx(f_n, np.arange(f_n.size), linestyle='', marker='o')
-    >>> labels = [str(nn) for nn in n.T]
-    >>> ax.set_yticks(np.arange(f_n.size))
-    >>> ax.set_yticklabels(labels)
-    >>> ax.set_xticks([30,  40, 50, 60, 70, 80])
-    >>> ax.set_xticklabels(['30', '40', '50', '60', '70', '80'])
-    >>> ax.set_xlabel('Frequency (Hz)')
-    >>> ax.set_ylabel('Eigenfrequency index [$n_x, n_y, n_z$]')
-    >>> plt.tight_layout()
+    .. plot::
+
+        >>> import numpy as np
+        >>> import pyrato as ra
+        >>> import matplotlib.pyplot as plt
+        >>> from pyrato.analytic import eigenfrequencies_rectangular_room_rigid
+        ...
+        >>> L = [4, 5, 2.6]
+        >>> f_n, n = eigenfrequencies_rectangular_room_rigid(
+        ...     L, max_freq=75, speed_of_sound=343.6, sort=True)
+        ...
+        >>> ax = plt.axes()
+        >>> ax.semilogx(f_n, np.arange(f_n.size), linestyle='', marker='o')
+        >>> labels = [str(nn) for nn in n.T]
+        >>> ax.set_yticks(np.arange(f_n.size))
+        >>> ax.set_yticklabels(labels)
+        >>> ax.set_xticks([30,  40, 50, 60, 70, 80])
+        >>> ax.set_xticklabels(['30', '40', '50', '60', '70', '80'])
+        >>> ax.set_xlabel('Frequency (Hz)')
+        >>> ax.set_ylabel('Eigenfrequency index [$n_x, n_y, n_z$]')
+        >>> plt.tight_layout()
 
     """
     c = speed_of_sound
@@ -108,14 +111,15 @@ def eigenfrequencies_rectangular_room_rigid(
     return f_n, n
 
 
-def rectangular_room_rigid_walls(dimensions,
-                                 source,
-                                 receiver,
-                                 reverberation_time,
-                                 max_freq,
-                                 samplingrate=44100,
-                                 speed_of_sound=343.9,
-                                 n_samples=2**18):
+def rectangular_room_rigid_walls(
+        dimensions,
+        source,
+        receiver,
+        reverberation_time,
+        max_freq,
+        samplingrate=44100,
+        speed_of_sound=343.9,
+        n_samples=2**18):
     r"""Calculate the transfer function of a rectangular room based on the
     analytic model as given in [2]_ . The model is based on the solution
     for a room with rigid walls. The damping of the modes is included as
@@ -143,7 +147,7 @@ def rectangular_room_rigid_walls(dimensions,
 
     Returns
     -------
-    rir : ndarray, double
+    rir : pyfar.Signal
         The room impulse response
     eigenfrequencies: ndarray, double
         The eigenfrequencies for which the room impulse response was
@@ -154,6 +158,24 @@ def rectangular_room_rigid_walls(dimensions,
     ..  [2] H. Kuttruff, Room acoustics, pp. 64-66, 4th Ed. Taylor & Francis,
         2009.
 
+    Example
+    -------
+    Calculate the sound field in a rectangular room with 1 s reverberation
+    time for a given source and receiver combination.
+
+    .. plot::
+        >>> import numpy as np
+        >>> import pyfar as pf
+        >>> from pyrato.analytic import rectangular_room_rigid_walls
+        ...
+        >>> L = np.array([8, 5, 3])/10
+        >>> source_pos = np.array([5, 3, 1.2])/10
+        >>> receiver_pos = np.array([1, 1, 1.2])/10
+        >>> rir, _ = rectangular_room_rigid_walls(
+        >>>     L, source_pos, receiver_pos,
+        >>>     reverberation_time=1, max_freq=1e3, n_samples=2**16,
+        >>>     speed_of_sound=343.9)
+        >>> pf.plot.time_freq(rir)
 
     """
     delta_n_raw = 3*np.log(10)/reverberation_time
@@ -196,6 +218,8 @@ def rectangular_room_rigid_walls(dimensions,
         transfer_function += (coeff_n/den)
 
     rir = np.fft.irfft(transfer_function, n=n_samples)
+
+    rir = pf.Signal(rir, samplingrate)
     return rir, f_n
 
 
