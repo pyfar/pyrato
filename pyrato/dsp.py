@@ -263,16 +263,13 @@ def time_shift(signal, shift, circular_shift=True, unit='samples'):
             comment=shifted.comment,
             dtype=shifted.dtype)
 
+        shifted = shifted.flatten()
         shift_samples = shift_samples.flatten()
         for ch in range(shifted.cshape[0]):
-            shifted.time[ch] = np.roll(
-                shifted.time[ch],
-                shift_samples[ch],
-                axis=-1)
             if shift[ch] < 0:
-                shifted.time[ch, shift[ch]:] = np.nan
+                shifted.time[ch, shift_samples[ch]:] = np.nan
             else:
-                shifted.time[ch, :shift[ch]] = np.nan
+                shifted.time[ch, :shift_samples[ch]] = np.nan
 
         shifted = shifted.reshape(signal.cshape)
 
