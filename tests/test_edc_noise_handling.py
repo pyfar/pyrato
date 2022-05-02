@@ -240,12 +240,12 @@ def test_edc_chu_2D(monkeypatch):
 
 
 def test_intersection_time_1D(monkeypatch):
-    rir = genfromtxt(
+    rir = pf.Signal(genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
-        delimiter=',')
-    expected = genfromtxt(
+        delimiter=','), 3000)
+    expected = np.atleast_2d(genfromtxt(
         os.path.join(test_data_path, 'intersection_time_1D.csv'),
-        delimiter=',')[np.newaxis].T
+        delimiter=',')).T
 
     monkeypatch.setattr(
         dsp,
@@ -254,7 +254,6 @@ def test_intersection_time_1D(monkeypatch):
 
     actual = enh.intersection_time_lundeby(
         rir,
-        sampling_rate=3000,
         freq='broadband',
         is_energy=False,
         time_shift=False,
@@ -264,12 +263,12 @@ def test_intersection_time_1D(monkeypatch):
 
 
 def test_intersection_time_2D(monkeypatch):
-    rir = genfromtxt(
+    rir = pf.Signal(genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'),
-        delimiter=',')
-    expected = genfromtxt(
+        delimiter=','), 3000)
+    expected = np.atleast_2d(genfromtxt(
         os.path.join(test_data_path, 'intersection_time_2D.csv'),
-        delimiter=',')
+        delimiter=','))
 
     monkeypatch.setattr(
         dsp,
@@ -278,7 +277,6 @@ def test_intersection_time_2D(monkeypatch):
 
     actual = enh.intersection_time_lundeby(
         rir,
-        sampling_rate=3000,
         freq='broadband',
         is_energy=False,
         time_shift=False,

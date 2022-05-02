@@ -661,24 +661,22 @@ def energy_decay_curve_chu_lundeby(
 
 def intersection_time_lundeby(
         data,
-        sampling_rate,
         freq='broadband',
         initial_noise_power='auto',
         is_energy=False,
         time_shift=False,
         channel_independent=False,
         plot=False):
+    """Calculate the intersection time between impulse response and noise.
 
-    """ This function uses the algorithm after Lundeby et al. [#]_ to calculate
+    This function uses the algorithm after Lundeby et al. [#]_ to calculate
     the intersection time, lundeby reverberation time, and noise level
     estimation.
 
     Parameters
     ----------
-    data : ndarray, double
-        The room impulse response with dimension [..., n_samples]
-    sampling_rate: integer
-        The sampling rate of the room impulse response.
+    data : pyfar.Signal
+        The room impulse response
     freq: integer OR string
         The frequency band. If set to 'broadband',
         the time window of the Lundeby-algorithm will not be set in dependence
@@ -711,6 +709,41 @@ def intersection_time_lundeby(
     .. [#]  Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of
             Measurements in Room Acoustics - ACUSTICA Vol. 81 (1995)
 
+    Examples
+    --------
+
+    Estimate the intersection time :math:`T_i` and plot the RIR and the
+    estimated noise power.
+
+    .. plot::
+
+        >>> import numpy as np
+        >>> import pyfar as pf
+        >>> import pyrato as ra
+        >>> from pyrato.analytic import rectangular_room_rigid_walls
+        ...
+        >>> L = np.array([8, 5, 3])/10
+        >>> source_pos = np.array([5, 3, 1.2])/10
+        >>> receiver_pos = np.array([1, 1, 1.2])/10
+        >>> rir, _ = rectangular_room_rigid_walls(
+        ...     L, source_pos, receiver_pos,
+        ...     reverberation_time=1, max_freq=1e3, n_samples=2**16,
+        ...     speed_of_sound=343.9)
+        >>> rir = rir/np.abs(rir.time).max()
+        ...
+        >>> awgn = pf.signals.noise(
+        ...     rir.n_samples, rms=rir.time.max()*10**(-40/20),
+        ...     sampling_rate=rir.sampling_rate)
+        >>> rir = rir + awgn
+        >>> inter_time, _, noise_power = ra.intersection_time_lundeby(rir)
+        ...
+        >>> ax = pf.plot.time(rir, dB=True, label='RIR')
+        >>> ax.axvline(inter_time, c='k', linestyle='--', label='$T_i$')
+        >>> ax.axhline(
+        ...     10*np.log10(noise_power), c='k', linestyle=':', label='Noise')
+        >>> ax.set_ylim(-65, 5)
+        >>> ax.legend()
+
     """
     # Define constants:
     # time intervals per 10 dB decay. Lundeby: 3...10
@@ -725,6 +758,8 @@ def intersection_time_lundeby(
         is_energy=is_energy,
         shift=time_shift,
         channel_independent=channel_independent)
+    sampling_rate = data.sampling_rate
+    energy_data = energy_data.time
 
     if freq == "broadband":
         # broadband: use 30 ms windows sizes
@@ -738,8 +773,7 @@ def intersection_time_lundeby(
 
     # (2) ESTIMATE NOISE
     if initial_noise_power == 'auto':
-        noise_estimation = dsp.estimate_noise_energy(
-            energy_data, is_energy=True)
+        noise_estimation = dsp._estimate_noise_energy(energy_data)
     else:
         noise_estimation = initial_noise_power.copy()
 
