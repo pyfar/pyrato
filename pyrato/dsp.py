@@ -478,7 +478,7 @@ def estimate_noise_energy(
     energy_data = preprocess_rir(
         data,
         is_energy=is_energy,
-        time_shift=False,
+        shift=False,
         channel_independent=False)[0]
 
     return _estimate_noise_energy(energy_data.time, interval=interval)
@@ -572,7 +572,7 @@ def _smooth_rir(
 def preprocess_rir(
         data,
         is_energy=False,
-        time_shift=False,
+        shift=False,
         channel_independent=False):
     """ Preprocess the room impulse response for further processing:
         - Square data
@@ -589,7 +589,7 @@ def preprocess_rir(
         The room impulse response with dimension [..., n_samples]
     is_energy : boolean
         Defines, if the data is already squared.
-    time_shift : boolean
+    shift : boolean
         Defines, if the silence at beginning of the RIR should be removed.
     channel_independent : boolean
         Defines, if the time shift is done channel-independent or not.
@@ -610,7 +610,7 @@ def preprocess_rir(
     data_shape = list(data.cshape)
     data = data.reshape((-1,))
 
-    if time_shift:
+    if shift:
         rir_start_idx = find_impulse_response_start(data)
 
         if channel_independent and not n_channels == 1:
