@@ -14,167 +14,31 @@ import warnings
 import pyfar as pf
 
 
-def estimate_noise_energy(
-        data,
-        interval=[0.9, 1.0],
-        is_energy=False):
-    """ This function estimates the noise energy level of a given room impulse
-    response. The noise is assumed to be Gaussian.
+def subtract_noise_from_squared_rir(data, noise_level='auto'):
+    """Subtract the noise power from a squared room impulse response.
 
     Parameters
     ----------
-    data: np.array
-        The room impulse response with dimension [..., n_samples]
-    interval : tuple, float, [0.9, 1.]
-        Defines the interval of the RIR to be evaluated for the estimation.
-        The interval is relative to the length of the RIR [0 = 0%, 1=100%)]
-    is_energy: Boolean
-        Defines if the data is already squared.
+    data : pyfar.TimeData
+        The squared room impulse response.
+    noise_level : str or numpy.ndarray, float, optional
+        The noise power for each channel. The default is 'auto', which will
+        try to estimate the noise power from the room impulse response.
 
     Returns
     -------
-    noise_energy: float
-        The energy of the background noise.
-    """
-
-    energy_data = preprocess_rir(
-        data,
-        is_energy=is_energy,
-        time_shift=False,
-        channel_independent=False)[0]
-
-    if np.any(energy_data) < 0:
-        raise ValueError("Energy is negative, check your input signal.")
-
-    region_start_idx = int(energy_data.shape[-1]*interval[0])
-    region_end_idx = int(energy_data.shape[-1]*interval[1])
-    mask = np.arange(region_start_idx, region_end_idx)
-    noise_energy = np.nanmean(np.take(energy_data, mask, axis=-1), axis=-1)
-
-    return noise_energy
-
-
-def preprocess_rir(
-        data,
-        is_energy=False,
-        time_shift=False,
-        channel_independent=False):
-    """ Preprocess the room impulse response for further processing:
-        - Square data
-        - Shift the RIR to the first sample of the array, compensating for the
-          delay of the time of arrival of the direct sound. The time shift is
-          performed as a non-cyclic shift, adding numpy.nan values in the end
-          of the RIR corresponding to the number of samples the data is
-          shifted by.
-        - The time shift can be done channel-independent or not.
-
-    Parameters
-    ----------
-    data : ndarray, double
-        The room impulse response with dimension [..., n_samples]
-    is_energy : boolean
-        Defines, if the data is already squared.
-    time_shift : boolean
-        Defines, if the silence at beginning of the RIR should be removed.
-    channel_independent : boolean
-        Defines, if the time shift is done channel-independent or not.
-
-    Returns
-    -------
-    energy_data : ndarray, double
-        The preprocessed RIR
-    n_channels : integer
-        The number of channels of the RIR
-    data_shape : list, integer
-        The original data shape.
+    pyfar.TimeData
+        The squared room impulse response after noise power subtraction.
 
     """
-    times = data.times
-    n_channels = np.prod(data.cshape)
+    subtracted = _subtract_noise_from_squared_rir(
+        data.time, noise_level=noise_level)
 
-    data_shape = list(data.cshape)
-    data = data.reshape((-1,))
-
-    if time_shift:
-        rir_start_idx = dsp.find_impulse_response_start(data)
-
-        if channel_independent and not n_channels == 1:
-            shift_samples = -rir_start_idx
-        else:
-            min_shift = np.amin(rir_start_idx)
-            shift_samples = np.asarray(
-                -min_shift * np.ones(n_channels), dtype=int)
-
-        result = dsp.time_shift(
-            data, shift_samples, circular_shift=False)
-    else:
-        result = data
-
-    if not is_energy:
-        energy_data = np.abs(result.time)**2
-    else:
-        energy_data = result.time.copy()
-
-    energy_data = pf.TimeData(energy_data, times)
-
-    return energy_data, n_channels, data_shape
-
-
-def _smooth_rir(
-        data,
-        sampling_rate,
-        smooth_block_length=0.075):
-    """ Smoothens the RIR by averaging the data in an specified interval.
-
-    Parameters
-    ----------
-    data : ndarray, double
-        The room impulse response with dimension [..., n_samples]
-    sampling_rate: integer
-        Defines the sampling rate of the room impulse response.
-    smooth_block_length : double
-        Defines the block-length of the smoothing algorithm in seconds.
-
-    Returns
-    -------
-    time_window_data : ndarray, double
-        The smoothed RIR.
-    time_vector_window : ndarray, double
-        The respective time vector fitting the smoothed data.
-    time_vector : ndarray, double
-        The time vector fitting the original data.
-
-    """
-    data = np.atleast_2d(data)
-    n_samples = data.shape[-1]
-    n_samples_nan = np.count_nonzero(np.isnan(data), axis=-1)
-
-    n_samples_per_block = int(np.round(smooth_block_length * sampling_rate, 0))
-    n_blocks = np.asarray(
-        np.floor((n_samples-n_samples_nan)/n_samples_per_block),
-        dtype=int)
-
-    n_blocks_min = int(np.min(n_blocks))
-    n_samples_actual = int(n_blocks_min*n_samples_per_block)
-    reshaped_array = np.reshape(
-        data[..., :n_samples_actual],
-        (-1, n_blocks_min, n_samples_per_block))
-    time_window_data = np.mean(reshaped_array, axis=-1)
-
-    # Use average time instances corresponding to the average energy level
-    # instead of time for the first sample of the block
-    time_vector_window = \
-        ((0.5+np.arange(0, n_blocks_min)) * n_samples_per_block/sampling_rate)
-
-    # Use the time corresponding to the sampling of the original data
-    time_vector = (np.arange(0, n_samples))/sampling_rate
-
-    return time_window_data, time_vector_window, time_vector
+    return pf.TimeData(subtracted, data.times, comment=data.comment)
 
 
 def _subtract_noise_from_squared_rir(data, noise_level='auto'):
-    """ Subtracts the noise energy level from the squared RIR. Note, that the
-        RIR has to be squared before.
+    """Subtract the noise power from a squared room impulse response.
 
     Parameters
     ----------
@@ -188,9 +52,8 @@ def _subtract_noise_from_squared_rir(data, noise_level='auto'):
 
     """
     if noise_level == "auto":
-        noise_level = estimate_noise_energy(
+        noise_level = dsp._estimate_noise_energy(
             data,
-            is_energy=True,
             interval=[0.9, 1.0])
     return (data.T - noise_level).T
 
@@ -348,10 +211,10 @@ def energy_decay_curve_truncation(
     energy_decay_curve: ndarray, double
         Returns the noise handeled edc.
     """
-    energy_data, n_channels, data_shape = preprocess_rir(
+    energy_data, n_channels, data_shape = dsp.preprocess_rir(
         data,
         is_energy=is_energy,
-        time_shift=time_shift,
+        shift=time_shift,
         channel_independent=channel_independent)
     n_samples = energy_data.shape[-1]
 
@@ -364,7 +227,7 @@ def energy_decay_curve_truncation(
         time_shift=False,
         channel_independent=False,
         plot=False)[0]
-    time_vector = _smooth_rir(energy_data, sampling_rate)[2]
+    time_vector = dsp._smooth_rir(energy_data, sampling_rate)[2]
 
     intersection_time_idx = np.rint(intersection_time * sampling_rate)
 
@@ -460,10 +323,10 @@ def energy_decay_curve_lundeby(
             Measurements in Room Acoustics - ACUSTICA Vol. 81 (1995)
     """
 
-    energy_data, n_channels, data_shape = preprocess_rir(
+    energy_data, n_channels, data_shape = dsp.preprocess_rir(
         data,
         is_energy=is_energy,
-        time_shift=time_shift,
+        shift=time_shift,
         channel_independent=channel_independent)
     n_samples = energy_data.shape[-1]
     intersection_time, late_reverberation_time, noise_estimation = \
@@ -476,7 +339,7 @@ def energy_decay_curve_lundeby(
             time_shift=False,
             channel_independent=False,
             plot=False)
-    time_vector = _smooth_rir(energy_data, sampling_rate)[2]
+    time_vector = dsp._smooth_rir(energy_data, sampling_rate)[2]
 
     energy_decay_curve = np.zeros([n_channels, n_samples])
 
@@ -534,8 +397,6 @@ def energy_decay_curve_lundeby(
 
 def energy_decay_curve_chu(
         data,
-        sampling_rate,
-        freq='broadband',
         noise_level='auto',
         is_energy=False,
         time_shift=True,
@@ -551,12 +412,6 @@ def energy_decay_curve_chu(
     ----------
     data : ndarray, double
         The room impulse response with dimension [..., n_samples]
-    sampling_rate: integer
-        The sampling rate of the room impulse response.
-    freq: integer OR string
-        The frequency band. If set to 'broadband',
-        the time window of the Lundeby-algorithm will not be set in dependence
-        of frequency.
     noise_level: ndarray, double OR string
         If not specified, the noise level is calculated based on the last 10
         percent of the RIR. Otherwise specify manually for each channel
@@ -585,66 +440,81 @@ def energy_decay_curve_chu(
             Schroeder’s impulse method and decay-curve averaging method”.
             In: Journal of the Acoustical Society of America 63.5 (1978),
             pp. 1444–1450.
-    """
 
-    energy_data, n_channels, data_shape = preprocess_rir(
+    Examples
+    --------
+
+    .. plot::
+
+        >>> import numpy as np
+        >>> import pyfar as pf
+        >>> import pyrato as ra
+        >>> from pyrato.analytic import rectangular_room_rigid_walls
+        ...
+        >>> L = np.array([8, 5, 3])/10
+        >>> source_pos = np.array([5, 3, 1.2])/10
+        >>> receiver_pos = np.array([1, 1, 1.2])/10
+        >>> rir, _ = rectangular_room_rigid_walls(
+        ...     L, source_pos, receiver_pos,
+        ...     reverberation_time=1, max_freq=1e3, n_samples=2**16,
+        ...     speed_of_sound=343.9)
+        ...
+        >>> awgn = pf.signals.noise(
+        ...     rir.n_samples, rms=rir.time.max()*10**(-40/20),
+        ...     sampling_rate=rir.sampling_rate)
+        >>> rir = rir + awgn
+        >>> edc = ra.energy_decay_curve_chu(rir)
+        ...
+        >>> pf.plot.time(rir/np.abs(rir.time).max(), dB=True, label='RIR')
+        >>> ax = pf.plot.time(
+        ...     edc/edc.time[..., 0], dB=True, log_prefix=10, label='EDC')
+        >>> ax.set_ylim(-65, 5)
+        >>> ax.legend()
+
+    """
+    cshape = data.cshape
+    energy_data, n_channels, data_shape = dsp.preprocess_rir(
         data,
         is_energy=is_energy,
-        time_shift=time_shift,
+        shift=time_shift,
         channel_independent=channel_independent)
 
-    subtracted = _subtract_noise_from_squared_rir(
+    subtracted = subtract_noise_from_squared_rir(
         energy_data,
         noise_level=noise_level)
 
-    energy_decay_curve = _schroeder_integration(
-        subtracted,
-        is_energy=True)
-
-    energy_decay_curve = np.atleast_2d(energy_decay_curve)
+    edc = schroeder_integration(subtracted, is_energy=True)
 
     if normalize:
         # Normalize the EDC...
         if not channel_independent:
             # ...by the first element of each channel.
-            energy_decay_curve = (energy_decay_curve.T
-                                  / energy_decay_curve[..., 0]).T
+            edc.time = (edc.time.T / edc.time[..., 0]).T
         else:
             # ...by the maximum first element of all channels.
-            max_start_value = np.amax(energy_decay_curve[..., 0])
-            energy_decay_curve /= max_start_value
+            max_start_value = np.amax(edc.time[..., 0])
+            edc.time /= max_start_value
 
-    mask = energy_decay_curve <= 2*np.finfo(float).eps
+    mask = edc.time <= 2*np.finfo(float).eps
     if np.any(mask):
         first_zero = np.nanargmax(mask, axis=-1)
         for channel in range(n_channels):
-            energy_decay_curve[channel, first_zero[channel]:] = np.nan
+            edc.time[channel, first_zero[channel]:] = np.nan
 
     if plot:
-        time_vector = (0.5+np.arange(0, energy_data.shape[-1]))/sampling_rate
         plt.figure(figsize=(15, 3))
+        pf.plot.use('light')
         plt.subplot(131)
-        plt.plot(time_vector, 10*np.log10(energy_data.T))
-        plt.xlabel('Time [s]')
-        plt.ylabel('Squared IR [dB]')
-        plt.grid(True)
+        pf.plot.time(energy_data, dB=True, log_prefix=10)
+        plt.ylabel('Squared IR in dB')
         plt.subplot(132)
-        plt.plot(time_vector, 10*np.log10(subtracted.T))
-        plt.xlabel('Time [s]')
-        plt.ylabel('Noise subtracted IR [dB]')
-        plt.grid(True)
+        pf.plot.time(subtracted, dB=True, log_prefix=10)
+        plt.ylabel('Noise subtracted RIR in dB')
         plt.subplot(133)
-        plt.plot(time_vector, 10*np.log10(energy_decay_curve.T))
-        plt.xlabel('Time [s]')
-        plt.ylabel('Noise-handeled EDC [dB]')
-        plt.grid(True)
-        plt.tight_layout()
+        pf.plot.time(edc, dB=True, log_prefix=10)
+        plt.ylabel('EDC in dB')
 
-    # Recover original data shape:
-    energy_decay_curve = np.reshape(energy_decay_curve, data_shape)
-    energy_decay_curve = np.squeeze(energy_decay_curve)
-
-    return energy_decay_curve
+    return edc.reshape(cshape)
 
 
 def energy_decay_curve_chu_lundeby(
@@ -706,10 +576,10 @@ def energy_decay_curve_chu_lundeby(
             room acoustic parameters,” 2015.
     """
 
-    energy_data, n_channels, data_shape = preprocess_rir(
+    energy_data, n_channels, data_shape = dsp.preprocess_rir(
         data,
         is_energy=is_energy,
-        time_shift=time_shift,
+        shift=time_shift,
         channel_independent=channel_independent)
     n_samples = energy_data.shape[-1]
 
@@ -728,14 +598,14 @@ def energy_decay_curve_chu_lundeby(
             channel_independent=False,
             plot=False)
 
-    time_vector = _smooth_rir(energy_data, sampling_rate)[2]
+    time_vector = dsp._smooth_rir(energy_data, sampling_rate)[2]
     energy_decay_curve = np.zeros([n_channels, n_samples])
 
     for idx_channel in range(0, n_channels):
         intersection_time_idx = np.argmin(np.abs(
             time_vector - intersection_time[idx_channel]))
         if noise_level == 'auto':
-            p_square_at_intersection = estimate_noise_energy(
+            p_square_at_intersection = dsp.estimate_noise_energy(
                 energy_data[idx_channel], is_energy=True)
         else:
             p_square_at_intersection = noise_level[idx_channel]
@@ -850,10 +720,10 @@ def intersection_time_lundeby(
     # Dynamic range 10 ... 20 dB
     use_dyn_range_for_regression = 20
 
-    energy_data, n_channels, data_shape = preprocess_rir(
+    energy_data, n_channels, data_shape = dsp.preprocess_rir(
         data,
         is_energy=is_energy,
-        time_shift=time_shift,
+        shift=time_shift,
         channel_independent=channel_independent)
 
     if freq == "broadband":
@@ -863,12 +733,12 @@ def intersection_time_lundeby(
         freq_dependent_window_time = (800/freq+10) / 1000
 
     # (1) SMOOTH
-    time_window_data, time_vector_window, time_vector = _smooth_rir(
+    time_window_data, time_vector_window, time_vector = dsp._smooth_rir(
         energy_data, sampling_rate, freq_dependent_window_time)
 
     # (2) ESTIMATE NOISE
     if initial_noise_power == 'auto':
-        noise_estimation = estimate_noise_energy(
+        noise_estimation = dsp.estimate_noise_energy(
             energy_data, is_energy=True)
     else:
         noise_estimation = initial_noise_power.copy()
@@ -937,7 +807,7 @@ def intersection_time_lundeby(
         # (6) AVERAGE
         time_window_data_current_channel, \
             time_vector_window_current_channel, \
-            time_vector_current_channel = _smooth_rir(
+            time_vector_current_channel = dsp._smooth_rir(
                 energy_data[idx_channel], sampling_rate, window_time)
         time_window_data_current_channel = np.squeeze(
             time_window_data_current_channel)

@@ -15,203 +15,12 @@ from numpy import genfromtxt
 import pyfar as pf
 test_data_path = os.path.join(os.path.dirname(__file__), 'test_data')
 
-
 def mock_shift_samples_1d(*args, **kwargs):
     return np.array([76])
 
 
 def mock_shift_samples_2d(*args, **kwargs):
     return np.array([76, 76])
-
-
-def test_noise_energy_1D():
-    rir = genfromtxt(
-        os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
-        delimiter=',')
-    expected = genfromtxt(
-        os.path.join(test_data_path, 'noise_energy_1D.csv'),
-        delimiter=',')
-    actual = enh.estimate_noise_energy(
-        rir,
-        interval=[0.9, 1.0],
-        is_energy=False)
-    npt.assert_allclose(actual, expected)
-
-
-def test_noise_energy_2D():
-    rir = genfromtxt(
-        os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'),
-        delimiter=',')
-    expected = genfromtxt(
-        os.path.join(test_data_path, 'noise_energy_2D.csv'),
-        delimiter=',')
-    actual = enh.estimate_noise_energy(
-        rir,
-        interval=[0.9, 1.0],
-        is_energy=False)
-    npt.assert_allclose(actual, expected)
-
-
-def test_preprocessing_1D():
-    rir = genfromtxt(
-        os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
-        delimiter=',')
-    rir = pf.Signal(rir, 1)
-    actual = enh.preprocess_rir(
-        rir,
-        is_energy=False,
-        time_shift=False,
-        channel_independent=False)[0]
-
-    expected = np.atleast_2d(genfromtxt(
-        os.path.join(test_data_path, 'preprocessing_1D.csv'),
-        delimiter=','))
-    npt.assert_allclose(actual.time, np.atleast_2d(expected))
-
-
-def test_preprocessing_2D():
-    rir = genfromtxt(
-        os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'),
-        delimiter=',')
-    rir = pf.Signal(rir, 1)
-
-    actual = enh.preprocess_rir(
-        rir,
-        is_energy=False,
-        time_shift=False,
-        channel_independent=False)[0]
-
-    expected = genfromtxt(
-        os.path.join(test_data_path, 'preprocessing_2D.csv'),
-        delimiter=',')
-    npt.assert_allclose(actual.time, expected)
-
-
-def test_preprocessing_time_shift_1D(monkeypatch):
-    # Patch the RIR start finding to always return same number of samples
-    monkeypatch.setattr(
-        dsp,
-        "find_impulse_response_start",
-        mock_shift_samples_1d)
-
-    rir = genfromtxt(
-        os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
-        delimiter=',')
-    rir = pf.Signal(rir, 1)
-
-    actual = enh.preprocess_rir(
-        rir,
-        is_energy=False,
-        time_shift=True,
-        channel_independent=False)[0]
-
-    expected = np.atleast_2d(genfromtxt(
-        os.path.join(test_data_path, 'preprocessing_time_shift_1D.csv'),
-        delimiter=','))
-    npt.assert_allclose(actual.time, expected)
-
-
-def test_preprocessing_time_shift_2D(monkeypatch):
-    # Patch the RIR start finding to always return same number of samples
-    monkeypatch.setattr(
-        dsp,
-        "find_impulse_response_start",
-        mock_shift_samples_2d)
-
-    rir = pf.Signal(
-        genfromtxt(
-            os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'),
-            delimiter=','),
-        1)
-
-    expected = np.atleast_2d(genfromtxt(
-        os.path.join(test_data_path, 'preprocessing_time_shift_2D.csv'),
-        delimiter=','))
-
-    actual = enh.preprocess_rir(
-        rir,
-        is_energy=False,
-        time_shift=True,
-        channel_independent=False)[0]
-    npt.assert_allclose(actual.time, expected)
-
-
-def test_preprocessing_time_shift_channel_independent_1D(monkeypatch):
-    # Patch the RIR start finding to always return same number of samples
-    monkeypatch.setattr(
-        dsp,
-        "find_impulse_response_start",
-        mock_shift_samples_1d)
-
-    rir = pf.Signal(
-        genfromtxt(
-            os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
-            delimiter=','),
-        1)
-    expected = np.atleast_2d(genfromtxt(
-        os.path.join(
-            test_data_path,
-            'preprocessing_time_shift_channel_independent_1D.csv'),
-        delimiter=','))
-
-    actual = enh.preprocess_rir(
-        rir,
-        is_energy=False,
-        time_shift=True,
-        channel_independent=True)[0]
-    npt.assert_allclose(actual.time, expected)
-
-
-def test_preprocessing_time_shift_channel_independent_2D(monkeypatch):
-    # Patch the RIR start finding to always return same number of samples
-    monkeypatch.setattr(
-        dsp,
-        "find_impulse_response_start",
-        mock_shift_samples_2d)
-
-    rir = pf.Signal(genfromtxt(
-        os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'),
-        delimiter=','), 1)
-    expected = np.atleast_2d(genfromtxt(
-        os.path.join(
-            test_data_path,
-            'preprocessing_time_shift_channel_independent_2D.csv'),
-        delimiter=','))
-
-    actual = enh.preprocess_rir(
-        rir,
-        is_energy=False,
-        time_shift=True,
-        channel_independent=True)[0]
-    npt.assert_allclose(actual.time, expected)
-
-
-def test_smoothed_rir_1D():
-    rir = genfromtxt(
-        os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
-        delimiter=',')
-    expected = genfromtxt(
-        os.path.join(test_data_path, 'smoothed_rir_1D.csv'),
-        delimiter=',')[np.newaxis]
-    actual = enh._smooth_rir(
-        rir,
-        sampling_rate=3000,
-        smooth_block_length=0.075)[0]
-    npt.assert_allclose(actual, expected)
-
-
-def test_smoothed_rir_2D():
-    rir = genfromtxt(
-        os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'),
-        delimiter=',')
-    expected = genfromtxt(
-        os.path.join(test_data_path, 'smoothed_rir_2D.csv'),
-        delimiter=',')
-    actual = enh._smooth_rir(
-        rir,
-        sampling_rate=3000,
-        smooth_block_length=0.075)[0]
-    npt.assert_allclose(actual, expected)
 
 
 def test_substracted_1D():
@@ -385,12 +194,12 @@ def test_edc_lundeby_chu_2D(monkeypatch):
 
 
 def test_edc_chu_1D(monkeypatch):
-    rir = genfromtxt(
+    rir = pf.Signal(genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
-        delimiter=',')
-    expected = genfromtxt(
+        delimiter=','), 3000)
+    expected = np.atleast_2d(genfromtxt(
         os.path.join(test_data_path, 'edc_chu_1D.csv'),
-        delimiter=',')
+        delimiter=','))
 
     monkeypatch.setattr(
         dsp,
@@ -399,23 +208,21 @@ def test_edc_chu_1D(monkeypatch):
 
     actual = enh.energy_decay_curve_chu(
         rir,
-        sampling_rate=3000,
-        freq='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=False,
         normalize=True,
         plot=False)
-    npt.assert_allclose(actual, expected)
+    npt.assert_allclose(actual.time, expected)
 
 
 def test_edc_chu_2D(monkeypatch):
-    rir = genfromtxt(
+    rir = pf.Signal(genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'),
-        delimiter=',')
-    expected = genfromtxt(
+        delimiter=','), 3e3)
+    expected = np.atleast_2d(genfromtxt(
         os.path.join(test_data_path, 'edc_chu_2D.csv'),
-        delimiter=',')
+        delimiter=','))
 
     monkeypatch.setattr(
         dsp,
@@ -424,14 +231,12 @@ def test_edc_chu_2D(monkeypatch):
 
     actual = enh.energy_decay_curve_chu(
         rir,
-        sampling_rate=3000,
-        freq='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=False,
         normalize=True,
         plot=False)
-    npt.assert_allclose(actual, expected)
+    npt.assert_allclose(actual.time, expected)
 
 
 def test_intersection_time_1D(monkeypatch):
