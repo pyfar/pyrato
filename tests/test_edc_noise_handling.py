@@ -94,12 +94,12 @@ def test_edc_truncation_2D(monkeypatch):
 
 
 def test_edc_lundeby_1D(monkeypatch):
-    rir = genfromtxt(
+    rir = pf.Signal(genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
-        delimiter=',')
-    expected = genfromtxt(
+        delimiter=','), 3000)
+    expected = np.atleast_2d(genfromtxt(
         os.path.join(test_data_path, 'edc_lundeby_1D.csv'),
-        delimiter=',')
+        delimiter=','))
 
     monkeypatch.setattr(
         dsp,
@@ -108,23 +108,22 @@ def test_edc_lundeby_1D(monkeypatch):
 
     actual = enh.energy_decay_curve_lundeby(
         rir,
-        sampling_rate=3000,
         freq='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=False,
         normalize=True,
         plot=False)
-    npt.assert_allclose(actual, expected)
+    npt.assert_allclose(actual.time, expected)
 
 
 def test_edc_lundeby_2D(monkeypatch):
-    rir = genfromtxt(
+    rir = pf.Signal(genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'),
-        delimiter=',')
-    expected = genfromtxt(
+        delimiter=','), 3000)
+    expected = np.atleast_2d(genfromtxt(
         os.path.join(test_data_path, 'edc_lundeby_2D.csv'),
-        delimiter=',')
+        delimiter=','))
 
     monkeypatch.setattr(
         dsp,
@@ -133,14 +132,13 @@ def test_edc_lundeby_2D(monkeypatch):
 
     actual = enh.energy_decay_curve_lundeby(
         rir,
-        sampling_rate=3000,
         freq='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=False,
         normalize=True,
         plot=False)
-    npt.assert_allclose(actual, expected)
+    npt.assert_allclose(actual.time, expected)
 
 
 def test_edc_lundeby_chu_1D(monkeypatch):
