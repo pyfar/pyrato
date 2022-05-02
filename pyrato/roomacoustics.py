@@ -4,15 +4,11 @@
 
 import re
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 def reverberation_time_energy_decay_curve(
         energy_decay_curve,
-        times,
-        T='T20',
-        normalize=True,
-        plot=False):
+        T='T20'):
     """Estimate the reverberation time from a given energy decay curve according
     to the ISO standard 3382 [#]_.
 
@@ -29,9 +25,6 @@ def reverberation_time_energy_decay_curve(
         the interval [-25, -35] dB.
     normalize : bool, True
         Normalize the EDC to the steady state energy level
-    plot : bool, False
-        Plot the estimated extrapolation line for visual inspection of the
-        results.
 
     Returns
     -------
@@ -42,6 +35,35 @@ def reverberation_time_energy_decay_curve(
     ----------
     .. [#]  ISO 3382, Acoustics - Measurement of the reverberation time of
             rooms with reference to other acoustical parameters.
+
+    Examples
+    --------
+
+    Estimate the reverberation time from an energy decay curve.
+
+    >>> import numpy as np
+    >>> import pyfar as pf
+    >>> import pyrato as ra
+    >>> from pyrato.analytic import rectangular_room_rigid_walls
+    ...
+    >>> L = np.array([8, 5, 3])/10
+    >>> source_pos = np.array([5, 3, 1.2])/10
+    >>> receiver_pos = np.array([1, 1, 1.2])/10
+    >>> rir, _ = rectangular_room_rigid_walls(
+    ...     L, source_pos, receiver_pos,
+    ...     reverberation_time=1, max_freq=1.5e3, n_samples=2**12,
+    ...     speed_of_sound=343.9, samplingrate=3e3)
+    >>> rir = rir/rir.time.max()
+    ...
+    >>> awgn = pf.signals.noise(
+    ...     rir.n_samples, rms=10**(-50/20),
+    ...     sampling_rate=rir.sampling_rate)
+    >>> rir = rir + awgn
+    ...
+    >>> edc = ra.energy_decay_curve_chu_lundeby(rir)
+    >>> t_20 = ra.reverberation_time_energy_decay_curve(edc, 'T20')
+    >>> t_20
+    ...     array([0.99526253])
 
     """
     intervals = [20, 30, 40, 50, 60]
@@ -62,44 +84,28 @@ def reverberation_time_energy_decay_curve(
         upper = -5
         lower = -np.double(re.findall(r'\d+', T)) + upper
 
-    if normalize:
-        energy_decay_curve /= energy_decay_curve[0]
+    edc = energy_decay_curve.time.copy()
+    edc = edc.reshape((-1, energy_decay_curve.n_samples))
+    times = energy_decay_curve.times
+    edc /= np.atleast_2d(edc[..., 0]).T
 
-    edc_db = 10*np.log10(np.abs(energy_decay_curve))
+    edcs_db = 10*np.log10(np.abs(edc))
 
-    idx_upper = np.nanargmin(np.abs(upper - edc_db))
-    idx_lower = np.nanargmin(np.abs(lower - edc_db))
+    reverberation_times = np.zeros(
+        np.prod(energy_decay_curve.cshape), dtype=float)
 
-    A = np.vstack(
-        [times[idx_upper:idx_lower], np.ones(idx_lower - idx_upper)]).T
-    gradient, const = np.linalg.lstsq(
-        A, edc_db[..., idx_upper:idx_lower], rcond=None)[0]
+    for ch, edc_db in enumerate(edcs_db):
+        idx_upper = np.nanargmin(np.abs(upper - edc_db))
+        idx_lower = np.nanargmin(np.abs(lower - edc_db))
 
-    reverberation_time = -60 / gradient
+        A = np.vstack(
+            [times[idx_upper:idx_lower], np.ones(idx_lower - idx_upper)]).T
+        gradient, const = np.linalg.lstsq(
+            A, edc_db[..., idx_upper:idx_lower], rcond=None)[0]
 
-    if plot:
-        plt.figure()
-        plt.plot(
-            times,
-            edc_db,
-            label='edc')
-        plt.plot(
-            times,
-            times * gradient + const,
-            label='regression',
-            linestyle='-.')
-        ax = plt.gca()
-        ax.set_ylim((-95, 5))
+        reverberation_times[ch] = -60 / gradient
 
-        reverberation_time = -60 / gradient
-
-        ax.set_xlim((-0.05, 2*reverberation_time))
-        plt.grid(True)
-        plt.legend()
-        ax.set_ylabel('EDC [dB]')
-        ax.set_xlabel('Time [s]')
-
-    return reverberation_time
+    return reverberation_times
 
 
 def energy_decay_curve_analytic(
