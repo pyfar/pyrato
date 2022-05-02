@@ -193,7 +193,7 @@ def test_smoothed_rir_1D():
     expected = genfromtxt(
         os.path.join(test_data_path, 'smoothed_rir_1D.csv'),
         delimiter=',')[np.newaxis]
-    actual = enh.smooth_rir(
+    actual = enh._smooth_rir(
         rir,
         sampling_rate=3000,
         smooth_block_length=0.075)[0]
@@ -207,7 +207,7 @@ def test_smoothed_rir_2D():
     expected = genfromtxt(
         os.path.join(test_data_path, 'smoothed_rir_2D.csv'),
         delimiter=',')
-    actual = enh.smooth_rir(
+    actual = enh._smooth_rir(
         rir,
         sampling_rate=3000,
         smooth_block_length=0.075)[0]

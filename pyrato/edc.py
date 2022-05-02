@@ -120,7 +120,7 @@ def preprocess_rir(
     return energy_data, n_channels, data_shape
 
 
-def smooth_rir(
+def _smooth_rir(
         data,
         sampling_rate,
         smooth_block_length=0.075):
@@ -364,7 +364,7 @@ def energy_decay_curve_truncation(
         time_shift=False,
         channel_independent=False,
         plot=False)[0]
-    time_vector = smooth_rir(energy_data, sampling_rate)[2]
+    time_vector = _smooth_rir(energy_data, sampling_rate)[2]
 
     intersection_time_idx = np.rint(intersection_time * sampling_rate)
 
@@ -476,7 +476,7 @@ def energy_decay_curve_lundeby(
             time_shift=False,
             channel_independent=False,
             plot=False)
-    time_vector = smooth_rir(energy_data, sampling_rate)[2]
+    time_vector = _smooth_rir(energy_data, sampling_rate)[2]
 
     energy_decay_curve = np.zeros([n_channels, n_samples])
 
@@ -728,7 +728,7 @@ def energy_decay_curve_chu_lundeby(
             channel_independent=False,
             plot=False)
 
-    time_vector = smooth_rir(energy_data, sampling_rate)[2]
+    time_vector = _smooth_rir(energy_data, sampling_rate)[2]
     energy_decay_curve = np.zeros([n_channels, n_samples])
 
     for idx_channel in range(0, n_channels):
@@ -863,7 +863,7 @@ def intersection_time_lundeby(
         freq_dependent_window_time = (800/freq+10) / 1000
 
     # (1) SMOOTH
-    time_window_data, time_vector_window, time_vector = smooth_rir(
+    time_window_data, time_vector_window, time_vector = _smooth_rir(
         energy_data, sampling_rate, freq_dependent_window_time)
 
     # (2) ESTIMATE NOISE
@@ -937,7 +937,7 @@ def intersection_time_lundeby(
         # (6) AVERAGE
         time_window_data_current_channel, \
             time_vector_window_current_channel, \
-            time_vector_current_channel = smooth_rir(
+            time_vector_current_channel = _smooth_rir(
                 energy_data[idx_channel], sampling_rate, window_time)
         time_window_data_current_channel = np.squeeze(
             time_window_data_current_channel)
