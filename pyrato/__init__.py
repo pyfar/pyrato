@@ -16,10 +16,7 @@ from .roomacoustics import (
 from .dsp import (
     find_impulse_response_maximum,
     find_impulse_response_start,
-    filter_fractional_octave_bands,
     time_shift,
-    center_frequencies_octaves,
-    center_frequencies_third_octaves,
     preprocess_rir,
     estimate_noise_energy,
 )
@@ -39,10 +36,7 @@ __all__ = [
     'air_attenuation_coefficient',
     'find_impulse_response_maximum',
     'find_impulse_response_start',
-    'filter_fractional_octave_bands',
     'time_shift',
-    'center_frequencies_octaves',
-    'center_frequencies_third_octaves',
     'preprocess_rir',
     'energy_decay_curve_chu',
     'energy_decay_curve_chu_lundeby',
