@@ -89,12 +89,11 @@ def preprocess_rir(
         The original data shape.
 
     """
-    n_samples = data.shape[-1]
-    data = np.atleast_2d(data)
-    n_channels = np.prod(data.shape[:-1])
+    times = data.times
+    n_channels = np.prod(data.cshape)
 
-    data_shape = list(data.shape)
-    data = np.reshape(data, (-1, n_samples))
+    data_shape = list(data.cshape)
+    data = data.reshape((-1,))
 
     if time_shift:
         rir_start_idx = dsp.find_impulse_response_start(data)
@@ -107,14 +106,16 @@ def preprocess_rir(
                 -min_shift * np.ones(n_channels), dtype=int)
 
         result = dsp.time_shift(
-            data, shift_samples, circular_shift=False, keepdims=True)
-
+            data, shift_samples, circular_shift=False)
     else:
         result = data
+
     if not is_energy:
-        energy_data = np.abs(result)**2
+        energy_data = np.abs(result.time)**2
     else:
-        energy_data = result.copy()
+        energy_data = result.time.copy()
+
+    energy_data = pf.TimeData(energy_data, times)
 
     return energy_data, n_channels, data_shape
 
