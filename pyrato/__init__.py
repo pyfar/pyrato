@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-"""Top-level package for pyrato."""
-
 __author__ = \
     """Marco Berzborn - Institute for Hearing Technology and Acoustics"""
 __email__ = 'marco.berzborn@akustik.rwth-aachen.de'

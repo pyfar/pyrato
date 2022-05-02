@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-"""Main module."""
-
 import re
 import numpy as np
 

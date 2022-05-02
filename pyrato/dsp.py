@@ -6,7 +6,6 @@ import warnings
 
 import pyfar as pf
 import numpy as np
-import scipy.signal as spsignal
 
 
 def find_impulse_response_start(
