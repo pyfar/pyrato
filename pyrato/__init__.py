@@ -19,16 +19,16 @@ from .dsp import (
     filter_fractional_octave_bands,
     time_shift,
     center_frequencies_octaves,
-    center_frequencies_third_octaves
+    center_frequencies_third_octaves,
+    preprocess_rir,
+    estimate_noise_energy,
 )
 from .edc import (
     schroeder_integration,
-    preprocess_rir,
     energy_decay_curve_chu,
     energy_decay_curve_chu_lundeby,
     energy_decay_curve_lundeby,
     energy_decay_curve_truncation,
-    estimate_noise_energy,
     intersection_time_lundeby,
 )
 

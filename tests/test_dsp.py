@@ -10,6 +10,7 @@ from numpy import genfromtxt
 from scipy.fftpack import shift
 
 import pyrato.dsp as dsp
+import pyrato
 
 test_data_path = os.path.join(os.path.dirname(__file__), 'test_data')
 
@@ -228,3 +229,25 @@ def test_time_shift_non_circular_left_right():
 
     ir_shifted = dsp.time_shift(ir, shift_samples, circular_shift=False)
     npt.assert_allclose(ir_shifted.time, ir_truth.time, equal_nan=True)
+
+
+# ----------------
+# Noise power estimation
+# ----------------
+
+def test_estimate_noise_power():
+    n_samples = 2**18
+    rms = 10**(-40/20)
+    noise = pf.signals.noise(n_samples, rms=rms)
+    actual = dsp.estimate_noise_energy(noise)
+
+    npt.assert_allclose(actual, rms**2, rtol=1e-3, atol=1e-3)
+
+
+def test_estimate_noise_power_private():
+    n_samples = 2**18
+    rms = 10**(-40/20)
+    noise = pf.signals.noise(n_samples, rms=rms)
+    actual = dsp._estimate_noise_energy(noise.time)
+
+    npt.assert_allclose(actual, rms**2, rtol=1e-3, atol=1e-3)
