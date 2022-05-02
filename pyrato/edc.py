@@ -541,7 +541,6 @@ def energy_decay_curve_chu(
 
 def energy_decay_curve_chu_lundeby(
         data,
-        sampling_rate,
         freq='broadband',
         noise_level='auto',
         is_energy=False,
@@ -556,10 +555,8 @@ def energy_decay_curve_chu_lundeby(
 
     Parameters
     ----------
-    data : ndarray, double
-        The room impulse response with dimension [..., n_samples]
-    sampling_rate: integer
-        The sampling rate of the room impulse response.
+    data : pyfar.Signal
+        The room impulse response.
     freq: integer OR string
         The frequency band. If set to 'broadband',
         the time window of the Lundeby-algorithm will not be set in dependence
@@ -583,7 +580,7 @@ def energy_decay_curve_chu_lundeby(
 
     Returns
     -------
-    energy_decay_curve: ndarray, double
+    pyfar.TimeData
         Returns the noise handeled edc.
 
     References
@@ -596,6 +593,40 @@ def energy_decay_curve_chu_lundeby(
             pp. 1444–1450.
     .. [6]  M. Guski, “Influences of external error sources on measurements of
             room acoustic parameters,” 2015.
+
+    Examples
+    --------
+
+    Calculate and plot the EDC using a combination of Chu's and Lundeby's
+    methods.
+
+    .. plot::
+
+        >>> import numpy as np
+        >>> import pyfar as pf
+        >>> import pyrato as ra
+        >>> from pyrato.analytic import rectangular_room_rigid_walls
+        ...
+        >>> L = np.array([8, 5, 3])/10
+        >>> source_pos = np.array([5, 3, 1.2])/10
+        >>> receiver_pos = np.array([1, 1, 1.2])/10
+        >>> rir, _ = rectangular_room_rigid_walls(
+        ...     L, source_pos, receiver_pos,
+        ...     reverberation_time=1, max_freq=1e3, n_samples=2**16,
+        ...     speed_of_sound=343.9)
+        >>> rir = rir/rir.time.max()
+        ...
+        >>> awgn = pf.signals.noise(
+        ...     rir.n_samples, rms=rir.time.max()*10**(-50/20),
+        ...     sampling_rate=rir.sampling_rate)
+        >>> rir = rir + awgn
+        >>> edc = ra.energy_decay_curve_chu_lundeby(rir)
+        ...
+        >>> ax = pf.plot.time(rir, dB=True, label='RIR')
+        >>> pf.plot.time(edc, dB=True, log_prefix=10, label='EDC')
+        >>> ax.set_ylim(-65, 5)
+        >>> ax.legend()
+
     """
 
     energy_data, n_channels, data_shape = dsp.preprocess_rir(
@@ -603,16 +634,15 @@ def energy_decay_curve_chu_lundeby(
         is_energy=is_energy,
         shift=time_shift,
         channel_independent=channel_independent)
-    n_samples = energy_data.shape[-1]
+    n_samples = energy_data.n_samples
 
-    subtraction = _subtract_noise_from_squared_rir(
+    subtraction = subtract_noise_from_squared_rir(
         energy_data,
         noise_level=noise_level)
 
     intersection_time, late_reverberation_time, noise_level = \
         intersection_time_lundeby(
             energy_data,
-            sampling_rate=sampling_rate,
             freq=freq,
             initial_noise_power=noise_level,
             is_energy=True,
@@ -620,7 +650,7 @@ def energy_decay_curve_chu_lundeby(
             channel_independent=False,
             plot=False)
 
-    time_vector = dsp._smooth_rir(energy_data, sampling_rate)[2]
+    time_vector = data.times
     energy_decay_curve = np.zeros([n_channels, n_samples])
 
     for idx_channel in range(0, n_channels):
@@ -628,7 +658,7 @@ def energy_decay_curve_chu_lundeby(
             time_vector - intersection_time[idx_channel]))
         if noise_level == 'auto':
             p_square_at_intersection = dsp.estimate_noise_energy(
-                energy_data[idx_channel], is_energy=True)
+                energy_data.time[idx_channel], is_energy=True)
         else:
             p_square_at_intersection = noise_level[idx_channel]
 
@@ -636,11 +666,11 @@ def energy_decay_curve_chu_lundeby(
         correction = (p_square_at_intersection
                       * late_reverberation_time[idx_channel]
                       * (1 / (6*np.log(10)))
-                      * sampling_rate)
+                      * data.sampling_rate)
 
         energy_decay_curve[idx_channel, :intersection_time_idx] = \
-            ra.schroeder_integration(
-                subtraction[idx_channel, :intersection_time_idx],
+            _schroeder_integration(
+                subtraction.time[idx_channel, :intersection_time_idx],
                 is_energy=True)
         energy_decay_curve[idx_channel] += correction
 
@@ -656,29 +686,16 @@ def energy_decay_curve_chu_lundeby(
             energy_decay_curve /= max_start_value
 
     energy_decay_curve[..., intersection_time_idx:] = np.nan
+    edc = pf.TimeData(
+        energy_decay_curve, data.times, comment=data.comment)
 
     if plot:
-        plt.figure(figsize=(15, 3))
-        plt.subplot(131)
-        plt.plot(time_vector, 10*np.log10(energy_data.T))
-        plt.xlabel('Time [s]')
-        plt.ylabel('Squared IR [dB]')
-        plt.subplot(132)
-        plt.plot(time_vector, 10*np.log10(subtraction.T))
-        plt.xlabel('Time [s]')
-        plt.ylabel('Noise subtracted IR [dB]')
-        plt.subplot(133)
-        plt.plot(time_vector[0:energy_decay_curve.shape[-1]], 10*np.log10(
-            energy_decay_curve.T))
-        plt.xlabel('Time [s]')
-        plt.ylabel('Tr. EDC with corr. & subt. [dB]')
-        plt.tight_layout()
+        ax = pf.plot.time(data, dB=True, label='RIR')
+        pf.plot.time(edc, dB=True, log_prefix=10, label='EDC')
+        ax.set_ylim(-65, 5)
+        ax.legend()
 
-    # Recover original data shape:
-    energy_decay_curve = np.reshape(energy_decay_curve, data_shape)
-    energy_decay_curve = np.squeeze(energy_decay_curve)
-
-    return energy_decay_curve
+    return edc.reshape(data.cshape)
 
 
 def intersection_time_lundeby(
