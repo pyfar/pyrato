@@ -9,7 +9,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from pyrato import dsp
-import pyrato as ra
 import warnings
 import pyfar as pf
 
