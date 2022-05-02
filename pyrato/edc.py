@@ -168,7 +168,6 @@ def _schroeder_integration(impulse_response, is_energy=False):
 
 def energy_decay_curve_truncation(
         data,
-        sampling_rate,
         freq='broadband',
         noise_level='auto',
         is_energy=False,
@@ -181,10 +180,8 @@ def energy_decay_curve_truncation(
 
     Parameters
     ----------
-    data : ndarray, double
-        The room impulse response with dimension [..., n_samples]
-    sampling_rate: integer
-        The sampling rate of the room impulse response.
+    data : pyfar.Signal
+        The room impulse response.
     freq: integer OR string
         The frequency band. If set to 'broadband',
         the time window of the Lundeby-algorithm will not be set in dependence
@@ -208,35 +205,67 @@ def energy_decay_curve_truncation(
 
     Returns
     -------
-    energy_decay_curve: ndarray, double
+    pyfar.TimeData
         Returns the noise handeled edc.
+
+    Examples
+    --------
+
+    Plot the RIR and the EDC calculated truncating the integration at the
+    intersection time.
+
+    .. plot::
+
+        >>> import numpy as np
+        >>> import pyfar as pf
+        >>> import pyrato as ra
+        >>> from pyrato.analytic import rectangular_room_rigid_walls
+        ...
+        >>> L = np.array([8, 5, 3])/10
+        >>> source_pos = np.array([5, 3, 1.2])/10
+        >>> receiver_pos = np.array([1, 1, 1.2])/10
+        >>> rir, _ = rectangular_room_rigid_walls(
+        ...     L, source_pos, receiver_pos,
+        ...     reverberation_time=1, max_freq=1e3, n_samples=2**16,
+        ...     speed_of_sound=343.9)
+        >>> rir = rir/rir.time.max()
+        ...
+        >>> awgn = pf.signals.noise(
+        ...     rir.n_samples, rms=rir.time.max()*10**(-50/20),
+        ...     sampling_rate=rir.sampling_rate)
+        >>> rir = rir + awgn
+        >>> edc = ra.energy_decay_curve_truncation(rir)
+        ...
+        >>> ax = pf.plot.time(rir, dB=True, label='RIR')
+        >>> pf.plot.time(edc, dB=True, log_prefix=10, label='EDC')
+        >>> ax.set_ylim(-65, 5)
+        >>> ax.legend()
+
     """
     energy_data, n_channels, data_shape = dsp.preprocess_rir(
         data,
         is_energy=is_energy,
         shift=time_shift,
         channel_independent=channel_independent)
-    n_samples = energy_data.shape[-1]
+    n_samples = data.n_samples
 
     intersection_time = intersection_time_lundeby(
         energy_data,
-        sampling_rate=sampling_rate,
         freq=freq,
         initial_noise_power=noise_level,
         is_energy=True,
         time_shift=False,
         channel_independent=False,
         plot=False)[0]
-    time_vector = dsp._smooth_rir(energy_data, sampling_rate)[2]
 
-    intersection_time_idx = np.rint(intersection_time * sampling_rate)
+    intersection_time_idx = np.rint(intersection_time * data.sampling_rate)
 
     energy_decay_curve = np.zeros([n_channels, n_samples])
     for idx_channel in range(0, n_channels):
         energy_decay_curve[
             idx_channel, :int(intersection_time_idx[idx_channel])] = \
                 _schroeder_integration(
-                    energy_data[
+                    energy_data.time[
                         idx_channel, :int(intersection_time_idx[idx_channel])],
                     is_energy=True)
 
@@ -251,24 +280,16 @@ def energy_decay_curve_truncation(
             max_start_value = np.amax(energy_decay_curve[..., 0])
             energy_decay_curve /= max_start_value
 
-    # Recover original data shape:
-    energy_decay_curve = np.reshape(energy_decay_curve, data_shape)
-    energy_decay_curve = np.squeeze(energy_decay_curve)
+    edc = pf.TimeData(
+        energy_decay_curve, data.times, comment=data.comment)
 
     if plot:
-        plt.figure(figsize=(15, 3))
-        plt.subplot(121)
-        plt.plot(time_vector, 10*np.log10(energy_data.T))
-        plt.xlabel('Time [s]')
-        plt.ylabel('Squared IR [dB]')
-        plt.subplot(122)
-        plt.plot(time_vector[0:energy_decay_curve.shape[-1]], 10*np.log10(
-            energy_decay_curve.T))
-        plt.xlabel('Time [s]')
-        plt.ylabel('EDC: Truncation method [dB]')
-        plt.tight_layout()
+        ax = pf.plot.time(data, dB=True, label='RIR')
+        pf.plot.time(edc, dB=True, log_prefix=10, label='EDC')
+        ax.set_ylim(-65, 5)
+        ax.legend()
 
-    return energy_decay_curve
+    return edc.reshape(data.cshape)
 
 
 def energy_decay_curve_lundeby(
