@@ -221,7 +221,7 @@ def test_substracted_1D():
     expected = genfromtxt(
         os.path.join(test_data_path, 'substracted_1D.csv'),
         delimiter=',')
-    actual = enh.subtract_noise_from_squared_rir(rir**2)
+    actual = enh._subtract_noise_from_squared_rir(rir**2)
     npt.assert_allclose(actual, expected)
 
 
@@ -232,7 +232,7 @@ def test_substracted_2D():
     expected = genfromtxt(
         os.path.join(test_data_path, 'substracted_2D.csv'),
         delimiter=',')
-    actual = enh.subtract_noise_from_squared_rir(rir**2)
+    actual = enh._subtract_noise_from_squared_rir(rir**2)
     npt.assert_allclose(actual, expected)
 
 

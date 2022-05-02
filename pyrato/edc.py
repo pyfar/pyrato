@@ -172,7 +172,7 @@ def _smooth_rir(
     return time_window_data, time_vector_window, time_vector
 
 
-def subtract_noise_from_squared_rir(data, noise_level='auto'):
+def _subtract_noise_from_squared_rir(data, noise_level='auto'):
     """ Subtracts the noise energy level from the squared RIR. Note, that the
         RIR has to be squared before.
 
@@ -593,7 +593,7 @@ def energy_decay_curve_chu(
         time_shift=time_shift,
         channel_independent=channel_independent)
 
-    subtracted = subtract_noise_from_squared_rir(
+    subtracted = _subtract_noise_from_squared_rir(
         energy_data,
         noise_level=noise_level)
 
@@ -713,7 +713,7 @@ def energy_decay_curve_chu_lundeby(
         channel_independent=channel_independent)
     n_samples = energy_data.shape[-1]
 
-    subtraction = subtract_noise_from_squared_rir(
+    subtraction = _subtract_noise_from_squared_rir(
         energy_data,
         noise_level=noise_level)
 
