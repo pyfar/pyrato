@@ -6,7 +6,7 @@
 import pytest
 import numpy as np
 from pyfar import Signal
-from roomacoustics import sti
+from pyrato import sti
 
 
 def test_sti_1D():
