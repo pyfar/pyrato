@@ -5,7 +5,7 @@
 __author__ = \
     """Marco Berzborn - Institute for Hearing Technology and Acoustics"""
 __email__ = 'marco.berzborn@akustik.rwth-aachen.de'
-__version__ = '0.3.0'
+__version__ = '0.3.1'
 
 
 from .roomacoustics import (
