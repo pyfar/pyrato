@@ -809,8 +809,9 @@ def intersection_time_lundeby(
                 + slope[1]*time_vector_window[stop_idx])])
 
         # (4) PRELIMINARY CROSSING POINT
-        preliminary_crossing_point = \
+        crossing_point = \
             (10*np.log10(noise_estimation[idx_channel]) - slope[0]) / slope[1]
+        preliminary_crossing_point = crossing_point
 
         # (5) NEW LOCAL TIME INTERVAL LENGTH
         n_blocks_in_decay = (np.diff(
@@ -834,7 +835,7 @@ def intersection_time_lundeby(
         idx_max = np.nanargmax(time_window_data_current_channel)
 
         # high start value to enter while-loop
-        old_crossing_point = 11+preliminary_crossing_point
+        old_crossing_point = 11+crossing_point
         loop_counter = 0
 
         while(True):
@@ -843,7 +844,7 @@ def intersection_time_lundeby(
             idx_last_10_percent = np.round(
                 time_window_data_current_channel.shape[-1]*0.9)
             idx_10dB_below_crosspoint = np.nanmax([1, np.round(
-                ((preliminary_crossing_point
+                ((crossing_point
                   - corresponding_decay / slope[1])
                  * sampling_rate / n_samples_per_block))])
 
@@ -857,8 +858,8 @@ def intersection_time_lundeby(
                     time_window_data_current_channel[idx_max:]) < (
                         10*np.log10(noise_estimation_current_channel)
                         + dB_above_noise
-                        + (use_dyn_range_for_regression)[0, 0]
-                        + idx_max))
+                        + use_dyn_range_for_regression
+                        + idx_max))[0, 0]
             except TypeError:
                 start_idx_loop = 0
 
@@ -890,13 +891,13 @@ def intersection_time_lundeby(
                         setting to 0. Estimation was terminated.')
 
             # (9) FIND CROSSPOINT
-            old_crossing_point = preliminary_crossing_point
+            old_crossing_point = crossing_point
             crossing_point = ((10*np.log10(noise_estimation_current_channel)
                                - slope[0]) / slope[1])
 
             loop_counter = loop_counter + 1
 
-            if (np.abs(old_crossing_point-preliminary_crossing_point) < 0.01):
+            if (np.abs(old_crossing_point-crossing_point) < 0.01):
                 break
             if loop_counter > 30:
                 # TO-DO: Paper says 5 iterations are sufficient in all cases!
