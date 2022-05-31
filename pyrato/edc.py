@@ -811,6 +811,7 @@ def intersection_time_lundeby(
         # (4) PRELIMINARY CROSSING POINT
         crossing_point = \
             (10*np.log10(noise_estimation[idx_channel]) - slope[0]) / slope[1]
+        preliminary_crossing_point = crossing_point
 
         # (5) NEW LOCAL TIME INTERVAL LENGTH
         n_blocks_in_decay = (np.diff(
@@ -943,7 +944,7 @@ def intersection_time_lundeby(
             color='C2',
             label='regression')
         plt.plot(
-            crossing_point,
+            preliminary_crossing_point,
             10*np.log10(noise_estimation[idx_channel]),
             marker='o',
             color='C3',
