@@ -300,7 +300,7 @@ def energy_decay_curve_lundeby(
         channel_independent=False,
         normalize=True,
         plot=False):
-    """ Lundeby et al. [#]_ proposed a correction term to prevent the truncation
+    """Lundeby et al. [#]_ proposed a correction term to prevent the truncation
     error. The missing signal energy from truncation time to infinity is
     estimated and added to the truncated integral.
 
@@ -915,7 +915,7 @@ def intersection_time_lundeby(
         old_crossing_point = 11+crossing_point
         loop_counter = 0
 
-        while(True):
+        while True:
             # (7) ESTIMATE BACKGROUND LEVEL
             corresponding_decay = 10  # 5...10 dB
             idx_last_10_percent = np.round(
