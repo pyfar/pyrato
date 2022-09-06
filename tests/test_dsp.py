@@ -325,10 +325,10 @@ def test_preprocessing_2D():
 
 def test_preprocessing_time_shift_1D(monkeypatch):
     # Patch the RIR start finding to always return same number of samples
-    monkeypatch.setattr(
-        dsp,
-        "find_impulse_response_start",
-        mock_shift_samples_1d)
+    # monkeypatch.setattr(
+    #     dsp,
+    #     "find_impulse_response_start",
+    #     mock_shift_samples_1d)
 
     rir = genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
@@ -349,10 +349,10 @@ def test_preprocessing_time_shift_1D(monkeypatch):
 
 def test_preprocessing_time_shift_2D(monkeypatch):
     # Patch the RIR start finding to always return same number of samples
-    monkeypatch.setattr(
-        dsp,
-        "find_impulse_response_start",
-        mock_shift_samples_2d)
+    # monkeypatch.setattr(
+    #     dsp,
+    #     "find_impulse_response_start",
+    #     mock_shift_samples_2d)
 
     rir = pf.Signal(
         genfromtxt(
@@ -374,10 +374,10 @@ def test_preprocessing_time_shift_2D(monkeypatch):
 
 def test_preprocessing_time_shift_channel_independent_1D(monkeypatch):
     # Patch the RIR start finding to always return same number of samples
-    monkeypatch.setattr(
-        dsp,
-        "find_impulse_response_start",
-        mock_shift_samples_1d)
+    # monkeypatch.setattr(
+    #     dsp,
+    #     "find_impulse_response_start",
+    #     mock_shift_samples_1d)
 
     rir = pf.Signal(
         genfromtxt(
@@ -400,10 +400,10 @@ def test_preprocessing_time_shift_channel_independent_1D(monkeypatch):
 
 def test_preprocessing_time_shift_channel_independent_2D(monkeypatch):
     # Patch the RIR start finding to always return same number of samples
-    monkeypatch.setattr(
-        dsp,
-        "find_impulse_response_start",
-        mock_shift_samples_2d)
+    # monkeypatch.setattr(
+    #     dsp,
+    #     "find_impulse_response_start",
+    #     mock_shift_samples_2d)
 
     rir = pf.Signal(genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'),
