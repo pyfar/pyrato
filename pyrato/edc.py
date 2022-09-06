@@ -676,7 +676,7 @@ def energy_decay_curve_chu_lundeby(
     for idx_channel in range(0, n_channels):
         intersection_time_idx = np.argmin(np.abs(
             time_vector - intersection_time[idx_channel]))
-        if noise_level == 'auto':
+        if type(noise_level) is str and noise_level == 'auto':
             p_square_at_intersection = dsp.estimate_noise_energy(
                 energy_data.time[idx_channel], is_energy=True)
         else:

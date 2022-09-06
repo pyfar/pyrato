@@ -43,7 +43,7 @@ def find_impulse_response_start(
     """
     ir_squared = np.abs(impulse_response.time)**2
 
-    mask_start = np.int(0.9*ir_squared.shape[-1])
+    mask_start = int(0.9*ir_squared.shape[-1])
 
     if noise_energy == 'auto':
         mask = np.arange(mask_start, ir_squared.shape[-1])
