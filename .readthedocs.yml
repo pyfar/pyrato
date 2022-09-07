@@ -5,6 +5,12 @@
 # Required
 version: 2
 
+# Add libsndfile to the image
+build:
+  image: latest
+  apt_packages:
+    - libsndfile1
+
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
   configuration: docs/conf.py
