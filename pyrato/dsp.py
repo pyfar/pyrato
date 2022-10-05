@@ -10,97 +10,120 @@ import numpy as np
 
 def find_impulse_response_start(
         impulse_response,
-        threshold=20,
-        noise_energy='auto'):
-    """Find the first sample of an impulse response in a accordance with the
-    ISO standard ISO 3382 [#]_. The start sample is identified as the first
-    sample that varies significantly from the noise floor but still has a level
-    of at least 20 dB below the maximum of the impulse response. The function
-    further tries to consider oscillations before the time below the threshold
-    value.
+        threshold=20):
+    """Find the start sample of an impulse response.
+    The start sample is identified as the first sample which is below the
+    ``threshold`` level relative to the maximum level of the impulse response.
+    For room impulse responses, ISO 3382 [#]_ specifies a threshold of 20 dB.
+    This function is primary intended to be used when processing room impulse
+    responses.
 
     Parameters
     ----------
     impulse_response : pyfar.Signal
         The impulse response
-    threshold : double, optional
-        Threshold according to ISO3382 in dB
-
+    threshold : float, optional
+        The threshold level in dB, by default 20, which complies with ISO 3382.
     Returns
     -------
     start_sample : numpy.ndarray, int
         Sample at which the impulse response starts
-
-    Note
-    ----
-    The function tries to estimate the SNR in the IR based on the signal energy
-    in the last 10 percent of the IR.
-
+    Notes
+    -----
+    The function tries to estimate the PSNR in the IR based on the signal
+    power in the last 10 percent of the IR. The automatic estimation may fail
+    if the noise spectrum is not white or the impulse response contains
+    non-linear distortions. If the PSNR is lower than the specified threshold,
+    the function will issue a warning.
     References
     ----------
     .. [#]  ISO 3382-1:2009-10, Acoustics - Measurement of the reverberation
             time of rooms with reference to other acoustical parameters. pp. 22
+    Examples
+    --------
+    Create a band-limited impulse shifted by 0.5 samples and estimate the
+    starting sample of the impulse and plot.
+    .. plot::
+        >>> import pyfar as pf
+        >>> import numpy as np
+        >>> n_samples = 256
+        >>> delay_samples = n_samples // 2 + 1/2
+        >>> ir = pf.signals.impulse(n_samples)
+        >>> ir = pf.dsp.linear_phase(ir, delay_samples, unit='samples')
+        >>> start_samples = pf.dsp.find_impulse_response_start(ir)
+        >>> ax = pf.plot.time(ir, unit='ms', label='impulse response', dB=True)
+        >>> ax.axvline(
+        ...     start_samples/ir.sampling_rate*1e3,
+        ...     color='k', linestyle='-.', label='start sample')
+        >>> ax.axhline(
+        ...     20*np.log10(np.max(np.abs(ir.time)))-20,
+        ...     color='k', linestyle=':', label='threshold')
+        >>> ax.legend()
+    Create a train of weighted impulses with levels below and above the
+    threshold, serving as a very abstract room impulse response. The starting
+    sample is identified as the last sample below the threshold relative to the
+    maximum of the impulse response.
+    .. plot::
+        >>> import pyfar as pf
+        >>> import numpy as np
+        >>> n_samples = 64
+        >>> delays = np.array([14, 22, 26, 30, 33])
+        >>> amplitudes = np.array([-35, -22, -6, 0, -9], dtype=float)
+        >>> ir = pf.signals.impulse(n_samples, delays, 10**(amplitudes/20))
+        >>> ir.time = np.sum(ir.time, axis=0)
+        >>> start_sample_est = pf.dsp.find_impulse_response_start(
+        ...     ir, threshold=20)
+        >>> ax = pf.plot.time(
+        ...     ir, dB=True, unit='samples',
+        ...     label=f'peak samples: {delays}')
+        >>> ax.axvline(
+        ...     start_sample_est, linestyle='-.', color='k',
+        ...     label=f'ir start sample: {start_sample_est}')
+        >>> ax.axhline(
+        ...     20*np.log10(np.max(np.abs(ir.time)))-20,
+        ...     color='k', linestyle=':', label='threshold')
+        >>> ax.legend()
     """
+    warnings.warn(
+        "This function will be deprecated in version 0.5.0 "
+        "Use pyfar.dsp.find_impulse_response_start instead",
+        DeprecationWarning)
+
     ir_squared = np.abs(impulse_response.time)**2
 
-    mask_start = int(0.9*ir_squared.shape[-1])
+    mask_start = int(0.9*impulse_response.n_samples)
 
-    if noise_energy == 'auto':
-        mask = np.arange(mask_start, ir_squared.shape[-1])
-        noise = np.mean(np.take(ir_squared, mask, axis=-1), axis=-1)
-    else:
-        noise = noise_energy
+    mask = np.arange(mask_start, ir_squared.shape[-1])
+    noise = np.mean(np.take(ir_squared, mask, axis=-1), axis=-1)
 
     max_sample = np.argmax(ir_squared, axis=-1)
     max_value = np.max(ir_squared, axis=-1)
 
     if np.any(max_value < 10**(threshold/10) * noise) or \
             np.any(max_sample > mask_start):
-        raise ValueError(
-            "The SNR is lower than the defined threshold. Check "
+        warnings.warn(
+            "The SNR seems lower than the specified threshold value. Check "
             "if this is a valid impulse response with sufficient SNR.")
 
-    start_sample_shape = max_sample.shape
-    n_samples = ir_squared.shape[-1]
-    ir_squared = np.reshape(ir_squared, (-1, n_samples))
-    n_channels = ir_squared.shape[0]
-    max_sample = np.reshape(max_sample, n_channels)
-    max_value = np.reshape(max_value, n_channels)
-
     start_sample = max_sample.copy()
-    for idx in range(0, n_channels):
+
+    for ch in np.ndindex(impulse_response.cshape):
         # Only look for the start sample if the maximum index is bigger than 0
-        if start_sample[idx] > 0:
-            ir_before_max = ir_squared[idx, :max_sample[idx]+1] \
-                / max_value[idx]
-            # Last value before peak lower than the peak/threshold
-            idx_last_below_thresh = np.argwhere(
-                ir_before_max < 10**(-threshold/10))
-            if idx_last_below_thresh.size > 0:
-                start_sample[idx] = idx_last_below_thresh[-1]
+        if start_sample[ch] > 0:
+            # Check samples before maximum
+            ir_before_max = np.squeeze(
+                ir_squared[ch][:max_sample[ch]+1] / max_value[ch])
+            # First sample above or at the threshold level
+            idx_first_above_thresh = np.where(
+                ir_before_max >= 10**(-threshold/10))[0]
+            if idx_first_above_thresh.size > 0:
+                # The start sample is the last sample below the threshold
+                start_sample[ch] = np.min(idx_first_above_thresh) - 1
             else:
-                start_sample[idx] = 0
+                start_sample[ch] = 0
                 warnings.warn(
-                    'No values below threshold found before the maximum value,\
-                    defaulting to 0')
-
-            idx_6dB_above_threshold = np.argwhere(
-                ir_before_max[:start_sample[idx]+1] >
-                10**((-threshold+6)/10))
-            if idx_6dB_above_threshold.size > 0:
-                idx_6dB_above_threshold = int(idx_6dB_above_threshold[0])
-                tmp = np.argwhere(
-                    ir_before_max[:idx_6dB_above_threshold+1] <
-                    10**(-threshold/10))
-                if tmp.size == 0:
-                    start_sample[idx] = 0
-                    warnings.warn(
-                        'Oscillations detected in the impulse response. \
-                        No clear starting sample found, defaulting to 0')
-                else:
-                    start_sample[idx] = tmp[-1]
-
-    start_sample = np.reshape(start_sample, start_sample_shape)
+                    f'No values below threshold found found for channel {ch}',
+                    'defaulting to 0')
 
     return np.squeeze(start_sample)
 
@@ -267,6 +290,74 @@ def time_shift(signal, shift, circular_shift=True, unit='samples'):
         shifted = shifted.reshape(signal.cshape)
 
     return shifted
+
+
+def center_frequencies_octaves():
+    """Return the octave center frequencies according to the IEC 61260:1:2014
+    standard.
+    Returns
+    -------
+    frequencies : ndarray, float
+        Octave center frequencies
+    """
+    warnings.warn(
+        "This function will be deprecated in version 0.5.0 "
+        "Use pyfar.dsp.filter.fractional_octave_frequencies instead",
+        DeprecationWarning)
+
+    nominal, exact = pf.dsp.filter.fractional_octave_frequencies(
+        1, (20, 20e3), return_cutoff=False)
+
+    return nominal, exact
+
+
+def center_frequencies_third_octaves():
+    """Return the third octave center frequencies according
+    to the ICE 61260:1:2014 standard.
+    Returns
+    -------
+    frequencies : ndarray, float
+        third octave center frequencies
+    """
+    warnings.warn(
+        "This function will be deprecated in version 0.5.0 "
+        "Use pyfar.dsp.filter.fractional_octave_frequencies instead",
+        DeprecationWarning)
+
+    nominal, exact = pf.dsp.filter.fractional_octave_frequencies(
+        3, (20, 20e3), return_cutoff=False)
+
+    return nominal, exact
+
+
+def filter_fractional_octave_bands(
+        signal, num_fractions,
+        freq_range=(20.0, 20e3), order=6):
+    """Apply a fractional octave filter to a signal.
+    Filter bank implementation using second order sections of butterworth
+    filters for increased numeric accuracy and stability.
+
+    Parameters
+    ----------
+    signal : ndarray
+        input signal to be filtered
+    num_fractions : integer
+        number of octave fractions
+    order : integer, optional
+        order of the butterworth filter
+
+    Returns
+    -------
+    signal_filtered : ndarray
+        Signal filtered into fractional octave bands.
+    """
+    warnings.warn(
+        "This function will be deprecated in version 0.5.0 "
+        "Use pyfar.dsp.filter.fractional_octave_bands instead",
+        DeprecationWarning)
+
+    return pf.dsp.filter.fractional_octave_bands(
+        signal, num_fractions, freq_range=freq_range, order=order)
 
 
 def estimate_noise_energy(

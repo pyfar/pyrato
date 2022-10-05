@@ -7,10 +7,8 @@ import numpy.testing as npt
 import pytest
 import pyfar as pf
 from numpy import genfromtxt
-from scipy.fftpack import shift
-
 import pyrato.dsp as dsp
-import pyrato
+
 test_data_path = os.path.join(os.path.dirname(__file__), 'test_data')
 
 
@@ -36,7 +34,7 @@ def test_start_ir_insufficient_snr():
 
     ir_noise = ir + noise
 
-    with pytest.raises(ValueError):
+    with pytest.warns(match='SNR seems lower'):
         dsp.find_impulse_response_start(ir_noise)
 
 
@@ -139,32 +137,6 @@ def test_start_room_impulse_response_shfted(monkeypatch):
     expected = 128
 
     npt.assert_allclose(actual, expected)
-
-
-def test_start_ir_thresh_invalid():
-    n_samples = 2**10
-    ir = np.zeros(n_samples)
-
-    start_sample = 24
-    ir[start_sample] = 1
-    # ir[start_sample-4:start_sample] = 10**(-10/10)
-    ir[0:start_sample] = 10**(-5/10)
-    ir = pf.Signal(ir, 44100)
-    start_sample_est = dsp.find_impulse_response_start(ir, threshold=20)
-    assert start_sample_est == 0
-
-
-def test_start_ir_thresh_invalid_osci():
-    n_samples = 2**10
-    ir = np.zeros(n_samples)
-
-    start_sample = 24
-    ir[start_sample] = 1
-    ir[start_sample-4:start_sample] = 10**(-30/10)
-    ir[0:start_sample-4] = 10**(-5/10)
-    ir = pf.Signal(ir, 44100)
-    start_sample_est = dsp.find_impulse_response_start(ir, threshold=20)
-    assert start_sample_est == 0
 
 
 def test_max_ir():
