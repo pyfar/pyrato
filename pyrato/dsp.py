@@ -254,8 +254,7 @@ def time_shift(signal, shift, circular_shift=True, unit='samples'):
         shifted = pf.TimeData(
             shifted.time,
             shifted.times,
-            comment=shifted.comment,
-            dtype=shifted.dtype)
+            comment=shifted.comment)
 
         shifted = shifted.flatten()
         shift_samples = shift_samples.flatten()
