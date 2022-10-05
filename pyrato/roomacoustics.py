@@ -2,6 +2,7 @@
 
 import numpy as np
 from pyrato.rap import reverberation_time_linear_regression
+import warnings
 
 
 def reverberation_time_energy_decay_curve(
@@ -65,6 +66,11 @@ def reverberation_time_energy_decay_curve(
     ...     array([0.99526253])
 
     """
+    warnings.warn(
+        "This function will be deprecated in version 0.5.0 "
+        "Use pyrato.reverberation_time_linear_regression instead",
+        DeprecationWarning)
+
     return reverberation_time_linear_regression(energy_decay_curve, T)
 
 
