@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import re
 import numpy as np
 from pyrato.rap import reverberation_time_linear_regression
 
