@@ -293,6 +293,74 @@ def time_shift(signal, shift, circular_shift=True, unit='samples'):
     return shifted
 
 
+def center_frequencies_octaves():
+    """Return the octave center frequencies according to the IEC 61260:1:2014
+    standard.
+    Returns
+    -------
+    frequencies : ndarray, float
+        Octave center frequencies
+    """
+    warnings.warn(
+        "This function will be deprecated in version 0.5.0 "
+        "Use pyfar.dsp.filter.fractional_octave_frequencies instead",
+        DeprecationWarning)
+
+    nominal, exact = pf.dsp.filter.fractional_octave_frequencies(
+        1, (20, 20e3), return_cutoff=False)
+
+    return nominal, exact
+
+
+def center_frequencies_third_octaves():
+    """Return the third octave center frequencies according
+    to the ICE 61260:1:2014 standard.
+    Returns
+    -------
+    frequencies : ndarray, float
+        third octave center frequencies
+    """
+    warnings.warn(
+        "This function will be deprecated in version 0.5.0 "
+        "Use pyfar.dsp.filter.fractional_octave_frequencies instead",
+        DeprecationWarning)
+
+    nominal, exact = pf.dsp.filter.fractional_octave_frequencies(
+        3, (20, 20e3), return_cutoff=False)
+
+    return nominal, exact
+
+
+def filter_fractional_octave_bands(
+        signal, num_fractions,
+        freq_range=(20.0, 20e3), order=6):
+    """Apply a fractional octave filter to a signal.
+    Filter bank implementation using second order sections of butterworth
+    filters for increased numeric accuracy and stability.
+
+    Parameters
+    ----------
+    signal : ndarray
+        input signal to be filtered
+    num_fractions : integer
+        number of octave fractions
+    order : integer, optional
+        order of the butterworth filter
+
+    Returns
+    -------
+    signal_filtered : ndarray
+        Signal filtered into fractional octave bands.
+    """
+    warnings.warn(
+        "This function will be deprecated in version 0.5.0 "
+        "Use pyfar.dsp.filter.fractional_octave_bands instead",
+        DeprecationWarning)
+
+    return pf.dsp.filter.fractional_octave_bands(
+        signal, num_fractions, freq_range=freq_range, order=order)
+
+
 def estimate_noise_energy(
         data,
         interval=[0.9, 1.0],
@@ -474,71 +542,3 @@ def preprocess_rir(
     energy_data = pf.TimeData(energy_data, times)
 
     return energy_data, n_channels, data_shape
-
-
-def filter_fractional_octave_bands(
-        signal, num_fractions,
-        freq_range=(20.0, 20e3), order=6):
-    """Apply a fractional octave filter to a signal.
-    Filter bank implementation using second order sections of butterworth
-    filters for increased numeric accuracy and stability.
-
-    Parameters
-    ----------
-    signal : ndarray
-        input signal to be filtered
-    num_fractions : integer
-        number of octave fractions
-    order : integer, optional
-        order of the butterworth filter
-
-    Returns
-    -------
-    signal_filtered : ndarray
-        Signal filtered into fractional octave bands.
-    """
-    warnings.warn(
-        "This function will be deprecated in version 0.5.0 "
-        "Use pyfar.dsp.filter.fractional_octave_bands instead",
-        DeprecationWarning)
-
-    return pf.dsp.filter.fractional_octave_bands(
-        signal, num_fractions, freq_range=freq_range, order=order)
-
-
-def center_frequencies_octaves():
-    """Return the octave center frequencies according to the IEC 61260:1:2014
-    standard.
-    Returns
-    -------
-    frequencies : ndarray, float
-        Octave center frequencies
-    """
-    warnings.warn(
-        "This function will be deprecated in version 0.5.0 "
-        "Use pyfar.dsp.filter.fractional_octave_frequencies instead",
-        DeprecationWarning)
-
-    nominal, exact = pf.dsp.filter.fractional_octave_frequencies(
-        1, (20, 20e3), return_cutoff=False)
-
-    return nominal, exact
-
-
-def center_frequencies_third_octaves():
-    """Return the third octave center frequencies according
-    to the ICE 61260:1:2014 standard.
-    Returns
-    -------
-    frequencies : ndarray, float
-        third octave center frequencies
-    """
-    warnings.warn(
-        "This function will be deprecated in version 0.5.0 "
-        "Use pyfar.dsp.filter.fractional_octave_frequencies instead",
-        DeprecationWarning)
-
-    nominal, exact = pf.dsp.filter.fractional_octave_frequencies(
-        3, (20, 20e3), return_cutoff=False)
-
-    return nominal, exact
