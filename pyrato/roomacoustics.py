@@ -13,8 +13,8 @@ def reverberation_time_energy_decay_curve(
         T='T20',
         normalize=True,
         plot=False):
-    """Estimate the reverberation time from a given energy decay curve according
-    to the ISO standard 3382 [#]_.
+    """Estimate the reverberation time from a given energy decay curve
+    according to the ISO standard 3382 [#]_.
 
     Parameters
     ----------
