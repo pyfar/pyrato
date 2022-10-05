@@ -66,7 +66,7 @@ def reverberation_time_energy_decay_curve(
     ...     array([0.99526253])
 
     """
-    return reverberation_time_energy_decay_curve(energy_decay_curve, T)
+    return reverberation_time_linear_regression(energy_decay_curve, T)
 
 
 def energy_decay_curve_analytic(
