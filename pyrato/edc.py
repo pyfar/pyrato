@@ -920,10 +920,11 @@ def intersection_time_lundeby(
             corresponding_decay = 10  # 5...10 dB
             idx_last_10_percent = np.round(
                 time_window_data_current_channel.shape[-1]*0.9)
-            idx_10dB_below_crosspoint = np.nanmax([1, np.round(
-                ((crossing_point
-                  - corresponding_decay / slope[1])
-                 * sampling_rate / n_samples_per_block))])
+
+            t_block = n_samples_per_block / sampling_rate
+            rel_decay = corresponding_decay / slope[1]
+            idx_10dB_below_crosspoint = np.nanmax(
+                np.r_[1, np.round(((crossing_point - rel_decay) / t_block))])
 
             noise_estimation_current_channel = np.nanmean(
                 time_window_data_current_channel[int(np.nanmin(
