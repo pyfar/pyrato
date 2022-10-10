@@ -279,15 +279,11 @@ def time_shift(signal, shift, circular_shift=True, unit='samples'):
             shifted.times,
             comment=shifted.comment)
 
-        shifted = shifted.flatten()
-        shift_samples = shift_samples.flatten()
-        for ch in range(shifted.cshape[0]):
+        for ch in np.ndindex(shifted.cshape):
             if shift[ch] < 0:
                 shifted.time[ch, shift_samples[ch]:] = np.nan
             else:
                 shifted.time[ch, :shift_samples[ch]] = np.nan
-
-        shifted = shifted.reshape(signal.cshape)
 
     return shifted
 
@@ -387,7 +383,7 @@ def estimate_noise_energy(
         data,
         is_energy=is_energy,
         shift=False,
-        channel_independent=False)[0]
+        channel_independent=False)
 
     return _estimate_noise_energy(energy_data.time, interval=interval)
 
@@ -506,17 +502,10 @@ def preprocess_rir(
     -------
     energy_data : ndarray, double
         The preprocessed RIR
-    n_channels : integer
-        The number of channels of the RIR
-    data_shape : list, integer
-        The original data shape.
 
     """
     times = data.times
     n_channels = np.prod(data.cshape)
-
-    data_shape = list(data.cshape)
-    data = data.reshape((-1,))
 
     if shift:
         rir_start_idx = find_impulse_response_start(data)
@@ -526,7 +515,7 @@ def preprocess_rir(
         else:
             min_shift = np.amin(rir_start_idx)
             shift_samples = np.asarray(
-                -min_shift * np.ones(n_channels), dtype=int)
+                -min_shift * np.ones(data.cshape), dtype=int)
 
         result = time_shift(
             data, shift_samples, circular_shift=False)
@@ -540,4 +529,4 @@ def preprocess_rir(
 
     energy_data = pf.TimeData(energy_data, times)
 
-    return energy_data, n_channels, data_shape
+    return energy_data
