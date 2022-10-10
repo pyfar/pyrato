@@ -1,6 +1,5 @@
 """Room acoustic parameters
 """
-
 import re
 import numpy as np
 
@@ -83,21 +82,14 @@ def reverberation_time_linear_regression(
         upper = -5
         lower = -np.double(re.findall(r'\d+', T)) + upper
 
-    edc = energy_decay_curve.time.copy()
-    edc = edc.reshape((-1, energy_decay_curve.n_samples))
+    edcs_db = 10*np.log10(np.abs(energy_decay_curve.time))
     times = energy_decay_curve.times
 
-    amplitude_steady_state = edc[..., 0].copy()
-    edc /= np.atleast_2d(amplitude_steady_state).T
+    reverberation_times = np.zeros(energy_decay_curve.cshape, dtype=float)
+    intercepts = np.zeros(energy_decay_curve.cshape, dtype=float)
 
-    edcs_db = 10*np.log10(np.abs(edc))
-
-    reverberation_times = np.zeros(
-        np.prod(energy_decay_curve.cshape), dtype=float)
-    intercepts = np.zeros(
-        np.prod(energy_decay_curve.cshape), dtype=float)
-
-    for ch, edc_db in enumerate(edcs_db):
+    for ch in np.ndindex(energy_decay_curve.cshape):
+        edc_db = edcs_db[ch]
         idx_upper = np.nanargmin(np.abs(upper - edc_db))
         idx_lower = np.nanargmin(np.abs(lower - edc_db))
 
@@ -108,8 +100,6 @@ def reverberation_time_linear_regression(
 
         reverberation_times[ch] = -60 / gradient
         intercepts[ch] = 10**(const/10)
-
-    intercepts *= amplitude_steady_state
 
     if return_intercept is True:
         return reverberation_times, intercepts
