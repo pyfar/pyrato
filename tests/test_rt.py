@@ -40,12 +40,13 @@ def test_rt_from_edc_mulitchannel(tx):
 @pytest.mark.parametrize(
     'tx', ['T20', 'T30', 'T40', 'T50', 'T60', 'LDT', 'EDT'])
 def test_rt_from_edc_mulitchannel_amplitude(tx):
-    times = np.linspace(0, 1.5, 2**9)
-    Ts = np.array([1, 2, 1.5])
-    As = np.array([0, 3, 6])
+    times = np.linspace(0, 5/2, 2**9)
+    Ts = np.array([[1, 2, 1.5], [3, 4, 5]])
+    As = np.array([[0, 3, 6], [1, 1, 1]])
     m = -60
-    edc = np.atleast_2d(m/Ts).T @ np.atleast_2d(times)
-    edc += np.atleast_2d(As).T
+    edc = np.zeros((*Ts.shape, times.size))
+    for idx in np.ndindex(Ts.shape):
+        edc[idx] = As[idx] + m*times/Ts[idx]
 
     edc_exp = pf.TimeData(10**(edc/10), times)
     RT_est, A_est = ra.reverberation_time_linear_regression(
