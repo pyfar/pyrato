@@ -3,7 +3,7 @@
 __author__ = \
     """Marco Berzborn - Institute for Hearing Technology and Acoustics"""
 __email__ = 'marco.berzborn@akustik.rwth-aachen.de'
-__version__ = '0.3.1'
+__version__ = '0.3.2'
 
 from .rap import (
     reverberation_time_linear_regression
