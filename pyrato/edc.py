@@ -850,16 +850,16 @@ def intersection_time_lundeby(
                 time_window_data_current_channel[start_idx+1:-1]) >
                     (10*np.log10(noise_estimation[ch]) +
                         dB_above_noise))[-1, 0] + start_idx)
-        except IndexError:
-            raise Exception(
-                'Regression failed: Low SNR. Estimation terminated.')
+        except IndexError as exc:
+            raise ValueError(
+                'Regression failed: Insufficient SNR.') from exc
 
         dyn_range = np.diff(10*np.log10(np.take(
             time_window_data_current_channel, [start_idx, stop_idx])))
 
         if (stop_idx == start_idx) or dyn_range > -5:
-            raise Exception(
-                'Regression failed: Low SNR. Estimation terminated.')
+            raise ValueError(
+                'Regression failed: Insufficient SNR.')
 
         # regression_matrix*slope = edc
         regression_matrix = np.vstack((np.ones(
@@ -870,9 +870,9 @@ def intersection_time_lundeby(
             rcond=None)[0]
 
         if slope[1] == 0 or np.any(np.isnan(slope)):
-            raise Exception(
-                'Regression failed: T would be Inf, setting to 0. \
-                    Estimation terminated.')
+            raise ValueError(
+                'Regression failed: T would be Inf, setting to 0. '
+                'Estimation terminated.')
 
         regression_time = np.array(
             [time_vector_window[start_idx], time_vector_window[stop_idx]])
@@ -943,9 +943,9 @@ def intersection_time_lundeby(
                         10*np.log10(noise_estimation_current_channel)
                         + dB_above_noise))[0, 0]
                                  + start_idx_loop)
-            except IndexError:
-                raise Exception(
-                    'Regression failed: Low SNR. Estimation terminated.')
+            except IndexError as exc:
+                raise ValueError(
+                    'Regression failed: Insufficient SNR.') from exc
 
             # regression_matrix*slope = edc
             regression_matrix = np.vstack((np.ones(
@@ -960,7 +960,7 @@ def intersection_time_lundeby(
                 rcond=None)[0]
 
             if slope[1] >= 0:
-                raise Exception(
+                raise ValueError(
                     'Regression did not work due, T would be Inf, \
                         setting to 0. Estimation was terminated.')
 
