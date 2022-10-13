@@ -817,10 +817,7 @@ def intersection_time_lundeby(
         shift=time_shift,
         channel_independent=channel_independent)
 
-    if isinstance(data, pf.Signal):
-        sampling_rate = data.sampling_rate
-    elif isinstance(data, pf.TimeData) and not isinstance(data, pf.Signal):
-        sampling_rate = np.round(1/np.diff(data.times).mean(), decimals=4)
+    sampling_rate = data.sampling_rate
     energy_data = energy_data.time
 
     if freq == "broadband":
