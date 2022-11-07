@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import re
 import numpy as np
+from pyrato.rap import reverberation_time_linear_regression
+import warnings
 
 
 def reverberation_time_energy_decay_curve(
@@ -65,46 +66,12 @@ def reverberation_time_energy_decay_curve(
     ...     array([0.99526253])
 
     """
-    intervals = [20, 30, 40, 50, 60]
+    warnings.warn(
+        "This function will be deprecated in version 0.5.0 "
+        "Use pyrato.reverberation_time_linear_regression instead",
+        DeprecationWarning)
 
-    if T == 'EDT':
-        upper = -0.1
-        lower = -10.1
-    elif T == 'LDT':
-        upper = -25.
-        lower = -35.
-    else:
-        try:
-            (int(re.findall(r'\d+', T)[0]) in intervals)
-        except IndexError:
-            raise ValueError(
-                "{} is not a valid interval for the regression.".format(T))
-
-        upper = -5
-        lower = -np.double(re.findall(r'\d+', T)) + upper
-
-    edc = energy_decay_curve.time.copy()
-    edc = edc.reshape((-1, energy_decay_curve.n_samples))
-    times = energy_decay_curve.times
-    edc /= np.atleast_2d(edc[..., 0]).T
-
-    edcs_db = 10*np.log10(np.abs(edc))
-
-    reverberation_times = np.zeros(
-        np.prod(energy_decay_curve.cshape), dtype=float)
-
-    for ch, edc_db in enumerate(edcs_db):
-        idx_upper = np.nanargmin(np.abs(upper - edc_db))
-        idx_lower = np.nanargmin(np.abs(lower - edc_db))
-
-        A = np.vstack(
-            [times[idx_upper:idx_lower], np.ones(idx_lower - idx_upper)]).T
-        gradient, const = np.linalg.lstsq(
-            A, edc_db[..., idx_upper:idx_lower], rcond=None)[0]
-
-        reverberation_times[ch] = -60 / gradient
-
-    return reverberation_times
+    return reverberation_time_linear_regression(energy_decay_curve, T)
 
 
 def energy_decay_curve_analytic(
