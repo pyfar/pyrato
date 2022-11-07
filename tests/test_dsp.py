@@ -158,6 +158,10 @@ def test_max_ir():
     start_sample_est = dsp.find_impulse_response_maximum(ir_awgn)
     assert start_sample_est == start_sample
 
+    with pytest.warns(match='SNR seems lower'):
+        start_sample_est = dsp.find_impulse_response_maximum(
+            ir_awgn, threshold=200)
+
 # ------------------
 # Time shift
 # ------------------

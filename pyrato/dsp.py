@@ -131,8 +131,9 @@ def find_impulse_response_maximum(
 
     if np.any(max_value < 10**(threshold/10) * noise) or \
             np.any(max_sample > mask_start):
-        raise ValueError("The SNR is lower than the defined threshold. Check \
-                if this is a valid impulse response with sufficient SNR.")
+        warnings.warn(
+            "The SNR seems lower than the specified threshold value. Check "
+            "if this is a valid impulse response with sufficient SNR.")
 
     return np.squeeze(max_sample)
 
