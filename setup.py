@@ -12,7 +12,7 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = [
-    'pyfar>=0.3.0',
+    'pyfar>=0.5.0',
     'numpy>=1.14.0',
     'scipy>=1.5.0',
     'matplotlib']
