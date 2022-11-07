@@ -58,4 +58,5 @@ setup(
     url='https://github.com/mberz/pyrato',
     version='0.3.1',
     zip_safe=False,
+    python_requires='>=3.8'
 )
