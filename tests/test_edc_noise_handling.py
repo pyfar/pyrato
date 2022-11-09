@@ -45,7 +45,7 @@ def test_substracted_2D():
     npt.assert_allclose(actual, expected)
 
 
-def test_edc_truncation_1D(monkeypatch):
+def test_edc_truncation_1D():
     rir = pf.Signal(genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
         delimiter=','), 3000)
@@ -53,10 +53,18 @@ def test_edc_truncation_1D(monkeypatch):
         os.path.join(test_data_path, 'edc_truncation_1D.csv'),
         delimiter=','))
 
-    # monkeypatch.setattr(
-    #     dsp,
-    #     "find_impulse_response_start",
-    #     mock_shift_samples_1d)
+    actual = enh.energy_decay_curve_truncation(
+        rir,
+        freq='broadband',
+        is_energy=False,
+        time_shift=True,
+        channel_independent=False,
+        normalize=True,
+        threshold=-np.inf)
+
+    pf.plot.time(actual, dB=True, log_prefix=10)
+
+    npt.assert_allclose(actual.time, expected)
 
     actual = enh.energy_decay_curve_truncation(
         rir,
@@ -64,7 +72,14 @@ def test_edc_truncation_1D(monkeypatch):
         is_energy=False,
         time_shift=True,
         channel_independent=False,
-        normalize=True)
+        normalize=True,
+        threshold=15)
+
+    mask = expected < 10**((-40+15)/10)
+    expected[mask] = np.nan
+
+    pf.plot.time(actual, dB=True, log_prefix=10)
+
     npt.assert_allclose(actual.time, expected)
 
 
@@ -76,18 +91,14 @@ def test_edc_truncation_2D(monkeypatch):
         os.path.join(test_data_path, 'edc_truncation_2D.csv'),
         delimiter=','))
 
-    # monkeypatch.setattr(
-    #     dsp,
-    #     "find_impulse_response_start",
-    #     mock_shift_samples_2d)
-
     actual = enh.energy_decay_curve_truncation(
         rir,
         freq='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=False,
-        normalize=True)
+        normalize=True,
+        threshold=-np.inf)
     npt.assert_allclose(actual.time, expected)
 
 
@@ -277,3 +288,41 @@ def test_intersection_time_2D(monkeypatch):
         channel_independent=False,
         plot=False)
     npt.assert_allclose(actual, expected)
+
+
+def test_energy_decay_curve_threshold():
+
+    t_60 = 1
+    m = -60/t_60
+
+    n_samples = 10
+    times = np.linspace(0, 1, n_samples)
+    edc_log = np.atleast_2d(times * m)
+
+    edc_log = np.tile(edc_log, (2, 3, 1))
+
+    edc = enh._truncate_energy_decay_curve(10**(edc_log.copy()/10), 30)
+
+    edc_ref = 10**(edc_log.copy()/10)
+    edc_ref[..., n_samples//2:] = np.nan
+
+    npt.assert_allclose(edc, edc_ref)
+
+
+def test_truncate_energy_decay_curve():
+    t_60 = 1
+    m = -60/t_60
+
+    n_samples = 10
+    times = np.linspace(0, 1, n_samples)
+    edc_log = np.atleast_2d(times * m)
+
+    edc_log = np.tile(edc_log, (2, 3, 1))
+
+    edc = pf.TimeData(10**(edc_log.copy()/10), times)
+    edc_trunc = enh.truncate_energy_decay_curve(edc, 30)
+
+    edc_ref = 10**(edc_log.copy()/10)
+    edc_ref[..., n_samples//2:] = np.nan
+
+    npt.assert_allclose(edc_trunc.time, edc_ref)

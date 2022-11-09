@@ -173,6 +173,7 @@ def energy_decay_curve_truncation(
         time_shift=True,
         channel_independent=False,
         normalize=True,
+        threshold=15,
         plot=False):
     """ This function truncates a given room impulse response by the
     intersection time after Lundeby and calculates the energy decay curve.
@@ -199,13 +200,18 @@ def energy_decay_curve_truncation(
     normalize : boolean
         Defines, if the energy decay curve should be normalized in the end
         or not.
+    threshold : float
+        Defines a peak-signal-to-noise ratio based threshold in dB for final
+        truncation of the EDC. Values below the sum of the threshold level and
+        the peak-signal-to-noise ratio in dB are discarded. The default is
+        15 dB, which is in correspondence with ISO 3382-1:2009 [#]_.
     plot: Boolean
         Specifies, whether the results should be visualized or not.
 
     Returns
     -------
     pyfar.TimeData
-        Returns the noise handeled edc.
+        Returns the noise compensated EDC.
 
     Examples
     --------
@@ -240,6 +246,12 @@ def energy_decay_curve_truncation(
         >>> ax.set_ylim(-65, 5)
         >>> ax.legend()
 
+
+    References
+    ----------
+    .. [#]  International Organization for Standardization, “EN ISO 3382-1:2009
+            Acoustics - Measurement of room acoustic parameters,” 2009.
+
     """
     energy_data = dsp.preprocess_rir(
         data,
@@ -259,6 +271,10 @@ def energy_decay_curve_truncation(
 
     intersection_time_idx = np.rint(intersection_time * data.sampling_rate)
 
+    psnr = dsp.peak_signal_to_noise_ratio(
+        data, noise_level, is_energy=is_energy)
+    trunc_levels = 10*np.log10((psnr)) - threshold
+
     energy_decay_curve = np.zeros([*data.cshape, n_samples])
     for ch in np.ndindex(data.cshape):
         energy_decay_curve[
@@ -267,6 +283,9 @@ def energy_decay_curve_truncation(
                     energy_data.time[
                         ch, :int(intersection_time_idx[ch])],
                     is_energy=True)
+
+    energy_decay_curve = _truncate_energy_decay_curve(
+        energy_decay_curve, trunc_levels)
 
     if normalize:
         # Normalize the EDC...
@@ -1067,3 +1086,33 @@ def intersection_time_lundeby(
         plt.grid(True)
 
     return intersection_time, reverberation_time, noise_level
+
+
+def _truncate_energy_decay_curve(energy_decay_curve, threshold_level):
+
+    edc = np.atleast_2d(energy_decay_curve)
+    threshold_level = np.atleast_2d(threshold_level)
+    e = edc.T[0]
+    t = e / 10**(threshold_level/10)
+
+    mask = edc.T < np.broadcast_to(t, edc.T.shape)
+    edc[mask.T] = np.nan
+
+    return edc
+
+
+def truncate_energy_decay_curve(energy_decay_curve, threshold):
+    """Truncate an energy decay curve, discarding values below the threshold.
+
+    Parameters
+    ----------
+    energy_decay_curve : pyfar.TimeData
+        The energy decay curve
+    threshold : float
+        The threshold level in dB. The data below the threshold level are set
+        to numpy.nan values.
+    """
+    return pf.TimeData(
+        _truncate_energy_decay_curve(energy_decay_curve.time, threshold),
+        energy_decay_curve.times,
+        energy_decay_curve.comment)
