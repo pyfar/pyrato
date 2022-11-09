@@ -463,8 +463,8 @@ def energy_decay_curve_chu(
         time_shift=True,
         channel_independent=False,
         normalize=True,
+        threshold=10,
         plot=False):
-
     """ Implementation of the "subtraction of noise"-method after Chu [#]
     The noise level is estimated and subtracted from the impulse response
     before backward integration.
@@ -487,6 +487,11 @@ def energy_decay_curve_chu(
     normalize : boolean
         Defines, if the energy decay curve should be normalized in the end
         or not.
+    threshold : float, None
+        Defines a peak-signal-to-noise ratio based threshold in dB for final
+        truncation of the EDC. Values below the sum of the threshold level and
+        the peak-signal-to-noise ratio in dB are discarded. The default is
+        10 dB. If `None`, the decay curve will not be truncated further.
     plot: Boolean
         Specifies, whether the results should be visualized or not.
 
@@ -560,6 +565,12 @@ def energy_decay_curve_chu(
         first_zero = np.nanargmax(mask, axis=-1)
         for ch in np.ndindex(edc.cshape):
             edc.time[ch, first_zero[ch]:] = np.nan
+
+    if threshold is not None:
+        psnr = dsp.peak_signal_to_noise_ratio(
+            data, noise_level, is_energy=is_energy)
+        trunc_levels = 10*np.log10((psnr)) - threshold
+        edc = truncate_energy_decay_curve(edc, trunc_levels)
 
     if plot:
         plt.figure(figsize=(15, 3))

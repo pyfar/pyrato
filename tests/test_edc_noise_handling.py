@@ -206,18 +206,33 @@ def test_edc_chu_1D(monkeypatch):
         os.path.join(test_data_path, 'edc_chu_1D.csv'),
         delimiter=','))
 
-    # monkeypatch.setattr(
-    #     dsp,
-    #     "find_impulse_response_start",
-    #     mock_shift_samples_1d)
-
     actual = enh.energy_decay_curve_chu(
         rir,
         is_energy=False,
         time_shift=True,
         channel_independent=False,
         normalize=True,
+        threshold=None,
         plot=False)
+    npt.assert_allclose(actual.time, expected)
+
+    # Test with a sufficiently high threshold to ensure exact matching of nans
+    threshold = 15
+    actual = enh.energy_decay_curve_chu(
+        rir,
+        is_energy=False,
+        time_shift=True,
+        channel_independent=False,
+        normalize=True,
+        threshold=threshold,
+        plot=False)
+
+    mask = expected <= 10**((-40+threshold)/10)
+    expected[mask] = np.nan
+
+    pf.plot.time(actual, dB=True, log_prefix=10)
+
+    pf.plot.time(pf.TimeData(expected, actual.times), dB=True, log_prefix=10)
     npt.assert_allclose(actual.time, expected)
 
 
@@ -240,6 +255,7 @@ def test_edc_chu_2D(monkeypatch):
         time_shift=True,
         channel_independent=False,
         normalize=True,
+        threshold=None,
         plot=False)
     npt.assert_allclose(actual.time, expected)
 
