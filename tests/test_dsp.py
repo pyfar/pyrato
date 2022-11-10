@@ -264,6 +264,21 @@ def test_noise_energy_2D():
     npt.assert_allclose(actual, expected)
 
 
+def test_psnr():
+    n_samples = 2**20
+    peak_levels = np.array([0, -6, -10])
+    noise_level = np.array([-20, -30, -40])
+    imp = pf.signals.impulse(n_samples, amplitude=10**(peak_levels/20))
+    awgn = pf.signals.noise(n_samples, rms=10**(noise_level/20), seed=7)
+    psnr = dsp.peak_signal_to_noise_ratio(imp+awgn)
+
+    npt.assert_allclose(
+        1/psnr, 10**((peak_levels + noise_level)/10), rtol=1e-2, atol=1e-2)
+
+# ----------------
+# RIR preprocessing
+# ----------------
+
 def test_preprocessing_1D():
     rir = genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
