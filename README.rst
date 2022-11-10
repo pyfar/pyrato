@@ -2,6 +2,14 @@
 pyrato
 ======
 
+.. image:: https://readthedocs.org/projects/pyrato/badge/?version=latest
+    :target: https://pyrato.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+.. image:: https://circleci.com/gh/mberz/pyrato.svg?style=shield
+    :target: https://circleci.com/gh/mberz/pyrato
+.. image:: https://mybinder.org/badge_logo.svg
+    :target: https://mybinder.org/v2/gh/mberz/pyrato/HEAD?filepath=examples%2Fenergy_decay_curves_and_reverberation_time.ipynb
+    
 Python Room Acoustics Tools - A collection of functions for commonly used operations in room acoustics
 
 Installation
