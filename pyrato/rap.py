@@ -7,22 +7,23 @@ import numpy as np
 def reverberation_time_linear_regression(
         energy_decay_curve, T='T20', return_intercept=False):
     """Estimate the reverberation time from a given energy decay curve.
+
     The linear regression is performed using least squares error minimization
     according to the ISO standard 3382 [#]_.
 
     Parameters
     ----------
-    energy_decay_curve : ndarray, double
-        Energy decay curve. The time needs to be the arrays last dimension.
-    times : ndarray, double
-        Time vector corresponding to each sample of the EDC.
+    energy_decay_curve : pyfar.TimeData
+        Energy decay curve.
     T : 'T20', 'T30', 'T40', 'T50', 'T60', 'EDT', 'LDT'
-        Decay interval to be used for the reverberation time extrapolation. EDT
-        corresponds to the early decay time extrapolated from the interval
-        [0, -10] dB, LDT corresponds to the late decay time extrapolated from
-        the interval [-25, -35] dB.
-    normalize : bool, True
-        Normalize the EDC to the steady state energy level
+        Decay interval to be used for the reverberation time extrapolation.
+        The EDT corresponds to the early decay time extrapolated from the
+        interval [0, -10] dB, The LDT corresponds to the late decay time
+        extrapolated from the interval [-25, -35] dB.
+    return_intercept : bool
+        If `True`, the function returns the intercept of the linear regression,
+        which corresponds to the amplitude of the energy decay curve on a
+        linear scale.
 
     Returns
     -------
@@ -31,6 +32,7 @@ def reverberation_time_linear_regression(
 
     References
     ----------
+
     .. [#]  ISO 3382, Acoustics - Measurement of the reverberation time of
             rooms with reference to other acoustical parameters.
 
@@ -64,8 +66,6 @@ def reverberation_time_linear_regression(
     ...     array([0.99526253])
 
     """
-    intervals = [20, 30, 40, 50, 60]
-
     if T == 'EDT':
         upper = -0.1
         lower = -10.1
@@ -73,11 +73,13 @@ def reverberation_time_linear_regression(
         upper = -25.
         lower = -35.
     else:
+        intervals = [20, 30, 40, 50, 60]
+
         try:
             (int(re.findall(r'\d+', T)[0]) in intervals)
-        except IndexError:
+        except IndexError as e:
             raise ValueError(
-                "{} is not a valid interval for the regression.".format(T))
+                f"{T} is not a valid interval for the regression.") from e
 
         upper = -5
         lower = -np.double(re.findall(r'\d+', T)) + upper
