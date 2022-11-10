@@ -12,6 +12,7 @@ def find_impulse_response_start(
         impulse_response,
         threshold=20):
     """Find the start sample of an impulse response.
+
     The start sample is identified as the first sample which is below the
     ``threshold`` level relative to the maximum level of the impulse response.
     For room impulse responses, ISO 3382 [#]_ specifies a threshold of 20 dB.
@@ -24,10 +25,12 @@ def find_impulse_response_start(
         The impulse response
     threshold : float, optional
         The threshold level in dB, by default 20, which complies with ISO 3382.
+
     Returns
     -------
     start_sample : numpy.ndarray, int
         Sample at which the impulse response starts
+
     Notes
     -----
     The function tries to estimate the PSNR in the IR based on the signal
@@ -35,15 +38,20 @@ def find_impulse_response_start(
     if the noise spectrum is not white or the impulse response contains
     non-linear distortions. If the PSNR is lower than the specified threshold,
     the function will issue a warning.
+
     References
     ----------
-    .. [#]  ISO 3382-1:2009-10, Acoustics - Measurement of the reverberation
-            time of rooms with reference to other acoustical parameters. pp. 22
+
+    .. [#] ISO 3382-1:2009-10, Acoustics - Measurement of the reverberation
+           time of rooms with reference to other acoustical parameters. pp. 22
+
     Examples
     --------
     Create a band-limited impulse shifted by 0.5 samples and estimate the
     starting sample of the impulse and plot.
+
     .. plot::
+
         >>> import pyfar as pf
         >>> import numpy as np
         >>> n_samples = 256
@@ -59,11 +67,14 @@ def find_impulse_response_start(
         ...     20*np.log10(np.max(np.abs(ir.time)))-20,
         ...     color='k', linestyle=':', label='threshold')
         >>> ax.legend()
+
     Create a train of weighted impulses with levels below and above the
     threshold, serving as a very abstract room impulse response. The starting
     sample is identified as the last sample below the threshold relative to the
     maximum of the impulse response.
+
     .. plot::
+
         >>> import pyfar as pf
         >>> import numpy as np
         >>> n_samples = 64
@@ -83,6 +94,7 @@ def find_impulse_response_start(
         ...     20*np.log10(np.max(np.abs(ir.time)))-20,
         ...     color='k', linestyle=':', label='threshold')
         >>> ax.legend()
+
     """
     warnings.warn(
         "This function will be deprecated in version 0.5.0 "
@@ -96,7 +108,8 @@ def find_impulse_response_maximum(
         impulse_response,
         threshold=20,
         noise_energy='auto'):
-    """Find the maximum of an impulse response as argmax(h(t)).
+    """Find the time of the maximum of an impulse response.
+
     Performs an initial SNR check according to a defined threshold level in dB.
 
     Parameters
@@ -254,12 +267,16 @@ def time_shift(signal, shift, circular_shift=True, unit='samples'):
 
 
 def center_frequencies_octaves():
-    """Return the octave center frequencies according to the IEC 61260:1:2014
+    """Return the center frequencies of fractional octave bands.
+
+    The center frequencies are calculated according to the IEC 61260:1:2014
     standard.
+
     Returns
     -------
     frequencies : ndarray, float
         Octave center frequencies
+
     """
     warnings.warn(
         "This function will be deprecated in version 0.5.0 "
@@ -273,8 +290,10 @@ def center_frequencies_octaves():
 
 
 def center_frequencies_third_octaves():
-    """Return the third octave center frequencies according
-    to the ICE 61260:1:2014 standard.
+    """Return the third octave center frequencies.
+
+    Frequencies are calculated according to the ICE 61260:1:2014 standard.
+
     Returns
     -------
     frequencies : ndarray, float
@@ -295,6 +314,7 @@ def filter_fractional_octave_bands(
         signal, num_fractions,
         freq_range=(20.0, 20e3), order=6):
     """Apply a fractional octave filter to a signal.
+
     Filter bank implementation using second order sections of butterworth
     filters for increased numeric accuracy and stability.
 
@@ -325,13 +345,15 @@ def estimate_noise_energy(
         data,
         interval=[0.9, 1.0],
         is_energy=False):
-    """ This function estimates the noise energy level of a given room impulse
-    response. The noise is assumed to be Gaussian.
+    """Estimate the noise power of additive noise in impulse responses.
+
+    The noise power is distributed from an interval in which the additive
+    noise is assumed to be larger than the impulse response data.
 
     Parameters
     ----------
-    data: np.array
-        The room impulse response with dimension [..., n_samples]
+    data: pyfar.Signal
+        The impulse response
     interval : tuple, float, [0.9, 1.]
         Defines the interval of the RIR to be evaluated for the estimation.
         The interval is relative to the length of the RIR [0 = 0%, 1=100%)]
@@ -356,8 +378,9 @@ def estimate_noise_energy(
 def _estimate_noise_energy(
         energy_data,
         interval=[0.9, 1.0]):
-    """ This function estimates the noise energy level of a given room impulse
-    response. The noise is assumed to be Gaussian.
+    """Estimate the noise power of additive noise in impulse responses.
+
+    Private function for use with numpy arrays
 
     Parameters
     ----------
@@ -443,14 +466,15 @@ def preprocess_rir(
         is_energy=False,
         shift=False,
         channel_independent=False):
-    """ Preprocess the room impulse response for further processing:
-        - Square data
-        - Shift the RIR to the first sample of the array, compensating for the
-          delay of the time of arrival of the direct sound. The time shift is
-          performed as a non-cyclic shift, adding numpy.nan values in the end
-          of the RIR corresponding to the number of samples the data is
-          shifted by.
-        - The time shift can be done channel-independent or not.
+    """Preprocess the room impulse response for further processing:
+
+    - Square data
+    - Shift the RIR to the first sample of the array, compensating for the
+        delay of the time of arrival of the direct sound. The time shift is
+        performed as a non-cyclic shift, adding numpy.nan values in the end
+        of the RIR corresponding to the number of samples the data is
+        shifted by.
+    - The time shift can be done channel-independent or not.
 
     Parameters
     ----------
