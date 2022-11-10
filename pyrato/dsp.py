@@ -495,3 +495,34 @@ def preprocess_rir(
     energy_data = pf.TimeData(energy_data, times)
 
     return energy_data
+
+
+def peak_signal_to_noise_ratio(
+        impulse_response,
+        noise_power='auto',
+        is_energy=False):
+    """Calculate the peak-signal-to-noise-ratio of an impulse response.
+
+    Parameters
+    ----------
+    impulse_response : pyfar.Signal
+        The impulse response
+    noise_power : float, str, optional
+        The noise power. The default is 'auto', in which case the noise power
+        is estimated from the last 10 % of the impulse response.
+
+    Returns
+    -------
+    float, array-like
+        The estimated peak-signal-to-noise-ratio for each channel of the
+        impulse response.
+
+    """
+    data = impulse_response.time
+    if is_energy is False:
+        data = data**2
+
+    if noise_power == 'auto':
+        noise_power = _estimate_noise_energy(data)
+
+    return np.max(data, axis=-1) / noise_power
