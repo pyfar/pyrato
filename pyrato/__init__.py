@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__author__ = \
-    """Marco Berzborn - Institute for Hearing Technology and Acoustics"""
+__author__ = "Marco Berzborn - Institute for Hearing Technology and Acoustics"
 __email__ = 'marco.berzborn@akustik.rwth-aachen.de'
 __version__ = '0.3.2'
 
