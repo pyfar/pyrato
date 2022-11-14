@@ -71,8 +71,9 @@ def schroeder_integration(room_impulse_response, is_energy=False):
     ----------
     room_impulse_response : pyfar.Signal
         Room impulse response as array
-    is_energy : boolean, optional
-        Whether the input represents energy data or sound pressure values.
+    is_energy: boolean
+        If `True` the input data is proportional to energy density; if `False`
+        the input data is proportional to sound pressure.
 
     Returns
     -------
@@ -134,8 +135,9 @@ def _schroeder_integration(impulse_response, is_energy=False):
     ----------
     impulse_response : ndarray, double
         Room impulse response as array
-    is_energy : boolean, optional
-        Whether the input represents energy data or sound pressure values.
+    is_energy: boolean
+        If `True` the input data is proportional to energy density; if `False`
+        the input data is proportional to sound pressure.
 
     Returns
     -------
@@ -194,7 +196,8 @@ def energy_decay_curve_truncation(
         percent of the RIR. Otherwise specify manually for each channel
         as array.
     is_energy: boolean
-        Defines, if the data is already squared.
+        If `True` the input data is proportional to energy density; if `False`
+        the input data is proportional to sound pressure.
     time_shift : boolean
         Defines, if the silence at beginning of the RIR should be removed.
     channel_independent : boolean
@@ -349,7 +352,8 @@ def energy_decay_curve_lundeby(
         percent of the RIR. Otherwise specify manually for each channel
         as array.
     is_energy: boolean
-        Defines, if the data is already squared.
+        If `True` the input data is proportional to energy density; if `False`
+        the input data is proportional to sound pressure.
     time_shift : bool
         If `True`, the delay of the RIR is removed.
     channel_independent : boolean
@@ -502,7 +506,8 @@ def energy_decay_curve_chu(
         percent of the RIR. Otherwise it needs to be given for each individual
         channel of the input.
     is_energy: boolean
-        Defines, if the data is already squared.
+        If `True` the input data is proportional to energy density; if `False`
+        the input data is proportional to sound pressure.
     time_shift : bool
         If `True`, the delay of the RIR is removed.
     channel_independent : boolean
@@ -649,7 +654,8 @@ def energy_decay_curve_chu_lundeby(
         percent of the RIR. Otherwise specify manually for each channel
         as array.
     is_energy: boolean
-        Defines, if the data is already squared.
+        If `True` the input data is proportional to energy density; if `False`
+        the input data is proportional to sound pressure.
     time_shift : boolean
         Defines, if the silence at beginning of the RIR should be removed.
     channel_independent : boolean
@@ -804,7 +810,8 @@ def intersection_time_lundeby(
         percent of the RIR. Otherwise specify manually for each channel
         as array.
     is_energy: boolean
-        Defines, if the data is already squared.
+        If `True` the input data is proportional to energy density; if `False`
+        the input data is proportional to sound pressure.
     time_shift : boolean
         Defines, if the silence at beginning of the RIR should be removed.
     channel_independent : boolean
