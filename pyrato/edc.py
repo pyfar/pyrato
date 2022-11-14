@@ -430,6 +430,7 @@ def energy_decay_curve_lundeby(
                 energy_data.time[ch, :intersection_time_idx],
                 is_energy=True)
         energy_decay_curve[ch] += correction
+        energy_decay_curve[..., intersection_time_idx:] = np.nan
 
     if normalize:
         # Normalize the EDC...
@@ -443,7 +444,6 @@ def energy_decay_curve_lundeby(
             max_start_value = np.amax(energy_decay_curve[..., 0])
             energy_decay_curve /= max_start_value
 
-    energy_decay_curve[..., intersection_time_idx:] = np.nan
     edc = pf.TimeData(
         energy_decay_curve, data.times, comment=data.comment)
 
@@ -722,6 +722,7 @@ def energy_decay_curve_chu_lundeby(
                 subtraction.time[ch, :intersection_time_idx],
                 is_energy=True)
         energy_decay_curve[ch] += correction
+        energy_decay_curve[..., intersection_time_idx:] = np.nan
 
     if normalize:
         # Normalize the EDC...
@@ -734,7 +735,6 @@ def energy_decay_curve_chu_lundeby(
             max_start_value = np.amax(energy_decay_curve[..., 0])
             energy_decay_curve /= max_start_value
 
-    energy_decay_curve[..., intersection_time_idx:] = np.nan
     edc = pf.TimeData(
         energy_decay_curve, data.times, comment=data.comment)
 
