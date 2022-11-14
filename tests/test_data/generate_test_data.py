@@ -27,37 +27,44 @@ t_60 = 1
 max_freq = 1000
 n_samples = 2**13
 
-rir_1 = analytic.rectangular_room_rigid_walls(
-    dimensions=room_dimensions, source=src_pos, receiver=rec_pos, reverberation_time=t_60, max_freq=max_freq,
-    samplingrate=sampling_rate, speed_of_sound=343.9, n_samples=n_samples*2)[0]
+# rir_1 = analytic.rectangular_room_rigid_walls(
+#     dimensions=room_dimensions, source=src_pos, receiver=rec_pos, reverberation_time=t_60, max_freq=max_freq,
+#     samplingrate=sampling_rate, speed_of_sound=343.9, n_samples=n_samples*2)[0]
 
-rir_2 = analytic.rectangular_room_rigid_walls(
-    dimensions=room_dimensions, source=src_pos, receiver=rec_pos, reverberation_time=t_60*2, max_freq=max_freq,
-    samplingrate=sampling_rate, speed_of_sound=343.9, n_samples=n_samples*2)[0]
+# rir_2 = analytic.rectangular_room_rigid_walls(
+#     dimensions=room_dimensions, source=src_pos, receiver=rec_pos, reverberation_time=t_60*2, max_freq=max_freq,
+#     samplingrate=sampling_rate, speed_of_sound=343.9, n_samples=n_samples*2)[0]
+
+# # %%
+
+# rir_array = np.zeros(([2, rir_2.time.size]))
+
+# psnr = 50
+
+# # rir_1 /= np.amax(np.abs(rir_1))
+# # rir_2 /= np.amax(np.abs(rir_2))
+
+# rir_array[0] = rir_1.time
+# rir_array[1] = rir_2.time
+
+# rir_array = pf.dsp.normalize(pf.Signal(rir_array, sampling_rate))
+
+# rms = 10**(-(psnr-10) / 20)
+# noise = pf.signals.noise(
+#     n_samples*2, rms=rms, sampling_rate=sampling_rate, seed=1)
+
+# rir_array += noise
 
 # %%
-
-rir_array = np.zeros(([2, rir_2.time.size]))
-
-psnr = 50
-
-# rir_1 /= np.amax(np.abs(rir_1))
-# rir_2 /= np.amax(np.abs(rir_2))
-
-rir_array[0] = rir_1.time
-rir_array[1] = rir_2.time
-
-rir_array = pf.dsp.normalize(pf.Signal(rir_array, sampling_rate))
+# Use existing RIR to avoid re-generating data for all tests
 
 
-# fix the seed
-np.random.seed(1)
+rir_array = pf.Signal(np.genfromtxt(
+        'analytic_rir_psnr50_2D.csv',
+        delimiter=','), 3000)
 
-rms = 10**(-(psnr-10) / 20)
-noise = pf.signals.noise(
-    n_samples*2, rms=rms, sampling_rate=sampling_rate, seed=1)
-
-rir_array += noise
+# %%
+pf.plot.time(rir_array, dB=True, alpha=0.5)
 # %%
 
 noise_energy_1D = pyrato.estimate_noise_energy(
@@ -117,10 +124,10 @@ edc_chu_2D = pyrato.energy_decay_curve_chu(
     channel_independent=False, normalize=True, plot=False)
 
 intersection_time_1D = pyrato.intersection_time_lundeby(
-    rir_array[0], freq='broadband', is_energy=False, time_shift=False,
+    rir_array[0], freq='broadband', is_energy=False, time_shift=True,
     channel_independent=False, plot=False)
 intersection_time_2D = pyrato.intersection_time_lundeby(
-    rir_array, freq='broadband', is_energy=False, time_shift=False,
+    rir_array, freq='broadband', is_energy=False, time_shift=True,
     channel_independent=False, plot=False)
 
 # noise_energy_from_edc_1D = pyrato.edc.estimate_noise_energy_from_edc(
@@ -128,6 +135,8 @@ intersection_time_2D = pyrato.intersection_time_lundeby(
 # noise_energy_from_edc_2D = pyrato.edc.estimate_noise_energy_from_edc(
 #     edc_lundeby_chu_2D, intersection_time_2D[0], sampling_rate)
 
+# %%
+pf.plot.time(edc_lundeby_2D, dB=True, log_prefix=10)
 # %%
 
 
@@ -198,3 +207,5 @@ np.savetxt("intersection_time_2D.csv", intersection_time_2D, delimiter=",")
 
 #     np.savetxt("noise_energy_from_edc_1D.csv", noise_energy_from_edc_1D, delimiter=",")
 #     np.savetxt("noise_energy_from_edc_2D.csv", noise_energy_from_edc_2D, delimiter=",")
+
+# %%
