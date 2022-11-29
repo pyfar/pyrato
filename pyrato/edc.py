@@ -11,6 +11,7 @@ from matplotlib import pyplot as plt
 from pyrato import dsp
 import warnings
 import pyfar as pf
+from scipy.stats import linregress
 
 
 def subtract_noise_from_squared_rir(data, noise_level='auto'):
@@ -837,9 +838,10 @@ def intersection_time_lundeby(
     # time intervals per 10 dB decay. Lundeby: 3...10
     n_intervals_per_10dB = 5
     # end of regression 5 ... 10 dB
-    dB_above_noise = 10
+    noise_level_headroom = 10
     # Dynamic range 10 ... 20 dB
     use_dyn_range_for_regression = 20
+    corresponding_decay = 10  # 5...10 dB
 
     energy_data = dsp.preprocess_rir(
         data,
@@ -875,31 +877,32 @@ def intersection_time_lundeby(
     for ch in np.ndindex(data.cshape):
         time_window_data_current_channel = time_window_data[ch]
         start_idx = np.nanargmax(time_window_data_current_channel, axis=-1)
+        energy_level = 10*np.log10(
+                time_window_data_current_channel[start_idx+1:])
+        noise_level_ch = 10*np.log10(noise_estimation[ch])
+
         try:
-            stop_idx = (np.argwhere(10*np.log10(
-                time_window_data_current_channel[start_idx+1:-1]) >
-                    (10*np.log10(noise_estimation[ch]) +
-                        dB_above_noise))[-1, 0] + start_idx)
+            stop_idx = np.argwhere(
+                    energy_level > (noise_level_ch + noise_level_headroom)
+                )[-1, 0] + start_idx
         except IndexError as exc:
             raise ValueError(
                 'Regression failed: Insufficient SNR.') from exc
 
-        dyn_range = np.diff(10*np.log10(np.take(
-            time_window_data_current_channel, [start_idx, stop_idx])))
+        dyn_range = np.diff(np.take(energy_level, [0, -1]))
 
         if (stop_idx == start_idx) or dyn_range > -5:
             raise ValueError(
                 'Regression failed: Insufficient SNR.')
 
-        # regression_matrix*slope = edc
-        regression_matrix = np.vstack((np.ones(
-            [stop_idx-start_idx]), time_vector_window[start_idx:stop_idx]))
-        slope = np.linalg.lstsq(
-            regression_matrix.T,
+        # slope in dB/s, intercept in dB
+        # edc = slope*t + intercept
+        slope, intercept = linregress(
+            time_vector_window[start_idx:stop_idx],
             10*np.log10(time_window_data_current_channel[start_idx:stop_idx]),
-            rcond=None)[0]
+            alternative='less')[:2]
 
-        if slope[1] == 0 or np.any(np.isnan(slope)):
+        if slope == 0 or np.any(np.isnan(slope)):
             raise ValueError(
                 'Regression failed: T would be Inf, setting to 0. '
                 'Estimation terminated.')
@@ -909,30 +912,30 @@ def intersection_time_lundeby(
         regression_values = np.array(
             [10*np.log10(time_window_data[0, start_idx]),
              (10*np.log10(time_window_data[0, start_idx])
-                + slope[1]*time_vector_window[stop_idx])])
+                + slope*time_vector_window[stop_idx])])
 
         # (4) PRELIMINARY CROSSING POINT
-        crossing_point = \
-            (10*np.log10(noise_estimation[ch]) - slope[0]) / slope[1]
+        crossing_point = (noise_level_ch - intercept) / slope
         preliminary_crossing_point = crossing_point
 
         # (5) NEW LOCAL TIME INTERVAL LENGTH
-        n_blocks_in_decay = (np.diff(
-            10*np.log10(np.take(
-                time_window_data_current_channel, [start_idx, stop_idx])))
-            / -10 * n_intervals_per_10dB)
+        energy_level = 10*np.log10(time_window_data_current_channel)
+        dynamic_range = np.abs(np.diff(np.take(
+                energy_level, [start_idx, stop_idx])))
 
-        n_samples_per_block = np.round(np.diff(np.take(
-            time_vector_window,
-            [start_idx, stop_idx])) / n_blocks_in_decay * sampling_rate)
+        # number of blocks for rir energy smoothing
+        n_blocks_in_decay = dynamic_range / 10 * n_intervals_per_10dB
 
+        # dt for a block of 10 dB
+        dt = np.diff(np.take(time_vector_window, [start_idx, stop_idx]))
+        n_samples_per_block = np.round(dt / n_blocks_in_decay * sampling_rate)
+
+        # new window time length
         window_time = n_samples_per_block/sampling_rate
 
         # (6) AVERAGE
-        time_window_data_current_channel, \
-            time_vector_window_current_channel, \
-            time_vector_current_channel = dsp._smooth_rir(
-                energy_data[ch], sampling_rate, window_time)
+        time_window_data_current_channel, time_vector_window_current_channel = dsp._smooth_rir(
+                energy_data[ch], sampling_rate, window_time)[:2]
         time_window_data_current_channel = np.squeeze(
             time_window_data_current_channel)
         idx_max = np.nanargmax(time_window_data_current_channel)
@@ -948,7 +951,7 @@ def intersection_time_lundeby(
                 time_window_data_current_channel.shape[-1]*0.9)
 
             t_block = n_samples_per_block / sampling_rate
-            rel_decay = corresponding_decay / slope[1]
+            rel_decay = corresponding_decay / slope
             idx_10dB_below_crosspoint = np.nanmax(
                 np.r_[1, np.round(((crossing_point - rel_decay) / t_block))])
 
@@ -961,7 +964,7 @@ def intersection_time_lundeby(
                 start_idx_loop = np.argwhere(10*np.log10(
                     time_window_data_current_channel[idx_max:]) < (
                         10*np.log10(noise_estimation_current_channel)
-                        + dB_above_noise
+                        + noise_level_headroom
                         + use_dyn_range_for_regression
                         + idx_max))[0, 0]
             except TypeError:
@@ -971,25 +974,20 @@ def intersection_time_lundeby(
                 stop_idx_loop = (np.argwhere(10*np.log10(
                     time_window_data_current_channel[start_idx_loop+1:]) < (
                         10*np.log10(noise_estimation_current_channel)
-                        + dB_above_noise))[0, 0]
+                        + noise_level_headroom))[0, 0]
                                  + start_idx_loop)
             except IndexError as exc:
                 raise ValueError(
                     'Regression failed: Insufficient SNR.') from exc
 
-            # regression_matrix*slope = edc
-            regression_matrix = np.vstack((np.ones(
-                [stop_idx_loop-start_idx_loop]),
-                time_vector_window_current_channel[
-                    start_idx_loop:stop_idx_loop]))
+            slope, intercept = linregress(
+                    time_vector_window_current_channel[
+                        start_idx_loop:stop_idx_loop],
+                    10*np.log10(time_window_data_current_channel[
+                        start_idx_loop:stop_idx_loop]),
+                    alternative='less')[:2]
 
-            slope = np.linalg.lstsq(
-                regression_matrix.T,
-                (10*np.log10(time_window_data_current_channel[
-                    start_idx_loop:stop_idx_loop])),
-                rcond=None)[0]
-
-            if slope[1] >= 0:
+            if slope >= 0:
                 raise ValueError(
                     'Regression did not work due, T would be Inf, \
                         setting to 0. Estimation was terminated.')
@@ -997,7 +995,7 @@ def intersection_time_lundeby(
             # (9) FIND CROSSPOINT
             old_crossing_point = crossing_point
             crossing_point = ((10*np.log10(noise_estimation_current_channel)
-                               - slope[0]) / slope[1])
+                               - intercept) / slope)
 
             loop_counter = loop_counter + 1
 
@@ -1009,7 +1007,7 @@ def intersection_time_lundeby(
                     "Lundeby algorithm was terminated after 30 iterations.")
                 break
 
-        reverberation_time[ch] = -60/slope[1]
+        reverberation_time[ch] = -60/slope
         noise_level[ch] = noise_estimation_current_channel
         intersection_time[ch] = crossing_point
         noise_peak_level[ch] = 10 * np.log10(
