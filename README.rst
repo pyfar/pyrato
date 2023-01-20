@@ -1,7 +1,8 @@
 ======
 pyrato
 ======
-
+.. image:: https://badge.fury.io/py/pyrato.svg
+    :target: https://badge.fury.io/py/pyrato
 .. image:: https://readthedocs.org/projects/pyrato/badge/?version=latest
     :target: https://pyrato.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
