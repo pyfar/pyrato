@@ -173,6 +173,7 @@ def energy_decay_curve_truncation(
         time_shift=True,
         channel_independent=False,
         normalize=True,
+        threshold=15,
         plot=False):
     """ This function truncates a given room impulse response by the
     intersection time after Lundeby and calculates the energy decay curve.
@@ -199,13 +200,18 @@ def energy_decay_curve_truncation(
     normalize : boolean
         Defines, if the energy decay curve should be normalized in the end
         or not.
+    threshold : float
+        Defines a peak-signal-to-noise ratio based threshold in dB for final
+        truncation of the EDC. Values below the sum of the threshold level and
+        the peak-signal-to-noise ratio in dB are discarded. The default is
+        15 dB, which is in correspondence with ISO 3382-1:2009 [#]_.
     plot: Boolean
         Specifies, whether the results should be visualized or not.
 
     Returns
     -------
     pyfar.TimeData
-        Returns the noise handeled edc.
+        Returns the noise compensated EDC.
 
     Examples
     --------
@@ -240,8 +246,14 @@ def energy_decay_curve_truncation(
         >>> ax.set_ylim(-65, 5)
         >>> ax.legend()
 
+
+    References
+    ----------
+    .. [#]  International Organization for Standardization, “EN ISO 3382-1:2009
+            Acoustics - Measurement of room acoustic parameters,” 2009.
+
     """
-    energy_data, n_channels, data_shape = dsp.preprocess_rir(
+    energy_data = dsp.preprocess_rir(
         data,
         is_energy=is_energy,
         shift=time_shift,
@@ -259,14 +271,21 @@ def energy_decay_curve_truncation(
 
     intersection_time_idx = np.rint(intersection_time * data.sampling_rate)
 
-    energy_decay_curve = np.zeros([n_channels, n_samples])
-    for idx_channel in range(0, n_channels):
+    psnr = dsp.peak_signal_to_noise_ratio(
+        data, noise_level, is_energy=is_energy)
+    trunc_levels = 10*np.log10((psnr)) - threshold
+
+    energy_decay_curve = np.zeros([*data.cshape, n_samples])
+    for ch in np.ndindex(data.cshape):
         energy_decay_curve[
-            idx_channel, :int(intersection_time_idx[idx_channel])] = \
+            ch, :int(intersection_time_idx[ch])] = \
                 _schroeder_integration(
                     energy_data.time[
-                        idx_channel, :int(intersection_time_idx[idx_channel])],
+                        ch, :int(intersection_time_idx[ch])],
                     is_energy=True)
+
+    energy_decay_curve = _truncate_energy_decay_curve(
+        energy_decay_curve, trunc_levels)
 
     if normalize:
         # Normalize the EDC...
@@ -288,7 +307,7 @@ def energy_decay_curve_truncation(
         ax.set_ylim(-65, 5)
         ax.legend()
 
-    return edc.reshape(data.cshape)
+    return edc
 
 
 def energy_decay_curve_lundeby(
@@ -300,7 +319,7 @@ def energy_decay_curve_lundeby(
         channel_independent=False,
         normalize=True,
         plot=False):
-    """ Lundeby et al. [#]_ proposed a correction term to prevent the truncation
+    """Lundeby et al. [#]_ proposed a correction term to prevent the truncation
     error. The missing signal energy from truncation time to infinity is
     estimated and added to the truncated integral.
 
@@ -373,7 +392,7 @@ def energy_decay_curve_lundeby(
 
     """
 
-    energy_data, n_channels, data_shape = dsp.preprocess_rir(
+    energy_data = dsp.preprocess_rir(
         data,
         is_energy=is_energy,
         shift=time_shift,
@@ -392,25 +411,26 @@ def energy_decay_curve_lundeby(
             plot=False)
     time_vector = data.times
 
-    energy_decay_curve = np.zeros([n_channels, n_samples])
+    energy_decay_curve = np.zeros([*data.cshape, n_samples])
 
-    for idx_channel in range(0, n_channels):
+    for ch in np.ndindex(data.cshape):
         intersection_time_idx = np.argmin(
-            np.abs(time_vector - intersection_time[idx_channel]))
-        p_square_at_intersection = noise_estimation[idx_channel]
+            np.abs(time_vector - intersection_time[ch]))
+        p_square_at_intersection = noise_estimation[ch]
 
         # Calculate correction term according to DIN EN ISO 3382
         # TO-DO: check reference!
         correction = (p_square_at_intersection
-                      * late_reverberation_time[idx_channel]
+                      * late_reverberation_time[ch]
                       * (1 / (6*np.log(10)))
                       * sampling_rate)
 
-        energy_decay_curve[idx_channel, :intersection_time_idx] = \
+        energy_decay_curve[ch, :intersection_time_idx] = \
             _schroeder_integration(
-                energy_data.time[idx_channel, :intersection_time_idx],
+                energy_data.time[ch, :intersection_time_idx],
                 is_energy=True)
-        energy_decay_curve[idx_channel] += correction
+        energy_decay_curve[ch] += correction
+        energy_decay_curve[ch, intersection_time_idx:] = np.nan
 
     if normalize:
         # Normalize the EDC...
@@ -424,7 +444,6 @@ def energy_decay_curve_lundeby(
             max_start_value = np.amax(energy_decay_curve[..., 0])
             energy_decay_curve /= max_start_value
 
-    energy_decay_curve[..., intersection_time_idx:] = np.nan
     edc = pf.TimeData(
         energy_decay_curve, data.times, comment=data.comment)
 
@@ -434,7 +453,7 @@ def energy_decay_curve_lundeby(
         ax.set_ylim(-65, 5)
         ax.legend()
 
-    return edc.reshape(data.cshape)
+    return edc
 
 
 def energy_decay_curve_chu(
@@ -444,8 +463,8 @@ def energy_decay_curve_chu(
         time_shift=True,
         channel_independent=False,
         normalize=True,
+        threshold=10,
         plot=False):
-
     """ Implementation of the "subtraction of noise"-method after Chu [#]
     The noise level is estimated and subtracted from the impulse response
     before backward integration.
@@ -468,6 +487,11 @@ def energy_decay_curve_chu(
     normalize : boolean
         Defines, if the energy decay curve should be normalized in the end
         or not.
+    threshold : float, None
+        Defines a peak-signal-to-noise ratio based threshold in dB for final
+        truncation of the EDC. Values below the sum of the threshold level and
+        the peak-signal-to-noise ratio in dB are discarded. The default is
+        10 dB. If `None`, the decay curve will not be truncated further.
     plot: Boolean
         Specifies, whether the results should be visualized or not.
 
@@ -514,8 +538,7 @@ def energy_decay_curve_chu(
         >>> ax.legend()
 
     """
-    cshape = data.cshape
-    energy_data, n_channels, data_shape = dsp.preprocess_rir(
+    energy_data = dsp.preprocess_rir(
         data,
         is_energy=is_energy,
         shift=time_shift,
@@ -540,8 +563,14 @@ def energy_decay_curve_chu(
     mask = edc.time <= 2*np.finfo(float).eps
     if np.any(mask):
         first_zero = np.nanargmax(mask, axis=-1)
-        for channel in range(n_channels):
-            edc.time[channel, first_zero[channel]:] = np.nan
+        for ch in np.ndindex(edc.cshape):
+            edc.time[ch, first_zero[ch]:] = np.nan
+
+    if threshold is not None:
+        psnr = dsp.peak_signal_to_noise_ratio(
+            data, noise_level, is_energy=is_energy)
+        trunc_levels = 10*np.log10((psnr)) - threshold
+        edc = truncate_energy_decay_curve(edc, trunc_levels)
 
     if plot:
         plt.figure(figsize=(15, 3))
@@ -556,7 +585,7 @@ def energy_decay_curve_chu(
         pf.plot.time(edc, dB=True, log_prefix=10)
         plt.ylabel('EDC in dB')
 
-    return edc.reshape(cshape)
+    return edc
 
 
 def energy_decay_curve_chu_lundeby(
@@ -649,7 +678,7 @@ def energy_decay_curve_chu_lundeby(
 
     """
 
-    energy_data, n_channels, data_shape = dsp.preprocess_rir(
+    energy_data = dsp.preprocess_rir(
         data,
         is_energy=is_energy,
         shift=time_shift,
@@ -671,28 +700,29 @@ def energy_decay_curve_chu_lundeby(
             plot=False)
 
     time_vector = data.times
-    energy_decay_curve = np.zeros([n_channels, n_samples])
+    energy_decay_curve = np.zeros([*data.cshape, n_samples])
 
-    for idx_channel in range(0, n_channels):
+    for ch in np.ndindex(data.cshape):
         intersection_time_idx = np.argmin(np.abs(
-            time_vector - intersection_time[idx_channel]))
-        if noise_level == 'auto':
+            time_vector - intersection_time[ch]))
+        if type(noise_level) is str and noise_level == 'auto':
             p_square_at_intersection = dsp.estimate_noise_energy(
-                energy_data.time[idx_channel], is_energy=True)
+                energy_data.time[ch], is_energy=True)
         else:
-            p_square_at_intersection = noise_level[idx_channel]
+            p_square_at_intersection = noise_level[ch]
 
         # calculate correction term according to DIN EN ISO 3382
         correction = (p_square_at_intersection
-                      * late_reverberation_time[idx_channel]
+                      * late_reverberation_time[ch]
                       * (1 / (6*np.log(10)))
                       * data.sampling_rate)
 
-        energy_decay_curve[idx_channel, :intersection_time_idx] = \
+        energy_decay_curve[ch, :intersection_time_idx] = \
             _schroeder_integration(
-                subtraction.time[idx_channel, :intersection_time_idx],
+                subtraction.time[ch, :intersection_time_idx],
                 is_energy=True)
-        energy_decay_curve[idx_channel] += correction
+        energy_decay_curve[ch] += correction
+        energy_decay_curve[ch, intersection_time_idx:] = np.nan
 
     if normalize:
         # Normalize the EDC...
@@ -705,7 +735,6 @@ def energy_decay_curve_chu_lundeby(
             max_start_value = np.amax(energy_decay_curve[..., 0])
             energy_decay_curve /= max_start_value
 
-    energy_decay_curve[..., intersection_time_idx:] = np.nan
     edc = pf.TimeData(
         energy_decay_curve, data.times, comment=data.comment)
 
@@ -715,7 +744,7 @@ def energy_decay_curve_chu_lundeby(
         ax.set_ylim(-65, 5)
         ax.legend()
 
-    return edc.reshape(data.cshape)
+    return edc
 
 
 def intersection_time_lundeby(
@@ -812,7 +841,7 @@ def intersection_time_lundeby(
     # Dynamic range 10 ... 20 dB
     use_dyn_range_for_regression = 20
 
-    energy_data, n_channels, data_shape = dsp.preprocess_rir(
+    energy_data = dsp.preprocess_rir(
         data,
         is_energy=is_energy,
         shift=time_shift,
@@ -841,18 +870,18 @@ def intersection_time_lundeby(
         noise_estimation = initial_noise_power.copy()
 
     # (3) REGRESSION
-    reverberation_time = np.zeros(n_channels)
-    noise_level = np.zeros(n_channels)
-    intersection_time = np.zeros(n_channels)
-    noise_peak_level = np.zeros(n_channels)
+    reverberation_time = np.zeros(data.cshape, data.time.dtype)
+    noise_level = np.zeros(data.cshape, data.time.dtype)
+    intersection_time = np.zeros(data.cshape, data.time.dtype)
+    noise_peak_level = np.zeros(data.cshape, data.time.dtype)
 
-    for idx_channel in range(0, n_channels):
-        time_window_data_current_channel = time_window_data[idx_channel]
+    for ch in np.ndindex(data.cshape):
+        time_window_data_current_channel = time_window_data[ch]
         start_idx = np.nanargmax(time_window_data_current_channel, axis=-1)
         try:
             stop_idx = (np.argwhere(10*np.log10(
                 time_window_data_current_channel[start_idx+1:-1]) >
-                    (10*np.log10(noise_estimation[idx_channel]) +
+                    (10*np.log10(noise_estimation[ch]) +
                         dB_above_noise))[-1, 0] + start_idx)
         except IndexError:
             raise Exception(
@@ -886,8 +915,9 @@ def intersection_time_lundeby(
                 + slope[1]*time_vector_window[stop_idx])])
 
         # (4) PRELIMINARY CROSSING POINT
-        preliminary_crossing_point = \
-            (10*np.log10(noise_estimation[idx_channel]) - slope[0]) / slope[1]
+        crossing_point = \
+            (10*np.log10(noise_estimation[ch]) - slope[0]) / slope[1]
+        preliminary_crossing_point = crossing_point
 
         # (5) NEW LOCAL TIME INTERVAL LENGTH
         n_blocks_in_decay = (np.diff(
@@ -905,24 +935,25 @@ def intersection_time_lundeby(
         time_window_data_current_channel, \
             time_vector_window_current_channel, \
             time_vector_current_channel = dsp._smooth_rir(
-                energy_data[idx_channel], sampling_rate, window_time)
+                energy_data[ch], sampling_rate, window_time)
         time_window_data_current_channel = np.squeeze(
             time_window_data_current_channel)
         idx_max = np.nanargmax(time_window_data_current_channel)
 
         # high start value to enter while-loop
-        old_crossing_point = 11+preliminary_crossing_point
+        old_crossing_point = 11+crossing_point
         loop_counter = 0
 
-        while(True):
+        while True:
             # (7) ESTIMATE BACKGROUND LEVEL
             corresponding_decay = 10  # 5...10 dB
             idx_last_10_percent = np.round(
                 time_window_data_current_channel.shape[-1]*0.9)
-            idx_10dB_below_crosspoint = np.nanmax([1, np.round(
-                ((preliminary_crossing_point
-                  - corresponding_decay / slope[1])
-                 * sampling_rate / n_samples_per_block))])
+
+            t_block = n_samples_per_block / sampling_rate
+            rel_decay = corresponding_decay / slope[1]
+            idx_10dB_below_crosspoint = np.nanmax(
+                np.r_[1, np.round(((crossing_point - rel_decay) / t_block))])
 
             noise_estimation_current_channel = np.nanmean(
                 time_window_data_current_channel[int(np.nanmin(
@@ -934,8 +965,8 @@ def intersection_time_lundeby(
                     time_window_data_current_channel[idx_max:]) < (
                         10*np.log10(noise_estimation_current_channel)
                         + dB_above_noise
-                        + (use_dyn_range_for_regression)[0, 0]
-                        + idx_max))
+                        + use_dyn_range_for_regression
+                        + idx_max))[0, 0]
             except TypeError:
                 start_idx_loop = 0
 
@@ -967,13 +998,13 @@ def intersection_time_lundeby(
                         setting to 0. Estimation was terminated.')
 
             # (9) FIND CROSSPOINT
-            old_crossing_point = preliminary_crossing_point
+            old_crossing_point = crossing_point
             crossing_point = ((10*np.log10(noise_estimation_current_channel)
                                - slope[0]) / slope[1])
 
             loop_counter = loop_counter + 1
 
-            if (np.abs(old_crossing_point-preliminary_crossing_point) < 0.01):
+            if (np.abs(old_crossing_point-crossing_point) < 0.01):
                 break
             if loop_counter > 30:
                 # TO-DO: Paper says 5 iterations are sufficient in all cases!
@@ -981,10 +1012,10 @@ def intersection_time_lundeby(
                     "Lundeby algorithm was terminated after 30 iterations.")
                 break
 
-        reverberation_time[idx_channel] = -60/slope[1]
-        noise_level[idx_channel] = noise_estimation_current_channel
-        intersection_time[idx_channel] = crossing_point
-        noise_peak_level[idx_channel] = 10 * np.log10(
+        reverberation_time[ch] = -60/slope[1]
+        noise_level[ch] = noise_estimation_current_channel
+        intersection_time[ch] = crossing_point
+        noise_peak_level[ch] = 10 * np.log10(
             np.nanmax(time_window_data_current_channel[int(np.nanmin(
                 [idx_last_10_percent, idx_10dB_below_crosspoint])):]))
 
@@ -1021,7 +1052,7 @@ def intersection_time_lundeby(
             label='regression')
         plt.plot(
             preliminary_crossing_point,
-            10*np.log10(noise_estimation[idx_channel]),
+            10*np.log10(noise_estimation[ch]),
             marker='o',
             color='C3',
             label='preliminary crosspoint')
@@ -1066,3 +1097,33 @@ def intersection_time_lundeby(
         plt.grid(True)
 
     return intersection_time, reverberation_time, noise_level
+
+
+def _truncate_energy_decay_curve(energy_decay_curve, threshold_level):
+
+    edc = np.atleast_2d(energy_decay_curve)
+    threshold_level = np.atleast_2d(threshold_level)
+    e = edc.T[0]
+    t = e / 10**(threshold_level/10)
+
+    mask = edc.T < np.broadcast_to(t, edc.T.shape)
+    edc[mask.T] = np.nan
+
+    return edc
+
+
+def truncate_energy_decay_curve(energy_decay_curve, threshold):
+    """Truncate an energy decay curve, discarding values below the threshold.
+
+    Parameters
+    ----------
+    energy_decay_curve : pyfar.TimeData
+        The energy decay curve
+    threshold : float
+        The threshold level in dB. The data below the threshold level are set
+        to numpy.nan values.
+    """
+    return pf.TimeData(
+        _truncate_energy_decay_curve(energy_decay_curve.time, threshold),
+        energy_decay_curve.times,
+        energy_decay_curve.comment)

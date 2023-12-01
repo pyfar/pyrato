@@ -2,6 +2,14 @@
 History
 =======
 
+0.3.2 (2022-10-10)
+------------------
+* Hotfix for deprecated generation of nested ragged sequences in Lundeby's intersection time algorithm.
+
+0.3.1 (2022-05-31)
+------------------
+* Bugfix Lundeby's intersection time algorithm
+
 0.3.0 (2021-06-12)
 ------------------
 * Release on PyPI as pyrato
