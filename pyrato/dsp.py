@@ -363,8 +363,8 @@ def filter_fractional_octave_bands(
     -------
     signal_filtered : ndarray
         Signal filtered into fractional octave bands. The array has a new axis
-        with dimension corresponding to the number of frequency bands:
-        [num_fractions, *signal.shape]
+        with dimension corresponding to the number of frequency bands
+        (num_fractions, signal.shape)
 
     """
 
