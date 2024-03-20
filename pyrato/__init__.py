@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 __author__ = \
-    """Marco Berzborn - Institute for Hearing Technology and Acoustics"""
-__email__ = 'marco.berzborn@akustik.rwth-aachen.de'
+    """The pyfar developers"""
+__email__ = 'info@pyfar.org'
 __version__ = '0.3.2'
 
 from .rap import (
