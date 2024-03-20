@@ -49,8 +49,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'pyrato'
-copyright = u"2021, Marco Berzborn - Institute for Hearing Technology and Acoustics"
-author = u"Marco Berzborn - Institute for Hearing Technology and Acoustics"
+copyright = u"2021-2023, Marco Berzborn; 2023, The pyfar developers"
+author = u"The pyfar developers"
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
