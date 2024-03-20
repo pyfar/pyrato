@@ -1,19 +1,15 @@
 # -*- coding: utf-8 -*-
 
-"""Main module."""
-
-import re
 import numpy as np
-import matplotlib.pyplot as plt
+from pyrato.rap import reverberation_time_linear_regression
+import warnings
 
 
 def reverberation_time_energy_decay_curve(
         energy_decay_curve,
-        times,
-        T='T20',
-        normalize=True,
-        plot=False):
-    """Estimate the reverberation time from a given energy decay curve
+        T='T20'):
+    """Estimate the reverberation time from a given energy decay curve.
+    The linear regression is performed using least squares error minimization
     according to the ISO standard 3382 [#]_.
 
     Parameters
@@ -29,9 +25,6 @@ def reverberation_time_energy_decay_curve(
         the interval [-25, -35] dB.
     normalize : bool, True
         Normalize the EDC to the steady state energy level
-    plot : bool, False
-        Plot the estimated extrapolation line for visual inspection of the
-        results.
 
     Returns
     -------
@@ -43,106 +36,42 @@ def reverberation_time_energy_decay_curve(
     .. [#]  ISO 3382, Acoustics - Measurement of the reverberation time of
             rooms with reference to other acoustical parameters.
 
-    """
-    intervals = [20, 30, 40, 50, 60]
+    Examples
+    --------
 
-    if T == 'EDT':
-        upper = -0.1
-        lower = -10.1
-    elif T == 'LDT':
-        upper = -25.
-        lower = -35.
-    else:
-        try:
-            (int(re.findall(r'\d+', T)[0]) in intervals)
-        except IndexError:
-            raise ValueError(
-                "{} is not a valid interval for the regression.".format(T))
+    Estimate the reverberation time from an energy decay curve.
 
-        upper = -5
-        lower = -np.double(re.findall(r'\d+', T)) + upper
-
-    if normalize:
-        energy_decay_curve /= energy_decay_curve[0]
-
-    edc_db = 10*np.log10(np.abs(energy_decay_curve))
-
-    idx_upper = np.nanargmin(np.abs(upper - edc_db))
-    idx_lower = np.nanargmin(np.abs(lower - edc_db))
-
-    A = np.vstack(
-        [times[idx_upper:idx_lower], np.ones(idx_lower - idx_upper)]).T
-    gradient, const = np.linalg.lstsq(
-        A, edc_db[..., idx_upper:idx_lower], rcond=None)[0]
-
-    reverberation_time = -60 / gradient
-
-    if plot:
-        plt.figure()
-        plt.plot(
-            times,
-            edc_db,
-            label='edc')
-        plt.plot(
-            times,
-            times * gradient + const,
-            label='regression',
-            linestyle='-.')
-        ax = plt.gca()
-        ax.set_ylim((-95, 5))
-
-        reverberation_time = -60 / gradient
-
-        ax.set_xlim((-0.05, 2*reverberation_time))
-        plt.grid(True)
-        plt.legend()
-        ax.set_ylabel('EDC [dB]')
-        ax.set_xlabel('Time [s]')
-
-    return reverberation_time
-
-
-def schroeder_integration(impulse_response, is_energy=False):
-    r"""Calculate the Schroeder integral of a room impulse response [#]_. The
-    result is the energy decay curve for the given room impulse response.
-
-    .. math:
-
-        \langle e^2(t) \rangle = N\cdot \int_{t}^{\infty} h^2(\tau)
-        \mathrm{d} \tau
-
-    Parameters
-    ----------
-    impulse_response : ndarray, double
-        Room impulse response as array
-    is_energy : boolean, optional
-        Whether the input represents energy data or sound pressure values.
-
-    Returns
-    -------
-    energy_decay_curve : ndarray, double
-        The energy decay curve
-
-    References
-    ----------
-    .. [#]  M. R. Schroeder, “New Method of Measuring Reverberation Time,”
-            The Journal of the Acoustical Society of America, vol. 37, no. 6,
-            pp. 1187–1187, 1965.
+    >>> import numpy as np
+    >>> import pyfar as pf
+    >>> import pyrato as ra
+    >>> from pyrato.analytic import rectangular_room_rigid_walls
+    ...
+    >>> L = np.array([8, 5, 3])/10
+    >>> source_pos = np.array([5, 3, 1.2])/10
+    >>> receiver_pos = np.array([1, 1, 1.2])/10
+    >>> rir, _ = rectangular_room_rigid_walls(
+    ...     L, source_pos, receiver_pos,
+    ...     reverberation_time=1, max_freq=1.5e3, n_samples=2**12,
+    ...     speed_of_sound=343.9, samplingrate=3e3)
+    >>> rir = rir/rir.time.max()
+    ...
+    >>> awgn = pf.signals.noise(
+    ...     rir.n_samples, rms=10**(-50/20),
+    ...     sampling_rate=rir.sampling_rate)
+    >>> rir = rir + awgn
+    ...
+    >>> edc = ra.energy_decay_curve_chu_lundeby(rir)
+    >>> t_20 = ra.reverberation_time_energy_decay_curve(edc, 'T20')
+    >>> t_20
+    ...     array([0.99526253])
 
     """
-    if not is_energy:
-        data = np.abs(impulse_response)**2
-    else:
-        data = impulse_response.copy()
+    warnings.warn(
+        "This function will be deprecated in version 0.5.0 "
+        "Use pyrato.reverberation_time_linear_regression instead",
+        DeprecationWarning)
 
-    ndim = data.ndim
-    data = np.atleast_2d(data)
-    energy_decay_curve = np.fliplr(np.nancumsum(np.fliplr(data), axis=-1))
-
-    if ndim < energy_decay_curve.ndim:
-        energy_decay_curve = np.squeeze(energy_decay_curve)
-
-    return energy_decay_curve
+    return reverberation_time_linear_regression(energy_decay_curve, T)
 
 
 def energy_decay_curve_analytic(

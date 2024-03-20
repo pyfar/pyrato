@@ -22,7 +22,7 @@ Use pip to install pyrato
 
     $ pip install pyrato
 
-(Requires Python >= 3.5)
+(Requires Python >= 3.8)
 
 
 Getting Started
