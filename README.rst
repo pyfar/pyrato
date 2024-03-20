@@ -1,15 +1,16 @@
 ======
 pyrato
 ======
-
-.. image:: https://readthedocs.org/projects/pyrato/badge/?version=latest
-    :target: https://pyrato.readthedocs.io/en/latest/?badge=latest
+.. image:: https://badge.fury.io/py/pyrato.svg
+    :target: https://badge.fury.io/py/pyrato
+.. image:: https://readthedocs.org/projects/pyrato/badge/?version=stable
+    :target: https://pyrato.readthedocs.io/en/stable/?badge=stable
     :alt: Documentation Status
-.. image:: https://circleci.com/gh/mberz/pyrato.svg?style=shield
-    :target: https://circleci.com/gh/mberz/pyrato
+.. image:: https://circleci.com/gh/pyfar/pyrato.svg?style=shield
+    :target: https://circleci.com/gh/pyfar/pyrato
 .. image:: https://mybinder.org/badge_logo.svg
-    :target: https://mybinder.org/v2/gh/mberz/pyrato/HEAD?filepath=examples%2Fenergy_decay_curves_and_reverberation_time.ipynb
-    
+    :target: https://mybinder.org/v2/gh/pyfar/pyrato/HEAD?filepath=examples%2Fenergy_decay_curves_and_reverberation_time.ipynb
+
 Python Room Acoustics Tools - A collection of functions for commonly used operations in room acoustics
 
 Installation
@@ -35,6 +36,6 @@ Contributing
 
 Refer to the `contribution guidelines`_ for more information.
 
-.. _contribution guidelines: https://github.com/mberz/pyrato/blob/main/CONTRIBUTING.rst
-.. _examples notebook: https://mybinder.org/v2/gh/mberz/pyrato/HEAD?filepath=examples%2Fenergy_decay_curves_and_reverberation_time.ipynb
-.. _read the docs: https://pyrato.readthedocs.io/en/latest
+.. _contribution guidelines: https://github.com/pyfar/pyrato/blob/main/CONTRIBUTING.rst
+.. _examples notebook: https://mybinder.org/v2/gh/pyfar/pyrato/HEAD?filepath=examples%2Fenergy_decay_curves_and_reverberation_time.ipynb
+.. _read the docs: https://pyrato.readthedocs.io/en/stable
