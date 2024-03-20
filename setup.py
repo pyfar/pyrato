@@ -32,8 +32,8 @@ test_requirements = [
 ]
 
 setup(
-    author="Marco Berzborn - Institute for Hearing Technology and Acoustics",
-    author_email='marco.berzborn@akustik.rwth-aachen.de',
+    author="The pyfar developers",
+    author_email='info@pyfar.org',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Science/Research',
