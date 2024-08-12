@@ -348,7 +348,7 @@ def mode_function_impedance(position, eigenvalue, phase):
     .. [#] M. Nolan and J. L. Davy, “Two definitions of the inner product of
            modes and their use in calculating non-diffuse reverberant sound
            fields,” The Journal of the Acoustical Society of America, vol.
-           145, no. 6, pp. 3330–3340, Jun. 2019.
+           145, no. 6, pp. 3330-3340, Jun. 2019.
     """
     return np.cosh(1j*eigenvalue * position + phase)
 

@@ -126,8 +126,9 @@ def schroeder_integration(room_impulse_response, is_energy=False):
 
 def _schroeder_integration(impulse_response, is_energy=False):
     r"""Calculate the Schroeder integral of a room impulse response.
-    The result is the energy decay curve for the given room impulse response
-    after [#]_.
+
+    The result is the energy decay curve for the given room impulse
+    response [#]_.
 
     .. math:
 

@@ -7,4 +7,5 @@ according to their modules.
 .. toctree::
    :maxdepth: 1
 
-   modules/pyrato
+   pyrato
+   analytic

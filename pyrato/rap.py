@@ -7,6 +7,7 @@ import numpy as np
 def reverberation_time_linear_regression(
         energy_decay_curve, T='T20', return_intercept=False):
     """Estimate the reverberation time from a given energy decay curve.
+
     The linear regression is performed using least squares error minimization
     according to the ISO standard 3382 [#]_.
 

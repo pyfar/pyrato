@@ -82,7 +82,7 @@ def energy_decay_curve_analytic(
     """Calculate the energy decay curve analytically by using Eyring's or
     Sabine's equation.
 
-    See [#]_.
+    Calculation according to [#]_.
 
     Parameters
     ----------

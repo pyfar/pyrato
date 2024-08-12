@@ -12,6 +12,7 @@ def find_impulse_response_start(
         impulse_response,
         threshold=20):
     """Find the start sample of an impulse response.
+
     The start sample is identified as the first sample which is below the
     ``threshold`` level relative to the maximum level of the impulse response.
     For room impulse responses, ISO 3382 [#]_ specifies a threshold of 20 dB.
