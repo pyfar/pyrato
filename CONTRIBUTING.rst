@@ -5,35 +5,24 @@ Contributing
 ============
 
 Contributions are welcome, and they are greatly appreciated! Every little bit
-helps, and credit will always be given.
-
-You can contribute in many ways:
+helps, and credit will always be given. The following helps you to start
+contributing specifically to pyrato. Please also consider the
+`general contributing guidelines`_ for example regarding the style
+of code and documentation and some helpful hints.
 
 Types of Contributions
 ----------------------
 
-Report Bugs
-~~~~~~~~~~~
+Report Bugs or Suggest Features
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Report bugs at https://github.com/pyfar/pyrato/issues.
+The best place for this is https://github.com/pyfar/pyrato/issues.
 
-If you are reporting a bug, please include:
+Fix Bugs or Implement Features
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* Your operating system name and version.
-* Any details about your local setup that might be helpful in troubleshooting.
-* Detailed steps to reproduce the bug.
-
-Fix Bugs
-~~~~~~~~
-
-Look through the GitLab issues for bugs. Anything tagged with "bug" and "help
-wanted" is open to whoever wants to implement it.
-
-Implement Features
-~~~~~~~~~~~~~~~~~~
-
-Look through the GitLab issues for features. Anything tagged with "enhancement"
-and "help wanted" is open to whoever wants to implement it.
+Look through https://github.com/pyfar/pyrato/issues for bugs or feature request
+and contact us or comment if you are interested in implementing.
 
 Write Documentation
 ~~~~~~~~~~~~~~~~~~~
@@ -42,87 +31,46 @@ pyrato could always use more documentation, whether as part of the
 official pyrato docs, in docstrings, or even on the web in blog posts,
 articles, and such.
 
-Submit Feedback
-~~~~~~~~~~~~~~~
-
-The best way to send feedback is to file an issue at https://github.com/pyfar/pyrato/issues.
-
-If you are proposing a feature:
-
-* Explain in detail how it would work.
-* Keep the scope as narrow as possible, to make it easier to implement.
-* Remember that this is a volunteer-driven project, and that contributions
-  are welcome :)
-
 Get Started!
 ------------
 
-Ready to contribute? Here's how to set up `pyrato` for local development.
+Ready to contribute? Here's how to set up `pyrato` for local development using the command-line interface. Note that several alternative user interfaces exist, e.g., the Git GUI, `GitHub Desktop <https://desktop.github.com/>`_, extensions in `Visual Studio Code <https://code.visualstudio.com/>`_ ...
 
-1. Fork the `pyrato` repo on GitHub.
-2. Clone your fork locally::
+1. `Fork <https://docs.github.com/en/get-started/quickstart/fork-a-repo/>`_ the `pyrato` repo on GitHub.
+2. Clone your fork locally and cd into the pyrato directory::
 
-    $ git clone https://github.com/pyfar/pyrato.git
+    $ git clone https://github.com/YOUR_USERNAME/pyrato.git
+    $ cd pyrato
 
-3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
+3. Install your local copy into a virtualenv. Assuming you have Anaconda or Miniconda installed, this is how you set up your fork for local development::
 
-    $ mkvirtualenv pyrato
-    $ cd pyrato/
-    $ python setup.py develop
+    $ conda create --name pyrato python
+    $ conda activate pyrato
+    $ conda install pip
+    $ pip install -e .
+    $ pip install -r requirements_dev.txt
 
-4. Create a branch for local development::
+4. Create a branch for local development. Indicate the intention of your branch in its respective name (i.e. `feature/branch-name` or `bugfix/branch-name`)::
 
     $ git checkout -b name-of-your-bugfix-or-feature
 
    Now you can make your changes locally.
 
-5. When you're done making changes, check that your changes pass flake8 and the
-   tests, including testing other Python versions with tox::
+5. When you're done making changes, check that your changes pass ruff and the
+   tests::
 
-    $ flake8 pyrato tests
-    $ python setup.py test or py.test
-    $ tox
+    $ ruff check
+    $ pytest
 
-   To get flake8 and tox, just pip install them into your virtualenv.
+   ruff must pass without any warnings for `./pyrato` and `./tests` using the default or a stricter configuration. Ruff ignores a couple of PEP Errors (see `./pyproject.toml`). If necessary, adjust your linting configuration in your IDE accordingly.
 
-6. Commit your changes and push your branch to GitLab::
+6. Commit your changes and push your branch to GitHub::
 
     $ git add .
     $ git commit -m "Your detailed description of your changes."
     $ git push origin name-of-your-bugfix-or-feature
 
-7. Submit a pull request through the GitLab website.
-
-Pull Request Guidelines
------------------------
-
-Before you submit a pull request, check that it meets these guidelines:
-
-1. The pull request should include tests.
-2. If the pull request adds functionality, the docs should be updated. Put
-   your new functionality into a function with a docstring, and add the
-   feature to the list in README.rst.
-3. The pull request should work for Python versions 3.8 or later. Check
-   https://app.travis-ci.com/github/pyfar/pyrato/pull_requests
-   and make sure that the tests pass for all supported Python versions.
-
-Tips
-----
-
-To run a subset of tests::
-
-$ py.test tests.test_dsp
+7. Submit a pull request on the develop branch through the GitHub website.
 
 
-Deploying
----------
-
-A reminder for the maintainers on how to deploy.
-Make sure all your changes are committed (including an entry in HISTORY.rst).
-Then run::
-
-$ bumpversion patch # possible: major / minor / patch
-$ git push
-$ git push --tags
-
-Travis will then deploy to PyPI if tests pass.
+.. _general contributing guidelines: https://pyfar-gallery.readthedocs.io/en/latest/contribute/index.html

@@ -48,7 +48,7 @@ jobs:
           name: Run tests
           command: pytest
 
-  flake:
+  ruff:
     parameters:
       version:
         description: "version tag"
@@ -65,10 +65,11 @@ jobs:
           # app-dir: ~/project/package-directory/  # If you're requirements.txt isn't in the root directory.
           pip-dependency-file: requirements_dev.txt
       - run:
-          name: Flake8
-          command: flake8 pyrato
+          name: Ruff
+          command: ruff check
 
-  test_examples:
+
+  test_documentation_build:
     parameters:
       version:
         description: "version tag"
@@ -80,18 +81,19 @@ jobs:
 
     steps:
       - checkout
-      - run:
-          name: Install System Dependencies
-          command: sudo apt-get update && sudo apt-get install -y libsndfile1
+   #    - run:
+   #        name: Install System Dependencies
+   #        command: sudo apt-get update && sudo apt-get install -y libsndfile1 texlive-latex-extra dvipng
       - python/install-packages:
           pkg-manager: pip
           # app-dir: ~/project/package-directory/  # If you're requirements.txt isn't in the root directory.
           pip-dependency-file: requirements_dev.txt
       - run:
-          name: Examples
+          name: Sphinx
           command: |
             pip install -e .
-            pytest --nbmake examples/*.ipynb
+            cd docs/
+            make html SPHINXOPTS="-W"
 
   test_pypi_publish:
     parameters:
@@ -105,9 +107,9 @@ jobs:
 
     steps:
       - checkout
-      - run:
-          name: Install System Dependencies
-          command: sudo apt-get update && sudo apt-get install -y libsndfile1
+    #   - run:
+    #       name: Install System Dependencies
+    #       command: sudo apt-get update && sudo apt-get install -y libsndfile1
       - python/install-packages:
           pkg-manager: pip
           # app-dir: ~/project/package-directory/  # If you're requirements.txt isn't in the root directory.
@@ -128,12 +130,13 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.8"
-                - "3.9"
-                - "3.10"
-                - "3.11"
-                - "3.12"
-      - flake:
+              - "3.8"
+              - "3.9"
+              - "3.10"
+              - "3.11"
+              - "3.12"
+
+      - ruff:
           matrix:
             parameters:
               version:
@@ -141,7 +144,8 @@ workflows:
           requires:
             - build_and_test
 
-      - test_examples:
+
+      - test_documentation_build:
           matrix:
             parameters:
               version:
@@ -149,7 +153,8 @@ workflows:
           requires:
             - build_and_test
 
-  test_and_publish:
+
+test_and_publish:
     # Test and publish on new git version tags
     # This requires its own workflow to successfully trigger the test and build
     jobs:
@@ -157,11 +162,12 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.8"
-                - "3.9"
-                - "3.10"
-                - "3.11"
-                - "3.12"
+              - "3.8"
+              - "3.9"
+              - "3.10"
+              - "3.11"
+              - "3.12"
+
           filters:
             branches:
               ignore: /.*/
@@ -169,7 +175,7 @@ workflows:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*$/
 
-      - flake:
+      - ruff:
           matrix:
             parameters:
               version:
@@ -183,7 +189,7 @@ workflows:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*$/
 
-      - test_examples:
+      - test_documentation_build:
           matrix:
             parameters:
               version:
@@ -204,8 +210,8 @@ workflows:
                 - "3.9"
           requires:
             - build_and_test
-            - flake
-            - test_examples
+            - ruff
+            - test_documentation_build
           filters:
             branches:
               ignore: /.*/
