@@ -31,8 +31,8 @@ def reverberation_time_linear_regression(
 
     References
     ----------
-    .. [#]  ISO 3382, Acoustics - Measurement of the reverberation time of
-            rooms with reference to other acoustical parameters.
+    .. [#] ISO 3382, Acoustics - Measurement of the reverberation time of
+           rooms with reference to other acoustical parameters.
 
     Examples
     --------

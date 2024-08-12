@@ -33,8 +33,8 @@ def reverberation_time_energy_decay_curve(
 
     References
     ----------
-    .. [#]  ISO 3382, Acoustics - Measurement of the reverberation time of
-            rooms with reference to other acoustical parameters.
+    .. [#] ISO 3382, Acoustics - Measurement of the reverberation time of
+           rooms with reference to other acoustical parameters.
 
     Examples
     --------
@@ -110,7 +110,7 @@ def energy_decay_curve_analytic(
 
     References
     ----------
-    .. [#]  H. Kuttruff, Room acoustics, 4th Ed. Taylor & Francis, 2009.
+    .. [#] H. Kuttruff, Room acoustics, 4th Ed. Taylor & Francis, 2009.
 
     """
 

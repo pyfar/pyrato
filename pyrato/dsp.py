@@ -24,10 +24,12 @@ def find_impulse_response_start(
         The impulse response
     threshold : float, optional
         The threshold level in dB, by default 20, which complies with ISO 3382.
+
     Returns
     -------
     start_sample : numpy.ndarray, int
         Sample at which the impulse response starts
+
     Notes
     -----
     The function tries to estimate the PSNR in the IR based on the signal
@@ -35,15 +37,19 @@ def find_impulse_response_start(
     if the noise spectrum is not white or the impulse response contains
     non-linear distortions. If the PSNR is lower than the specified threshold,
     the function will issue a warning.
+
     References
     ----------
-    .. [#]  ISO 3382-1:2009-10, Acoustics - Measurement of the reverberation
-            time of rooms with reference to other acoustical parameters. pp. 22
+    .. [#] ISO 3382-1:2009-10, Acoustics - Measurement of the reverberation
+           time of rooms with reference to other acoustical parameters. pp. 22
+
     Examples
     --------
     Create a band-limited impulse shifted by 0.5 samples and estimate the
     starting sample of the impulse and plot.
+
     .. plot::
+
         >>> import pyfar as pf
         >>> import numpy as np
         >>> n_samples = 256
@@ -59,11 +65,14 @@ def find_impulse_response_start(
         ...     20*np.log10(np.max(np.abs(ir.time)))-20,
         ...     color='k', linestyle=':', label='threshold')
         >>> ax.legend()
+
     Create a train of weighted impulses with levels below and above the
     threshold, serving as a very abstract room impulse response. The starting
     sample is identified as the last sample below the threshold relative to the
     maximum of the impulse response.
+
     .. plot::
+
         >>> import pyfar as pf
         >>> import numpy as np
         >>> n_samples = 64

@@ -118,7 +118,7 @@ def rectangular_room_rigid_walls(
         speed_of_sound=343.9,
         n_samples=2**18):
     r"""Calculate the transfer function of a rectangular room based on the
-    analytic model as given in [2]_ . The model is based on the solution
+    analytic model as given in [#]_ . The model is based on the solution
     for a room with rigid walls. The damping of the modes is included as
     a damping in the medium, not as a damping caused by the boundary.
     Consequently, all modes share the same damping factor calculated from
@@ -152,8 +152,8 @@ def rectangular_room_rigid_walls(
 
     References
     ----------
-    ..  [2] H. Kuttruff, Room acoustics, pp. 64-66, 4th Ed. Taylor & Francis,
-        2009.
+    .. [#] H. Kuttruff, Room acoustics, pp. 64-66, 4th Ed. Taylor & Francis,
+           2009.
 
     Example
     -------

@@ -86,9 +86,9 @@ def schroeder_integration(room_impulse_response, is_energy=False):
 
     References
     ----------
-    .. [#]  M. R. Schroeder, “New Method of Measuring Reverberation Time,”
-            The Journal of the Acoustical Society of America, vol. 37, no. 6,
-            pp. 1187-1187, 1965.
+    .. [#] M. R. Schroeder, “New Method of Measuring Reverberation Time,”
+           The Journal of the Acoustical Society of America, vol. 37, no. 6,
+           pp. 1187-1187, 1965.
 
     Example
     -------
@@ -145,9 +145,9 @@ def _schroeder_integration(impulse_response, is_energy=False):
 
     References
     ----------
-    .. [#]  M. R. Schroeder, “New Method of Measuring Reverberation Time,”
-            The Journal of the Acoustical Society of America, vol. 37, no. 6,
-            pp. 1187-1187, 1965.
+    .. [#] M. R. Schroeder, “New Method of Measuring Reverberation Time,”
+           The Journal of the Acoustical Society of America, vol. 37, no. 6,
+           pp. 1187-1187, 1965.
 
     """
     if not is_energy:
@@ -249,8 +249,8 @@ def energy_decay_curve_truncation(
 
     References
     ----------
-    .. [#]  International Organization for Standardization, “EN ISO 3382-1:2009
-            Acoustics - Measurement of room acoustic parameters,” 2009.
+    .. [#] International Organization for Standardization, “EN ISO 3382-1:2009
+           Acoustics - Measurement of room acoustic parameters,” 2009.
 
     """
     energy_data = dsp.preprocess_rir(
@@ -355,8 +355,8 @@ def energy_decay_curve_lundeby(
 
     References
     ----------
-    .. [#]  Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of
-            Measurements in Room Acoustics - ACUSTICA Vol. 81 (1995)
+    .. [#] Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of
+           Measurements in Room Acoustics - ACUSTICA Vol. 81 (1995)
 
     Examples
     --------
@@ -465,7 +465,7 @@ def energy_decay_curve_chu(
         normalize=True,
         threshold=10,
         plot=False):
-    """ Implementation of the "subtraction of noise"-method after Chu [#]
+    """ Implementation of the "subtraction of noise"-method after Chu [#]_
     The noise level is estimated and subtracted from the impulse response
     before backward integration.
 
@@ -502,10 +502,10 @@ def energy_decay_curve_chu(
 
     References
     ----------
-    .. [#]  W. T. Chu. “Comparison of reverberation measurements using
-            Schroeder’s impulse method and decay-curve averaging method”.
-            In: Journal of the Acoustical Society of America 63.5 (1978),
-            pp. 1444–1450.
+    .. [#] W. T. Chu. “Comparison of reverberation measurements using
+           Schroeder's impulse method and decay-curve averaging method”.
+           In: Journal of the Acoustical Society of America 63.5 (1978),
+           pp. 1444-1450.
 
     Examples
     --------
@@ -600,7 +600,7 @@ def energy_decay_curve_chu_lundeby(
     """ This function combines Chu's and Lundeby's methods:
     The estimated noise level is subtracted before backward integration,
     the impulse response is truncated at the intersection time,
-    and the correction for the truncation is applied [4]_, [5]_, [6]_
+    and the correction for the truncation is applied [#]_, [#]_, [#]_
 
     Parameters
     ----------
@@ -634,13 +634,13 @@ def energy_decay_curve_chu_lundeby(
 
     References
     ----------
-    .. [4]  Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of
-            Measurements in Room Acoustics - ACUSTICA Vol. 81 (1995)
-    .. [5]  W. T. Chu. “Comparison of reverberation measurements using
-            Schroeder’s impulse method and decay-curve averaging method”. In:
-            Journal of the Acoustical Society of America 63.5 (1978),
-            pp. 1444–1450.
-    .. [6]  M. Guski, “Influences of external error sources on measurements of
+    .. [#] Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of
+           Measurements in Room Acoustics - ACUSTICA Vol. 81 (1995)
+    .. [#] W. T. Chu. “Comparison of reverberation measurements using
+           Schroeder's impulse method and decay-curve averaging method”. In:
+           Journal of the Acoustical Society of America 63.5 (1978),
+           pp. 1444-1450.
+    .. [#] M. Guski, “Influences of external error sources on measurements of
             room acoustic parameters,” 2015.
 
     Examples
@@ -794,8 +794,8 @@ def intersection_time_lundeby(
 
     References
     ----------
-    .. [#]  Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of
-            Measurements in Room Acoustics - ACUSTICA Vol. 81 (1995)
+    .. [#] Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of
+           Measurements in Room Acoustics - ACUSTICA Vol. 81 (1995)
 
     Examples
     --------
