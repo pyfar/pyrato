@@ -27,7 +27,7 @@ test_requirements = [
     'flake8',
     'tox',
     'coverage',
-    'Sphinx',
+    'Sphinx<8',
     'twine'
 ]
 
