@@ -5,4 +5,4 @@
 
 
 def test_import():
-    import pyrato
+    import pyrato  # noqa: F401
