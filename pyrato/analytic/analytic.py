@@ -5,7 +5,8 @@ import numpy as np
 
 def eigenfrequencies_rectangular_room_rigid(
         dimensions, max_freq, speed_of_sound=343.9, sort=True):
-    """Calculate the eigenfrequencies of a rectangular room with rigid walls.
+    """Calculate the eigenfrequencies of a rectangular room with rigid
+    walls [1]_.
 
     Parameters
     ----------
@@ -29,8 +30,8 @@ def eigenfrequencies_rectangular_room_rigid(
 
     References
     ----------
-    ..  [2] H. Kuttruff, Room acoustics, pp. 64-66, 4th Ed. Taylor & Francis,
-        2009.
+    .. [1] H. Kuttruff, Room acoustics, pp. 64-66, 4th Ed. Taylor & Francis,
+           2009.
 
     Examples
     --------
@@ -118,7 +119,7 @@ def rectangular_room_rigid_walls(
         speed_of_sound=343.9,
         n_samples=2**18):
     r"""Calculate the transfer function of a rectangular room based on the
-    analytic model as given in [2]_ . The model is based on the solution
+    analytic model as given in [3]_. The model is based on the solution
     for a room with rigid walls. The damping of the modes is included as
     a damping in the medium, not as a damping caused by the boundary.
     Consequently, all modes share the same damping factor calculated from
@@ -152,8 +153,8 @@ def rectangular_room_rigid_walls(
 
     References
     ----------
-    ..  [2] H. Kuttruff, Room acoustics, pp. 64-66, 4th Ed. Taylor & Francis,
-        2009.
+    .. [3] H. Kuttruff, Room acoustics, pp. 64-66, 4th Ed. Taylor & Francis,
+           2009.
 
     Example
     -------
@@ -161,6 +162,7 @@ def rectangular_room_rigid_walls(
     time for a given source and receiver combination.
 
     .. plot::
+
         >>> import numpy as np
         >>> import pyfar as pf
         >>> from pyrato.analytic import rectangular_room_rigid_walls

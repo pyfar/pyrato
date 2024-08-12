@@ -5,3 +5,4 @@ Modules
    :maxdepth: 1
 
    pyrato
+   analytic

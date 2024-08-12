@@ -58,8 +58,10 @@ def _subtract_noise_from_squared_rir(data, noise_level='auto'):
 
 
 def schroeder_integration(room_impulse_response, is_energy=False):
-    r"""Calculate the Schroeder integral of a room impulse response [#]_. The
-    result is the energy decay curve for the given room impulse response.
+    r"""Calculate the Schroeder integral of a room impulse response.
+
+    The result is the energy decay curve for the given room impulse
+    response [#]_.
 
     .. math:
 
@@ -123,8 +125,10 @@ def schroeder_integration(room_impulse_response, is_energy=False):
 
 
 def _schroeder_integration(impulse_response, is_energy=False):
-    r"""Calculate the Schroeder integral of a room impulse response [#]_. The
-    result is the energy decay curve for the given room impulse response.
+    r"""Calculate the Schroeder integral of a room impulse response.
+
+    The result is the energy decay curve for the given room impulse
+    response [#]_.
 
     .. math:
 
@@ -319,7 +323,9 @@ def energy_decay_curve_lundeby(
         channel_independent=False,
         normalize=True,
         plot=False):
-    """Lundeby et al. [#]_ proposed a correction term to prevent the truncation
+    """ Calculate the EDC according to Lundeby et al.
+
+    Lundeby et al. [#]_ proposed a correction term to prevent the truncation
     error. The missing signal energy from truncation time to infinity is
     estimated and added to the truncated integral.
 
@@ -465,9 +471,10 @@ def energy_decay_curve_chu(
         normalize=True,
         threshold=10,
         plot=False):
-    """ Implementation of the "subtraction of noise"-method after Chu [#]
+    """ Implementation of the "subtraction of noise"-method after Chu.
+
     The noise level is estimated and subtracted from the impulse response
-    before backward integration.
+    before backward integration [#]_.
 
     Parameters
     ----------
@@ -598,6 +605,7 @@ def energy_decay_curve_chu_lundeby(
         normalize=True,
         plot=False):
     """ This function combines Chu's and Lundeby's methods:
+
     The estimated noise level is subtracted before backward integration,
     the impulse response is truncated at the intersection time,
     and the correction for the truncation is applied [4]_, [5]_, [6]_
