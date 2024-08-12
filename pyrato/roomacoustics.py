@@ -9,6 +9,7 @@ def reverberation_time_energy_decay_curve(
         energy_decay_curve,
         T='T20'):
     """Estimate the reverberation time from a given energy decay curve.
+
     The linear regression is performed using least squares error minimization
     according to the ISO standard 3382 [#]_.
 
@@ -22,7 +23,7 @@ def reverberation_time_energy_decay_curve(
         Decay interval to be used for the reverberation time extrapolation. EDT
         corresponds to the early decay time extrapolated from the interval
         [0, -10] dB, LDT corresponds to the late decay time extrapolated from
-        the interval [-25, -35] dB.
+        the interval ``(-25, -35)`` dB.
     normalize : bool, True
         Normalize the EDC to the steady state energy level
 
@@ -79,7 +80,9 @@ def energy_decay_curve_analytic(
         receiver=None, method='eyring', c=343.4, frequency=None,
         air_absorption=True):
     """Calculate the energy decay curve analytically by using Eyring's or
-    Sabine's equation [#]_.
+    Sabine's equation.
+
+    See [#]_.
 
     Parameters
     ----------

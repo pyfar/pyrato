@@ -320,7 +320,9 @@ def eigenfrequencies_rectangular_room_impedance(
 
 
 def mode_function_impedance(position, eigenvalue, phase):
-    r""" The modal function for a room with boundary impedances [#]_ .
+    r""" The modal function for a room with boundary impedances.
+
+    See [#]_ .
 
     .. math::
 
