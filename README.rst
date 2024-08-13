@@ -24,7 +24,7 @@ functionality and is a good starting point. It is part of the
 `pyfar example gallery`_ that also contains more specific and in-depth
 examples that can be executed interactively without a local installation by
 clicking the mybinder.org button on the respective example. The
-`pyfar documentation`_ gives a detailed and complete overview of pyfar. All
+`pyrato documentation`_ gives a detailed and complete overview of pyrato. All
 these information are available from `pyfar.org`_.
 
 Installation
@@ -47,7 +47,7 @@ Check out the `contributing guidelines`_ if you want to become part of pyfar.
 
 .. _pyfar workshop: https://mybinder.org/v2/gh/pyfar/gallery/main?labpath=docs/gallery/interactive/pyfar_introduction.ipynb
 .. _pyfar example gallery: https://pyfar-gallery.readthedocs.io/en/latest/examples_gallery.html
-.. _pyfar documentation: https://pyfar.readthedocs.io
+.. _pyrato documentation: https://pyrato.readthedocs.io
 .. _pyfar.org: https://pyfar.org
 .. _help section: https://pyfar-gallery.readthedocs.io/en/latest/help
 .. _contributing guidelines: https://pyfar.readthedocs.io/en/stable/contributing.html
