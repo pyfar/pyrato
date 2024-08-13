@@ -606,7 +606,7 @@ def energy_decay_curve_chu_lundeby(
 
     The estimated noise level is subtracted before backward integration,
     the impulse response is truncated at the intersection time,
-    and the correction for the truncation is applied [#]_, [#]_, [#]_
+    and the correction for the truncation is applied [#]_, [#]_, [#]_.
 
     Parameters
     ----------
