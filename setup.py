@@ -28,8 +28,8 @@ test_requirements = [
     'watchdog',
     'ruff',
     'coverage',
-    'Sphinx',
-    'twine',
+    'Sphinx<8',
+    'twine'
     'pydata-sphinx-theme',
 ]
 
