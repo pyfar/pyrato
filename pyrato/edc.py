@@ -42,7 +42,7 @@ def _subtract_noise_from_squared_rir(data, noise_level='auto'):
     Parameters
     ----------
     data : ndarray, double
-        The squared room impulse response with dimension [..., n_samples]
+        The squared room impulse response with dimension ``(..., n_samples)``
 
     Returns
     -------
@@ -58,8 +58,10 @@ def _subtract_noise_from_squared_rir(data, noise_level='auto'):
 
 
 def schroeder_integration(room_impulse_response, is_energy=False):
-    r"""Calculate the Schroeder integral of a room impulse response [#]_. The
-    result is the energy decay curve for the given room impulse response.
+    r"""Calculate the Schroeder integral of a room impulse response.
+
+    The result is the energy decay curve for the given room impulse response
+    after [#]_.
 
     .. math:
 
@@ -78,17 +80,17 @@ def schroeder_integration(room_impulse_response, is_energy=False):
     energy_decay_curve : pyfar.TimeData
         The energy decay curve
 
+    References
+    ----------
+    .. [#] M. R. Schroeder, "New Method of Measuring Reverberation Time,"
+           The Journal of the Acoustical Society of America, vol. 37, no. 6,
+           pp. 1187-1187, 1965.
+
     Note
     ----
     This function does not apply any compensation of measurement noise and
     integrates the full length of the input signal. It should only be used
     if no measurement noise or artifacts are present in the data.
-
-    References
-    ----------
-    .. [#]  M. R. Schroeder, “New Method of Measuring Reverberation Time,”
-            The Journal of the Acoustical Society of America, vol. 37, no. 6,
-            pp. 1187-1187, 1965.
 
     Example
     -------
@@ -123,8 +125,10 @@ def schroeder_integration(room_impulse_response, is_energy=False):
 
 
 def _schroeder_integration(impulse_response, is_energy=False):
-    r"""Calculate the Schroeder integral of a room impulse response [#]_. The
-    result is the energy decay curve for the given room impulse response.
+    r"""Calculate the Schroeder integral of a room impulse response.
+
+    The result is the energy decay curve for the given room impulse
+    response [#]_.
 
     .. math:
 
@@ -145,9 +149,9 @@ def _schroeder_integration(impulse_response, is_energy=False):
 
     References
     ----------
-    .. [#]  M. R. Schroeder, “New Method of Measuring Reverberation Time,”
-            The Journal of the Acoustical Society of America, vol. 37, no. 6,
-            pp. 1187-1187, 1965.
+    .. [#] M. R. Schroeder, “New Method of Measuring Reverberation Time,”
+           The Journal of the Acoustical Society of America, vol. 37, no. 6,
+           pp. 1187-1187, 1965.
 
     """
     if not is_energy:
@@ -213,6 +217,11 @@ def energy_decay_curve_truncation(
     pyfar.TimeData
         Returns the noise compensated EDC.
 
+    References
+    ----------
+    .. [#] International Organization for Standardization, “EN ISO 3382-1:2009
+           Acoustics - Measurement of room acoustic parameters,” 2009.
+
     Examples
     --------
 
@@ -245,12 +254,6 @@ def energy_decay_curve_truncation(
         >>> pf.plot.time(edc, dB=True, log_prefix=10, label='EDC')
         >>> ax.set_ylim(-65, 5)
         >>> ax.legend()
-
-
-    References
-    ----------
-    .. [#]  International Organization for Standardization, “EN ISO 3382-1:2009
-            Acoustics - Measurement of room acoustic parameters,” 2009.
 
     """
     energy_data = dsp.preprocess_rir(
@@ -319,9 +322,10 @@ def energy_decay_curve_lundeby(
         channel_independent=False,
         normalize=True,
         plot=False):
-    """Lundeby et al. [#]_ proposed a correction term to prevent the truncation
-    error. The missing signal energy from truncation time to infinity is
-    estimated and added to the truncated integral.
+    """Correction term to prevent the truncation error.
+
+    The missing signal energy from truncation time to infinity is
+    estimated and added to the truncated integral. After Lundeby et al. [#]_.
 
     Parameters
     ----------
@@ -355,8 +359,8 @@ def energy_decay_curve_lundeby(
 
     References
     ----------
-    .. [#]  Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of
-            Measurements in Room Acoustics - ACUSTICA Vol. 81 (1995)
+    .. [#] Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of
+           Measurements in Room Acoustics - ACUSTICA Vol. 81 (1995)
 
     Examples
     --------
@@ -465,14 +469,15 @@ def energy_decay_curve_chu(
         normalize=True,
         threshold=10,
         plot=False):
-    """ Implementation of the "subtraction of noise"-method after Chu [#]
+    """Implementation of the "subtraction of noise"-method after Chu.
+
     The noise level is estimated and subtracted from the impulse response
-    before backward integration.
+    before backward integration after Chu [#]_.
 
     Parameters
     ----------
     data : ndarray, double
-        The room impulse response with dimension [..., n_samples]
+        The room impulse response with dimension ``(..., n_samples)``
     noise_level: ndarray, double OR string
         If not specified, the noise level is calculated based on the last 10
         percent of the RIR. Otherwise specify manually for each channel
@@ -502,10 +507,10 @@ def energy_decay_curve_chu(
 
     References
     ----------
-    .. [#]  W. T. Chu. “Comparison of reverberation measurements using
-            Schroeder’s impulse method and decay-curve averaging method”.
-            In: Journal of the Acoustical Society of America 63.5 (1978),
-            pp. 1444–1450.
+    .. [#] W. T. Chu. “Comparison of reverberation measurements using
+           Schroeder's impulse method and decay-curve averaging method”.
+           In: Journal of the Acoustical Society of America 63.5 (1978),
+           pp. 1444-1450.
 
     Examples
     --------
@@ -597,10 +602,11 @@ def energy_decay_curve_chu_lundeby(
         channel_independent=False,
         normalize=True,
         plot=False):
-    """ This function combines Chu's and Lundeby's methods:
+    """This function combines Chu's and Lundeby's methods.
+
     The estimated noise level is subtracted before backward integration,
     the impulse response is truncated at the intersection time,
-    and the correction for the truncation is applied [4]_, [5]_, [6]_
+    and the correction for the truncation is applied [#]_, [#]_, [#]_.
 
     Parameters
     ----------
@@ -619,7 +625,7 @@ def energy_decay_curve_chu_lundeby(
     time_shift : boolean
         Defines, if the silence at beginning of the RIR should be removed.
     channel_independent : boolean
-        Defines, if the time shift and normalizsation is done
+        Defines, if the time shift and normalization is done
         channel-independently or not.
     normalize : boolean
         Defines, if the energy decay curve should be normalized in the end
@@ -634,13 +640,13 @@ def energy_decay_curve_chu_lundeby(
 
     References
     ----------
-    .. [4]  Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of
-            Measurements in Room Acoustics - ACUSTICA Vol. 81 (1995)
-    .. [5]  W. T. Chu. “Comparison of reverberation measurements using
-            Schroeder’s impulse method and decay-curve averaging method”. In:
-            Journal of the Acoustical Society of America 63.5 (1978),
-            pp. 1444–1450.
-    .. [6]  M. Guski, “Influences of external error sources on measurements of
+    .. [#] Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of
+           Measurements in Room Acoustics - ACUSTICA Vol. 81 (1995)
+    .. [#] W. T. Chu. “Comparison of reverberation measurements using
+           Schroeder's impulse method and decay-curve averaging method”. In:
+           Journal of the Acoustical Society of America 63.5 (1978),
+           pp. 1444-1450.
+    .. [#] M. Guski, “Influences of external error sources on measurements of
             room acoustic parameters,” 2015.
 
     Examples
@@ -705,7 +711,7 @@ def energy_decay_curve_chu_lundeby(
     for ch in np.ndindex(data.cshape):
         intersection_time_idx = np.argmin(np.abs(
             time_vector - intersection_time[ch]))
-        if type(noise_level) is str and noise_level == 'auto':
+        if isinstance(noise_level, str) and noise_level == 'auto':
             p_square_at_intersection = dsp.estimate_noise_energy(
                 energy_data.time[ch], is_energy=True)
         else:
@@ -778,7 +784,7 @@ def intersection_time_lundeby(
     time_shift : boolean
         Defines, if the silence at beginning of the RIR should be removed.
     channel_independent : boolean
-        Defines, if the time shift and normalizsation is done
+        Defines, if the time shift and normalization is done
         channel-independently or not.
     plot: Boolean
         Specifies, whether the results should be visualized or not.
@@ -794,8 +800,8 @@ def intersection_time_lundeby(
 
     References
     ----------
-    .. [#]  Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of
-            Measurements in Room Acoustics - ACUSTICA Vol. 81 (1995)
+    .. [#] Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of
+           Measurements in Room Acoustics - ACUSTICA Vol. 81 (1995)
 
     Examples
     --------

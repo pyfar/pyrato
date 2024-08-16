@@ -29,6 +29,8 @@ from .edc import (
     intersection_time_lundeby,
 )
 
+from . import analytic
+
 __all__ = [
     'reverberation_time_linear_regression',
     'reverberation_time_energy_decay_curve',
@@ -45,4 +47,5 @@ __all__ = [
     'energy_decay_curve_truncation',
     'estimate_noise_energy',
     'intersection_time_lundeby',
+    'analytic',
 ]
