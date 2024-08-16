@@ -15,7 +15,7 @@ __status__ = "Development"
 # %%
 import numpy as np
 import pyrato
-from pyrato import analytic
+# from pyrato import analytic
 import pyfar as pf
 
 
@@ -28,12 +28,16 @@ max_freq = 1000
 n_samples = 2**13
 
 # rir_1 = analytic.rectangular_room_rigid_walls(
-#     dimensions=room_dimensions, source=src_pos, receiver=rec_pos, reverberation_time=t_60, max_freq=max_freq,
-#     samplingrate=sampling_rate, speed_of_sound=343.9, n_samples=n_samples*2)[0]
+#     dimensions=room_dimensions, source=src_pos, receiver=rec_pos,
+#     reverberation_time=t_60, max_freq=max_freq,
+#     samplingrate=sampling_rate, speed_of_sound=343.9,
+#     n_samples=n_samples*2)[0]
 
 # rir_2 = analytic.rectangular_room_rigid_walls(
-#     dimensions=room_dimensions, source=src_pos, receiver=rec_pos, reverberation_time=t_60*2, max_freq=max_freq,
-#     samplingrate=sampling_rate, speed_of_sound=343.9, n_samples=n_samples*2)[0]
+#     dimensions=room_dimensions, source=src_pos, receiver=rec_pos,
+#     reverberation_time=t_60*2, max_freq=max_freq,
+#     samplingrate=sampling_rate, speed_of_sound=343.9,
+#     n_samples=n_samples*2)[0]
 
 # # %%
 
@@ -205,7 +209,9 @@ np.savetxt("edc_chu_2D.csv", np.squeeze(edc_chu_2D.time), delimiter=",")
 np.savetxt("intersection_time_1D.csv", intersection_time_1D, delimiter=",")
 np.savetxt("intersection_time_2D.csv", intersection_time_2D, delimiter=",")
 
-#     np.savetxt("noise_energy_from_edc_1D.csv", noise_energy_from_edc_1D, delimiter=",")
-#     np.savetxt("noise_energy_from_edc_2D.csv", noise_energy_from_edc_2D, delimiter=",")
+# np.savetxt(
+#     "noise_energy_from_edc_1D.csv", noise_energy_from_edc_1D, delimiter=",")
+# np.savetxt(
+#     "noise_energy_from_edc_2D.csv", noise_energy_from_edc_2D, delimiter=",")
 
 # %%

@@ -1,8 +1,11 @@
 Modules
 =======
 
+The following gives detailed information about all pyfar functions sorted
+according to their modules.
+
 .. toctree::
    :maxdepth: 1
 
-   pyrato
-   analytic
+   modules/pyrato
+   modules/analytic

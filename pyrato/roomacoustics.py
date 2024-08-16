@@ -23,7 +23,7 @@ def reverberation_time_energy_decay_curve(
         Decay interval to be used for the reverberation time extrapolation. EDT
         corresponds to the early decay time extrapolated from the interval
         [0, -10] dB, LDT corresponds to the late decay time extrapolated from
-        the interval [-25, -35] dB.
+        the interval ``(-25, -35)`` dB.
     normalize : bool, True
         Normalize the EDC to the steady state energy level
 
@@ -34,8 +34,8 @@ def reverberation_time_energy_decay_curve(
 
     References
     ----------
-    .. [#]  ISO 3382, Acoustics - Measurement of the reverberation time of
-            rooms with reference to other acoustical parameters.
+    .. [#] ISO 3382, Acoustics - Measurement of the reverberation time of
+           rooms with reference to other acoustical parameters.
 
     Examples
     --------
@@ -113,7 +113,7 @@ def energy_decay_curve_analytic(
 
     References
     ----------
-    .. [#]  H. Kuttruff, Room acoustics, 4th Ed. Taylor & Francis, 2009.
+    .. [#] H. Kuttruff, Room acoustics, 4th Ed. Taylor & Francis, 2009.
 
     """
 

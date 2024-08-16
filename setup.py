@@ -17,18 +17,20 @@ requirements = [
     'scipy>=1.5.0',
     'matplotlib']
 
-setup_requirements = ['pytest-runner', ]
+setup_requirements = [
+    'pytest-runner',
+]
 
 test_requirements = [
     'pytest',
     'bump2version',
     'wheel',
     'watchdog',
-    'flake8',
-    'tox',
+    'ruff',
     'coverage',
     'Sphinx',
-    'twine'
+    'twine',
+    'pydata-sphinx-theme',
 ]
 
 setup(
@@ -53,12 +55,18 @@ setup(
     include_package_data=True,
     keywords='pyrato',
     name='pyrato',
-    packages=find_packages(include=['pyrato']),
+    packages=find_packages(),
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/pyfar/pyrato',
+    download_url="https://pypi.org/project/pyrato/",
+    project_urls={
+        "Bug Tracker": "https://github.com/pyfar/pyrato/issues",
+        "Documentation": "https://pyrato.readthedocs.io/",
+        "Source Code": "https://github.com/pyfar/pyrato",
+    },
     version='0.4.0',
     zip_safe=False,
-    python_requires='>=3.8'
+    python_requires='>=3.8',
 )
