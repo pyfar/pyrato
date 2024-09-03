@@ -711,7 +711,7 @@ def energy_decay_curve_chu_lundeby(
     for ch in np.ndindex(data.cshape):
         intersection_time_idx = np.argmin(np.abs(
             time_vector - intersection_time[ch]))
-        if isinstance(noise_level, str) and noise_level == 'auto':
+        if type(noise_level) is str and noise_level == 'auto':
             p_square_at_intersection = dsp.estimate_noise_energy(
                 energy_data.time[ch], is_energy=True)
         else:
@@ -855,7 +855,7 @@ def intersection_time_lundeby(
 
     if isinstance(data, pf.Signal):
         sampling_rate = data.sampling_rate
-    elif isinstance(data, pf.TimeData) and not isinstance(data, pf.Signal):
+    elif isinstance(data, pf.TimeData):
         sampling_rate = np.round(1/np.diff(data.times).mean(), decimals=4)
     energy_data = energy_data.time
 
@@ -889,15 +889,16 @@ def intersection_time_lundeby(
                 time_window_data_current_channel[start_idx+1:-1]) >
                     (10*np.log10(noise_estimation[ch]) +
                         dB_above_noise))[-1, 0] + start_idx)
-        except IndexError:
-            raise Exception(
-                'Regression failed: Low SNR. Estimation terminated.')
+        except IndexError as e:
+            raise ValueError(
+                'Regression failed: Low SNR. Estimation terminated.'
+            ) from e
 
         dyn_range = np.diff(10*np.log10(np.take(
             time_window_data_current_channel, [start_idx, stop_idx])))
 
         if (stop_idx == start_idx) or dyn_range > -5:
-            raise Exception(
+            raise ValueError(
                 'Regression failed: Low SNR. Estimation terminated.')
 
         # regression_matrix*slope = edc
@@ -909,9 +910,10 @@ def intersection_time_lundeby(
             rcond=None)[0]
 
         if slope[1] == 0 or np.any(np.isnan(slope)):
-            raise Exception(
-                'Regression failed: T would be Inf, setting to 0. \
-                    Estimation terminated.')
+            raise ValueError(
+                'Regression did not work, reverberation time would be ',
+                'infinite, setting to 0 and terminating the estimation. ',
+                'Please remove preceeding delay or check the SNR')
 
         regression_time = np.array(
             [time_vector_window[start_idx], time_vector_window[stop_idx]])
@@ -971,8 +973,7 @@ def intersection_time_lundeby(
                     time_window_data_current_channel[idx_max:]) < (
                         10*np.log10(noise_estimation_current_channel)
                         + dB_above_noise
-                        + use_dyn_range_for_regression
-                        + idx_max))[0, 0]
+                        + use_dyn_range_for_regression))[0, 0] + idx_max
             except TypeError:
                 start_idx_loop = 0
 
@@ -980,11 +981,11 @@ def intersection_time_lundeby(
                 stop_idx_loop = (np.argwhere(10*np.log10(
                     time_window_data_current_channel[start_idx_loop+1:]) < (
                         10*np.log10(noise_estimation_current_channel)
-                        + dB_above_noise))[0, 0]
-                                 + start_idx_loop)
-            except IndexError:
-                raise Exception(
-                    'Regression failed: Low SNR. Estimation terminated.')
+                        + dB_above_noise))[0, 0] + start_idx_loop)
+            except IndexError as e:
+                raise ValueError(
+                    'Regression failed: Low SNR. Estimation terminated.'
+                ) from e
 
             # regression_matrix*slope = edc
             regression_matrix = np.vstack((np.ones(
@@ -999,9 +1000,10 @@ def intersection_time_lundeby(
                 rcond=None)[0]
 
             if slope[1] >= 0:
-                raise Exception(
-                    'Regression did not work due, T would be Inf, \
-                        setting to 0. Estimation was terminated.')
+                raise ValueError(
+                    'Regression did not work, reverberation time would be ',
+                    'infinite, setting to 0 and terminating the estimation. ',
+                    'Please remove preceeding delay or check the SNR')
 
             # (9) FIND CROSSPOINT
             old_crossing_point = crossing_point
