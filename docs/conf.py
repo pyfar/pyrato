@@ -29,6 +29,7 @@ extensions = [
     'sphinx_design',
     'sphinx_favicon',
     'sphinx_reredirects',
+    'sphinx_mdinclude',
 ]
 
 # show tocs for classes and functions of modules using the autodocsumm
@@ -44,7 +45,10 @@ templates_path = ['_templates']
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
-source_suffix = '.rst'
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.md': 'markdown',
+}
 
 # The master toctree document.
 master_doc = 'index'
@@ -106,7 +110,9 @@ html_favicon = '_static/favicon.ico'
 
 # -- HTML theme options
 # https://pydata-sphinx-theme.readthedocs.io/en/stable/user_guide/layout.html
-
+html_sidebars = {
+    "pyrato": []
+}
 html_theme_options = {
     "navbar_start": ["navbar-logo"],
     "navbar_end": ["navbar-icon-links", "theme-switcher"],
@@ -124,6 +130,8 @@ html_theme_options = {
     "show_toc_level": 3,  # Show all subsections of notebooks
     "secondary_sidebar_items": ["page-toc"],  # Omit 'show source' link that that shows notebook in json format
     "navigation_with_keys": True,
+    # Configure navigation depth for section navigation
+    "navigation_depth": 1,
 }
 
 html_context = {
