@@ -978,10 +978,10 @@ def intersection_time_lundeby(
                 start_idx_loop = 0
 
             try:
-                stop_idx_loop = (np.argwhere(10*np.log10(
+                stop_idx_loop = np.argwhere(10*np.log10(
                     time_window_data_current_channel[start_idx_loop+1:]) < (
                         10*np.log10(noise_estimation_current_channel)
-                        + dB_above_noise))[0, 0] + start_idx_loop)
+                        + dB_above_noise))[0, 0] + start_idx_loop
             except IndexError as e:
                 raise ValueError(
                     'Regression failed: Low SNR. Estimation terminated.'
