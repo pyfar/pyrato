@@ -5,7 +5,7 @@
 
 from setuptools import setup, find_packages
 
-with open('README.rst') as readme_file:
+with open('README.md') as readme_file:
     readme = readme_file.read()
 
 with open('HISTORY.rst') as history_file:
@@ -31,6 +31,7 @@ test_requirements = [
     'Sphinx<8',
     'twine'
     'pydata-sphinx-theme',
+    'sphinx_mdinclude',
 ]
 
 setup(
@@ -51,6 +52,7 @@ setup(
     description="Collection of functions commonly used in room acoustics",
     install_requires=requirements,
     license="MIT license",
+    long_description_content_type='text/markdown',
     long_description=readme,
     include_package_data=True,
     keywords='pyrato',
