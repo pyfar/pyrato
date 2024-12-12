@@ -105,11 +105,11 @@ lint.select = [
     # "PT",     # Pytest style
     # "A",      # Avoid builtin function and type shadowing
     # "ERA",    # No commented out code
-    # "NPY",    # Check all numpy related deprecations
-    # "COM",    # trailing comma rules
-    # "I002",   # missing required import
-    # "TID252", # Use absolute over relative imports
-    # "FIX",    # Code should not contain FIXME, TODO, etc
+    "NPY",    # Check all numpy related deprecations
+    "COM",    # trailing comma rules
+    "I002",   # missing required import
+    "TID252", # Use absolute over relative imports
+    "FIX",    # Code should not contain FIXME, TODO, etc
 ]
 
 # Ignore missing docstrings in tests

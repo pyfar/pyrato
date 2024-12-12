@@ -28,7 +28,8 @@ def test_start_ir_insufficient_snr():
 
     snr = 15
 
-    noise = np.random.randn(n_samples)
+    rng = np.random.default_rng()
+    noise = rng.standard_normal(n_samples)
     noise = noise / np.sqrt(np.mean(np.abs(noise**2))) * 10**(-snr/20)
     noise = pf.Signal(noise, 44100)
 
@@ -42,8 +43,8 @@ def test_start_ir():
     n_samples = 2**10
     ir = np.zeros(n_samples)
     snr = 60
-
-    noise = pf.Signal(np.random.randn(n_samples) * 10**(-snr/20), 44100)
+    rng = np.random.default_rng()
+    noise = pf.Signal(rng.standard_normal(n_samples) * 10**(-snr/20), 44100)
 
     start_sample = 24
     ir[start_sample] = 1
@@ -77,10 +78,11 @@ def test_start_ir_multidim():
     n_channels = 3
     ir = np.zeros((n_channels, n_samples))
 
+    rng = np.random.default_rng()
     snr = 60
 
     noise = pf.Signal(
-        np.random.randn(n_channels, n_samples) * 10**(-snr/20), 44100)
+        rng.standard_normal(n_channels, n_samples) * 10**(-snr/20), 44100)
 
     start_sample = [24, 5, 43]
     ir[[0, 1, 2], start_sample] = 1
@@ -94,7 +96,7 @@ def test_start_ir_multidim():
 
     ir = np.zeros((2, n_channels, n_samples))
     noise = pf.Signal(
-        np.random.randn(2, n_channels, n_samples) * 10**(-snr/20), 44100)
+        rng.standard_normal(2, n_channels, n_samples) * 10**(-snr/20), 44100)
 
     start_sample_1 = [24, 5, 43]
     ir[0, [0, 1, 2], start_sample_1] = 1
@@ -144,9 +146,9 @@ def test_max_ir():
     ir = np.zeros(n_samples)
 
     snr = 60
-
+    rng = np.random.default_rng()
     noise = pf.Signal(
-        np.random.randn(n_samples) * 10**(-snr/20), 44100)
+        rng.standard_normal(n_samples) * 10**(-snr/20), 44100)
 
     start_sample = 24
     ir[start_sample] = 1

@@ -284,7 +284,7 @@ def eigenfrequencies_rectangular_room_impedance(
     mask = ks >= 0.02
     ks_search = ks[mask]
     k_ns = normal_eigenfrequencies_rectangular_room_impedance(
-        L, ks_search, k_max, zeta
+        L, ks_search, k_max, zeta,
     )
     for idx in range(0, len(L)):
         k_ns[idx] = np.hstack((
@@ -394,7 +394,7 @@ def pressure_modal_superposition(
     k_ns_xyz = np.array([
         k_ns[0][mode_indices[:, 0]],
         k_ns[1][mode_indices[:, 1]],
-        k_ns[2][mode_indices[:, 2]]
+        k_ns[2][mode_indices[:, 2]],
         ])
 
     phi = np.arctanh(ks/(zeta_0 * k_ns_xyz.T).T)
@@ -491,7 +491,7 @@ def rectangular_room_impedance(
     k_ns_xyz = np.array([
         k_ns[0][mode_indices[:, 0]],
         k_ns[1][mode_indices[:, 1]],
-        k_ns[2][mode_indices[:, 2]]
+        k_ns[2][mode_indices[:, 2]],
         ])
 
     return rir, spectrum, k_ns_xyz

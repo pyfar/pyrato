@@ -8,7 +8,7 @@ __version__ = '0.3.2'
 
 
 from .rap import (
-    reverberation_time_linear_regression
+    reverberation_time_linear_regression,
 )
 from .roomacoustics import (
     reverberation_time_energy_decay_curve,
