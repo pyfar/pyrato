@@ -9,6 +9,7 @@ def reverberation_time_energy_decay_curve(
         energy_decay_curve,
         T='T20'):
     """Estimate the reverberation time from a given energy decay curve.
+
     The linear regression is performed using least squares error minimization
     according to the ISO standard 3382 [#]_.
 
@@ -79,7 +80,9 @@ def energy_decay_curve_analytic(
         receiver=None, method='eyring', c=343.4, frequency=None,
         air_absorption=True):
     """Calculate the energy decay curve analytically by using Eyring's or
-    Sabine's equation [#]_.
+    Sabine's equation.
+    
+    Based on [#]_.
 
     Parameters
     ----------
@@ -110,7 +113,8 @@ def energy_decay_curve_analytic(
 
     References
     ----------
-    .. [#]  H. Kuttruff, Room acoustics, 4th Ed. Taylor & Francis, 2009.
+    .. [#]  H. Kuttruff, Room acoustics, 4th Ed. Taylor & Francis,
+            2009.
 
     """
 
