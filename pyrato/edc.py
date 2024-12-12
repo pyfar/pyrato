@@ -42,7 +42,7 @@ def _subtract_noise_from_squared_rir(data, noise_level='auto'):
     Parameters
     ----------
     data : ndarray, double
-        The squared room impulse response with dimension [..., n_samples]
+        The squared room impulse response with dimension (..., n_samples)
 
     Returns
     -------
@@ -600,7 +600,7 @@ def energy_decay_curve_chu_lundeby(
     """ This function combines Chu's and Lundeby's methods:
     The estimated noise level is subtracted before backward integration,
     the impulse response is truncated at the intersection time,
-    and the correction for the truncation is applied [4]_, [5]_, [6]_
+    and the correction for the truncation is applied [#]_, [#]_, [#]_
 
     Parameters
     ----------
@@ -634,13 +634,13 @@ def energy_decay_curve_chu_lundeby(
 
     References
     ----------
-    .. [4]  Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of
+    .. [#]  Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of
             Measurements in Room Acoustics - ACUSTICA Vol. 81 (1995)
-    .. [5]  W. T. Chu. “Comparison of reverberation measurements using
-            Schroeder’s impulse method and decay-curve averaging method”. In:
+    .. [#]  W. T. Chu. “Comparison of reverberation measurements using
+            Schroeder's impulse method and decay-curve averaging method”. In:
             Journal of the Acoustical Society of America 63.5 (1978),
-            pp. 1444–1450.
-    .. [6]  M. Guski, “Influences of external error sources on measurements of
+            pp. 1444-1450.
+    .. [#]  M. Guski, “Influences of external error sources on measurements of
             room acoustic parameters,” 2015.
 
     Examples

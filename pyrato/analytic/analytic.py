@@ -5,12 +5,13 @@ import numpy as np
 
 def eigenfrequencies_rectangular_room_rigid(
         dimensions, max_freq, speed_of_sound=343.9, sort=True):
-    """Calculate the eigenfrequencies of a rectangular room with rigid walls.
+    """Calculate the eigenfrequencies of a rectangular room with rigid walls
+    after [#]_.
 
     Parameters
     ----------
     dimensions : float, numpy.ndarray
-        The dimensions of the room in the form [L_x, L_y, L_z]
+        The dimensions of the room in the form (L_x, L_y, L_z)
     max_freq : float
         The maximum frequency to consider for the calculation of the
         eigenfrequencies.
@@ -29,8 +30,8 @@ def eigenfrequencies_rectangular_room_rigid(
 
     References
     ----------
-    ..  [2] H. Kuttruff, Room acoustics, pp. 64-66, 4th Ed. Taylor & Francis,
-        2009.
+    ..  [#] H. Kuttruff, Room acoustics, pp. 64-66, 4th Ed. Taylor & Francis,
+            2009.
 
     Examples
     --------
@@ -118,7 +119,7 @@ def rectangular_room_rigid_walls(
         speed_of_sound=343.9,
         n_samples=2**18):
     r"""Calculate the transfer function of a rectangular room based on the
-    analytic model as given in [2]_ . The model is based on the solution
+    analytic model as given in [#]_ . The model is based on the solution
     for a room with rigid walls. The damping of the modes is included as
     a damping in the medium, not as a damping caused by the boundary.
     Consequently, all modes share the same damping factor calculated from
@@ -127,11 +128,11 @@ def rectangular_room_rigid_walls(
     Parameters
     ----------
     dimensions : double, ndarray
-        The dimensions of the room in the form [L_x, L_y, L_z]
+        The dimensions of the room in the form (L_x, L_y, L_z)
     source : double, array
-        The source position in Cartesian coordinates [x, y, z]
+        The source position in Cartesian coordinates (x, y, z)
     receiver : double, ndarray
-        The receiver position in Cartesian coordinates [x, y, z]
+        The receiver position in Cartesian coordinates (x, y, z)
     max_freq : double
         The maximum frequency to consider for the calculation of the
         eigenfrequencies of the room
@@ -152,8 +153,8 @@ def rectangular_room_rigid_walls(
 
     References
     ----------
-    ..  [2] H. Kuttruff, Room acoustics, pp. 64-66, 4th Ed. Taylor & Francis,
-        2009.
+    ..  [#] H. Kuttruff, Room acoustics, pp. 64-66, 4th Ed. Taylor & Francis,
+            2009.
 
     Example
     -------

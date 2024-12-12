@@ -320,7 +320,7 @@ def eigenfrequencies_rectangular_room_impedance(
 
 
 def mode_function_impedance(position, eigenvalue, phase):
-    r""" The modal function for a room with boundary impedances [4]_ .
+    r"""The modal function for a room with boundary impedances [#]_.
 
     .. math::
 
@@ -343,17 +343,17 @@ def mode_function_impedance(position, eigenvalue, phase):
 
     References
     ----------
-    ..  [4] M. Nolan and J. L. Davy, “Two definitions of the inner product of
-        modes and their use in calculating non-diffuse reverberant sound
-        fields,” The Journal of the Acoustical Society of America, vol.
-        145, no. 6, pp. 3330–3340, Jun. 2019.
+    ..  [#] M. Nolan and J. L. Davy, “Two definitions of the inner product of
+            modes and their use in calculating non-diffuse reverberant sound
+            fields,” The Journal of the Acoustical Society of America, vol.
+            145, no. 6, pp. 3330-3340, Jun. 2019.
     """
     return np.cosh(1j*eigenvalue * position + phase)
 
 
 def pressure_modal_superposition(
         ks, omegas, k_ns, mode_indices, r_R, r_S, L, zeta):
-    r""" Calculate modal composition for a rectangular room with arbitrary
+    r"""Calculate modal composition for a rectangular room with arbitrary
     boundary impedances.
 
     Parameters
