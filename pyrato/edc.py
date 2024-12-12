@@ -936,7 +936,7 @@ def intersection_time_lundeby(
             time_vector_window,
             [start_idx, stop_idx])) / n_blocks_in_decay * sampling_rate)
 
-        window_time = n_samples_per_block/sampling_rate
+        window_time = n_samples_per_block[0]/sampling_rate
 
         # (6) AVERAGE
         time_window_data_current_channel, \
