@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 """ Tests for reverberation time related things. """
-from pytest import raises
-
 import numpy as np
 import numpy.testing as npt
 
@@ -62,5 +60,5 @@ def test_rt_from_edc_error():
     edc_exp = pf.TimeData(10**(edc/10), times)
     T = 'Bla'
 
-    with raises(ValueError, match='is not a valid interval.'):
+    with pytest.raises(ValueError, match='is not a valid interval.'):
         ra.reverberation_time_linear_regression(edc_exp, T=T)
