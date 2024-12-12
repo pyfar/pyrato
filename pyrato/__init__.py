@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 
-__author__ = \
-    """The pyfar developers"""
-__email__ = 'info@pyfar.org'
+"""Top-level package for pyrato."""
+
+__author__ = """The pyfar developers"""
+__email__ = ''
 __version__ = '0.3.2'
+
 
 from .rap import (
     reverberation_time_linear_regression

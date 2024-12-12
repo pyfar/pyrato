@@ -34,21 +34,19 @@ jobs:
     executor:
       name: python-docker
       version: <<parameters.version>>
-
     steps:
       - checkout
+    #   - run:
+    #       name: Install System Dependencies
+    #       command: sudo apt-get update && sudo apt-get install -y libsndfile1
       - run:
-          name: Install System Dependencies
-          command: sudo apt-get update && sudo apt-get install -y libsndfile1
-      - python/install-packages:
-          pkg-manager: pip
-          # app-dir: ~/project/package-directory/  # If you're requirements.txt isn't in the root directory.
-          pip-dependency-file: requirements_dev.txt
+          name: install dependencies
+          command: pip install ".[tests]"
       - run:
           name: Run tests
           command: pytest
 
-  flake:
+  ruff:
     parameters:
       version:
         description: "version tag"
@@ -57,18 +55,16 @@ jobs:
     executor:
       name: python-docker
       version: <<parameters.version>>
-
     steps:
       - checkout
-      - python/install-packages:
-          pkg-manager: pip
-          # app-dir: ~/project/package-directory/  # If you're requirements.txt isn't in the root directory.
-          pip-dependency-file: requirements_dev.txt
       - run:
-          name: Flake8
-          command: flake8 pyrato
+          name: install dependencies
+          command: pip install ".[tests]"
+      - run:
+          name: Ruff
+          command: ruff check
 
-  test_examples:
+  test_documentation_build:
     parameters:
       version:
         description: "version tag"
@@ -77,21 +73,40 @@ jobs:
     executor:
       name: python-docker
       version: <<parameters.version>>
-
     steps:
       - checkout
+   #    - run:
+   #        name: Install System Dependencies
+   #        command: sudo apt-get update && sudo apt-get install -y libsndfile1 texlive-latex-extra dvipng
       - run:
-          name: Install System Dependencies
-          command: sudo apt-get update && sudo apt-get install -y libsndfile1
-      - python/install-packages:
-          pkg-manager: pip
-          # app-dir: ~/project/package-directory/  # If you're requirements.txt isn't in the root directory.
-          pip-dependency-file: requirements_dev.txt
-      - run:
-          name: Examples
+          name: Sphinx
           command: |
-            pip install -e .
-            pytest --nbmake examples/*.ipynb
+            pip install ".[docs]"
+            cd docs/
+            make html SPHINXOPTS="-W"
+
+  test_deprecation_warnings:
+    parameters:
+      version:
+        description: "version tag"
+        default: "latest"
+        type: string
+    executor:
+      name: python-docker
+      version: <<parameters.version>>
+    steps:
+      - checkout
+   #    - run:
+   #        name: Install System Dependencies
+   #        command: sudo apt-get update && sudo apt-get install -y libsndfile1 texlive-latex-extra dvipng
+      - run:
+          name: install dependencies
+          command: pip install ".[tests]"
+      - run: |
+          python --version
+      - run:
+          name: Run tests
+          command: pytest tests -W error::DeprecationWarning
 
   test_pypi_publish:
     parameters:
@@ -102,20 +117,42 @@ jobs:
     executor:
       name: python-docker
       version: <<parameters.version>>
+    steps:
+      - checkout
+    #  - run:
+    #      name: Install System Dependencies
+    #      command: sudo apt-get update && sudo apt-get install -y libsndfile1
+      - run:
+          name: install dependencies
+          command: pip install ".[deploy]"
+      - run:
+          name: deploy
+          command: |  # create whl, install twine and publish to Test PyPI
+            python -m build
+            twine check dist/*
 
+  run_pypi_publish:
+    parameters:
+      version:
+        description: "version tag"
+        default: "latest"
+        type: string
+    executor:
+      name: python-docker
+      version: <<parameters.version>>
     steps:
       - checkout
       - run:
           name: Install System Dependencies
           command: sudo apt-get update && sudo apt-get install -y libsndfile1
-      - python/install-packages:
-          pkg-manager: pip
-          # app-dir: ~/project/package-directory/  # If you're requirements.txt isn't in the root directory.
-          pip-dependency-file: requirements_dev.txt
+      - run:
+          name: install dependencies
+          command: pip install ".[deploy]"
       - run:
           name: deploy
           command: |  # create whl, install twine and publish to Test PyPI
-            python setup.py sdist bdist_wheel
+            python -m build
+            twine check dist/*
             twine upload dist/*
 
 # Invoke jobs via workflows
@@ -133,19 +170,37 @@ workflows:
                 - "3.10"
                 - "3.11"
                 - "3.12"
-      - flake:
+                - "3.13"
+                
+      - ruff:
           matrix:
             parameters:
               version:
-                - "3.9"
+                - "3.12"
           requires:
             - build_and_test
 
-      - test_examples:
+      - test_documentation_build:
           matrix:
             parameters:
               version:
-                - "3.9"
+                - "3.12"
+          requires:
+            - build_and_test
+
+      - test_deprecation_warnings:
+          matrix:
+            parameters:
+              version:
+                - "3.12"
+          requires:
+            - build_and_test
+
+      - test_pypi_publish:
+          matrix:
+            parameters:
+              version:
+                - "3.12"
           requires:
             - build_and_test
 
@@ -162,6 +217,8 @@ workflows:
                 - "3.10"
                 - "3.11"
                 - "3.12"
+                - "3.13"
+                
           filters:
             branches:
               ignore: /.*/
@@ -169,11 +226,11 @@ workflows:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*$/
 
-      - flake:
+      - ruff:
           matrix:
             parameters:
               version:
-                - "3.9"
+                - "3.12"
           requires:
             - build_and_test
           filters:
@@ -183,11 +240,11 @@ workflows:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*$/
 
-      - test_examples:
+      - test_documentation_build:
           matrix:
             parameters:
               version:
-                - "3.9"
+                - "3.12"
           requires:
             - build_and_test
           filters:
@@ -197,15 +254,30 @@ workflows:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*$/
 
-      - test_pypi_publish:
+      - test_deprecation_warnings:
           matrix:
             parameters:
               version:
-                - "3.9"
+                - "3.12"
           requires:
             - build_and_test
-            - flake
-            - test_examples
+          filters:
+            branches:
+              ignore: /.*/
+            # only act on version tags
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*$/
+
+      - run_pypi_publish:
+          matrix:
+            parameters:
+              version:
+                - "3.12"
+          requires:
+            - build_and_test
+            - ruff
+            - test_documentation_build
+            - test_deprecation_warnings
           filters:
             branches:
               ignore: /.*/
