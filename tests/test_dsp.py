@@ -35,7 +35,7 @@ def test_start_ir_insufficient_snr():
     ir_noise = ir + noise
 
     with pytest.warns(match='SNR seems lower'):
-        dsp.find_impulse_response_start(ir_noise)
+        pf.dsp.find_impulse_response_start(ir_noise)
 
 
 def test_start_ir():
@@ -50,11 +50,11 @@ def test_start_ir():
 
     ir = pf.Signal(ir, 44100)
 
-    start_sample_est = dsp.find_impulse_response_start(ir)
+    start_sample_est = pf.dsp.find_impulse_response_start(ir)
     assert start_sample_est == start_sample - 1
 
     ir_awgn = ir + noise
-    start_sample_est = dsp.find_impulse_response_start(ir_awgn)
+    start_sample_est = pf.dsp.find_impulse_response_start(ir_awgn)
     assert start_sample_est == start_sample - 1
 
 
@@ -68,7 +68,7 @@ def test_start_ir_thresh():
 
     ir = pf.Signal(ir, 44100)
 
-    start_sample_est = dsp.find_impulse_response_start(ir, threshold=20)
+    start_sample_est = pf.dsp.find_impulse_response_start(ir, threshold=20)
     assert start_sample_est == start_sample - 4 - 1
 
 
@@ -88,7 +88,7 @@ def test_start_ir_multidim():
     ir = pf.Signal(ir, 44100)
 
     ir_awgn = ir + noise
-    start_sample_est = dsp.find_impulse_response_start(ir_awgn)
+    start_sample_est = pf.dsp.find_impulse_response_start(ir_awgn)
 
     npt.assert_allclose(start_sample_est, np.array(start_sample) - 1)
 
@@ -106,7 +106,7 @@ def test_start_ir_multidim():
     start_samples = np.vstack((start_sample_1, start_sample_2))
 
     ir_awgn = ir + noise
-    start_sample_est = dsp.find_impulse_response_start(ir_awgn)
+    start_sample_est = pf.dsp.find_impulse_response_start(ir_awgn)
 
     npt.assert_allclose(start_sample_est, start_samples - 1)
 
@@ -118,7 +118,7 @@ def test_start_room_impulse_response():
 
     rir = pf.Signal(rir, 44100)
 
-    actual = dsp.find_impulse_response_start(rir, threshold=20)
+    actual = pf.dsp.find_impulse_response_start(rir, threshold=20)
 
     expected = 0
 
@@ -132,7 +132,7 @@ def test_start_room_impulse_response_shfted(monkeypatch):
 
     rir_shifted = np.roll(rir, 128, axis=-1)
     rir_shifted = pf.Signal(rir_shifted, 44100)
-    actual = dsp.find_impulse_response_start(rir_shifted, threshold=20)
+    actual = pf.dsp.find_impulse_response_start(rir_shifted, threshold=20)
 
     expected = 128
 
