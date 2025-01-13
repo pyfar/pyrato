@@ -21,8 +21,6 @@ __all__ = [
     'rap',
     'dsp',
     'analytic',
-    'reverberation_time_energy_decay_curve',
-    'energy_decay_curve_analytic',
-    'air_attenuation_coefficient',
     'parametric',
+    'air_attenuation_coefficient'
 ]
