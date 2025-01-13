@@ -100,6 +100,13 @@ def air_attenuation_coefficient(
         The resulting attenuation coefficient.
 
     """
+    from pyfar.classes.warnings import PyfarDeprecationWarning
+    import warnings
+
+    warnings.warn(
+        'Will be replaced by respective function in pyfar before v1.0.0',
+        PyfarDeprecationWarning)
+
     # room temperature in Kelvin
     t_K = temperature + 273.16
     p_ref_kPa = 101.325
