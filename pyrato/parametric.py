@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""Parametric room acoustics calculations using simple geometric considerations
+such as Sabine's theory of sound in rooms.
+"""
+
 import numpy as np
 
 
