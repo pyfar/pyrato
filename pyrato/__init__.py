@@ -3,9 +3,8 @@
 """Top-level package for pyrato."""
 
 __author__ = """The pyfar developers"""
-__email__ = ''
-__version__ = '0.3.2'
-
+__email__ = 'info@pyfar.org'
+__version__ = '0.4.0'
 
 from .rap import (
     reverberation_time_linear_regression
@@ -31,6 +30,8 @@ from .edc import (
     intersection_time_lundeby,
 )
 
+from . import analytic
+
 __all__ = [
     'reverberation_time_linear_regression',
     'reverberation_time_energy_decay_curve',
@@ -47,4 +48,5 @@ __all__ = [
     'energy_decay_curve_truncation',
     'estimate_noise_energy',
     'intersection_time_lundeby',
+    'analytic',
 ]

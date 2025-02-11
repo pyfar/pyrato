@@ -1,5 +1,4 @@
 import pytest
-import warnings
 import pyfar as pf
 import pyrato
 import numpy as np
