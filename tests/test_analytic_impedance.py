@@ -12,7 +12,7 @@ def test_eigenfreq_impedance_1d_real():
     k_max = 1e3*2*np.pi/c
 
     k_ns = analytic.eigenfrequencies_rectangular_room_1d(
-        L, k, k_max, zeta
+        L, k, k_max, zeta,
     )
 
     truth = np.array([
@@ -35,7 +35,7 @@ def test_eigenfreq_impedance_1d_real_jac():
     k_max = 1e3*2*np.pi/c
 
     k_ns = analytic.eigenfrequencies_rectangular_room_1d(
-        L, k, k_max, zeta, gradient=True
+        L, k, k_max, zeta, gradient=True,
     )
 
     truth = np.array([
@@ -59,7 +59,7 @@ def test_analytic_shoebox_eigenfreqs_impedance_multi_k():
     k = np.linspace(0, k_max*1.1, 2**10)
 
     k_ns, _ = analytic.eigenfrequencies_rectangular_room_impedance(
-            L, k, k_max, zetas
+            L, k, k_max, zetas,
         )
 
     truth = np.array([
@@ -103,7 +103,7 @@ def test_analytic_shoebox_eigenfreqs_impedance():
     k_max = 1e3*2*np.pi/c
 
     k_ns, _ = analytic.eigenfrequencies_rectangular_room_impedance(
-            L, k, k_max, zetas
+            L, k, k_max, zetas,
         )
 
     truth = np.array([
@@ -148,7 +148,7 @@ def test_analytic_eigenfrequencies_impedance_cplx():
     k = np.linspace(k_min, k_max*1.1, 2**10)
 
     k_ns, _ = analytic.eigenfrequencies_rectangular_room_impedance(
-            L, k, k_max, zetas, only_normal=True
+            L, k, k_max, zetas, only_normal=True,
         )
 
     k_ns_x = np.loadtxt(
@@ -180,7 +180,7 @@ def test_analytic_eigenfrequencies_impedance_zeta15():
     k = np.linspace(k_min, k_max*1.1, 2**10)
 
     k_ns, _ = analytic.eigenfrequencies_rectangular_room_impedance(
-            L, k, k_max, zetas, only_normal=True
+            L, k, k_max, zetas, only_normal=True,
         )
 
     k_ns_x = np.loadtxt(

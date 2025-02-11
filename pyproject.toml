@@ -11,7 +11,7 @@ lint.select = [
     "ARG",    # Remove unused function/method arguments
     "B",      # bugbear extension
     "C4",     # Check for common security issues
-    # "COM",    # trailing comma rules
+    "COM",    # trailing comma rules
     # "D",      # Docstring guidelines
     # "D417",   # Missing argument descriptions in the docstring
     # "E",      # PEP8 errors

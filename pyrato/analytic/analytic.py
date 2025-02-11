@@ -76,7 +76,7 @@ def eigenfrequencies_rectangular_room_rigid(
         for n_y in range(0, n_y_max):
             n_modes += int(np.floor(np.real(
                 np.sqrt(
-                    (2*f_max/c)**2 - (n_x/L_x)**2 - (n_y/L_y)**2
+                    (2*f_max/c)**2 - (n_x/L_x)**2 - (n_y/L_y)**2,
                 ) * L_z))) + 1
 
     n = np.zeros((3, n_modes), dtype=int)
@@ -89,7 +89,7 @@ def eigenfrequencies_rectangular_room_rigid(
         for n_y in range(0, n_y_max):
             n_z_max = int(np.floor(np.real(
                 np.sqrt(
-                    (2*f_max/c)**2 - (n_x/L_x)**2 - (n_y/L_y)**2
+                    (2*f_max/c)**2 - (n_x/L_x)**2 - (n_y/L_y)**2,
                 ) * L_z))) + 1
 
             idx_end = idx + n_z_max
