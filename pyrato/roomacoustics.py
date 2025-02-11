@@ -71,7 +71,7 @@ def reverberation_time_energy_decay_curve(
     warnings.warn(
         "This function will be deprecated in version 0.5.0 "
         "Use pyrato.reverberation_time_linear_regression instead",
-        PyfarDeprecationWarning)
+        PyfarDeprecationWarning, stacklevel=2)
 
     return reverberation_time_linear_regression(energy_decay_curve, T)
 
