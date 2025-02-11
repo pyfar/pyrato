@@ -54,9 +54,9 @@ source_suffix = {
 master_doc = 'index'
 
 # General information about the project.
-project = 'pyrato'
-copyright = "2024, The pyfar developers"
-author = "The pyfar developers"
+project = u'pyrato'
+copyright = u"2021-2023, Marco Berzborn; 2023, The pyfar developers"
+author = u"The pyfar developers"
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
@@ -94,6 +94,7 @@ intersphinx_mapping = {
     'numpy': ('https://numpy.org/doc/stable/', None),
     'scipy': ('https://docs.scipy.org/doc/scipy/', None),
     'matplotlib': ('https://matplotlib.org/stable/', None),
+    'spharpy': ('https://spharpy.readthedocs.io/en/stable/', None),
     'pyfar': ('https://pyfar.readthedocs.io/en/stable/', None),
     }
 
@@ -139,7 +140,7 @@ html_context = {
 
 # redirect index to pyfar.html
 redirects = {
-     "index": "pyrato.html"
+     "index": f"{project}.html"
 }
 
 # -- download navbar and style files from gallery -----------------------------

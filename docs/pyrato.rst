@@ -5,7 +5,7 @@ Python Room Acoustics Tools - A collection of functions for commonly used
 operations in room acoustics
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
    :hidden:
 
    readme

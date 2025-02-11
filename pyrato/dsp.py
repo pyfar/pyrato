@@ -54,7 +54,7 @@ def find_impulse_response_start(
         >>> import pyfar as pf
         >>> import numpy as np
         >>> n_samples = 256
-        >>> delay_samples = n_samples / 2 + 1/2
+        >>> delay_samples = n_samples // 2 + 1/2
         >>> ir = pf.signals.impulse(n_samples)
         >>> ir = pf.dsp.linear_phase(ir, delay_samples, unit='samples')
         >>> start_samples = pf.dsp.find_impulse_response_start(ir)
@@ -266,7 +266,8 @@ def time_shift(signal, shift, circular_shift=True, unit='samples'):
 def center_frequencies_octaves():
     """Return the octave center frequencies according to the IEC 61260:1:2014
     standard.
-    Returns.
+
+    Returns
     -------
     frequencies : ndarray, float
         Octave center frequencies
