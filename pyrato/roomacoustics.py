@@ -3,6 +3,7 @@
 import numpy as np
 from pyrato.rap import reverberation_time_linear_regression
 import warnings
+from pyfar.classes.warnings import PyfarDeprecationWarning
 
 
 def reverberation_time_energy_decay_curve(
@@ -70,7 +71,7 @@ def reverberation_time_energy_decay_curve(
     warnings.warn(
         "This function will be deprecated in version 0.5.0 "
         "Use pyrato.reverberation_time_linear_regression instead",
-        DeprecationWarning)
+        PyfarDeprecationWarning)
 
     return reverberation_time_linear_regression(energy_decay_curve, T)
 

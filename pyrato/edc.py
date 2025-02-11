@@ -929,12 +929,12 @@ def intersection_time_lundeby(
         # (5) NEW LOCAL TIME INTERVAL LENGTH
         n_blocks_in_decay = (np.diff(
             10*np.log10(np.take(
-                time_window_data_current_channel, [start_idx, stop_idx])))
+                time_window_data_current_channel, [start_idx, stop_idx])))[0]
             / -10 * n_intervals_per_10dB)
 
         n_samples_per_block = np.round(np.diff(np.take(
             time_vector_window,
-            [start_idx, stop_idx])) / n_blocks_in_decay * sampling_rate)
+            [start_idx, stop_idx]))[0] / n_blocks_in_decay * sampling_rate)
 
         window_time = n_samples_per_block/sampling_rate
 

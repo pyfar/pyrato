@@ -6,7 +6,7 @@ import warnings
 
 import pyfar as pf
 import numpy as np
-
+from pyfar.classes.warnings import PyfarDeprecationWarning
 
 def find_impulse_response_start(
         impulse_response,
@@ -93,7 +93,7 @@ def find_impulse_response_start(
     warnings.warn(
         "This function will be deprecated in version 0.5.0 "
         "Use pyfar.dsp.find_impulse_response_start instead",
-        DeprecationWarning)
+        PyfarDeprecationWarning, stacklevel=2)
 
     return pf.dsp.find_impulse_response_start(impulse_response, threshold)
 
@@ -270,7 +270,7 @@ def center_frequencies_octaves():
     warnings.warn(
         "This function will be deprecated in version 0.5.0 "
         "Use pyfar.dsp.filter.fractional_octave_frequencies instead",
-        DeprecationWarning)
+        PyfarDeprecationWarning)
 
     nominal, exact = pf.dsp.filter.fractional_octave_frequencies(
         1, (20, 20e3), return_cutoff=False)
@@ -290,7 +290,7 @@ def center_frequencies_third_octaves():
     warnings.warn(
         "This function will be deprecated in version 0.5.0 "
         "Use pyfar.dsp.filter.fractional_octave_frequencies instead",
-        DeprecationWarning)
+        PyfarDeprecationWarning)
 
     nominal, exact = pf.dsp.filter.fractional_octave_frequencies(
         3, (20, 20e3), return_cutoff=False)
@@ -322,7 +322,7 @@ def filter_fractional_octave_bands(
     warnings.warn(
         "This function will be deprecated in version 0.5.0 "
         "Use pyfar.dsp.filter.fractional_octave_bands instead",
-        DeprecationWarning)
+        PyfarDeprecationWarning)
 
     return pf.dsp.filter.fractional_octave_bands(
         signal, num_fractions, freq_range=freq_range, order=order)
@@ -421,7 +421,8 @@ def _smooth_rir(
     data = np.atleast_2d(data)
     n_samples = data.shape[-1]
     n_samples_nan = np.count_nonzero(np.isnan(data), axis=-1)
-
+    # if isinstance(smooth_block_length, np.ndarray):
+    #     assert False
     n_samples_per_block = int(np.round(smooth_block_length * sampling_rate, 0))
     n_blocks = np.asarray(
         np.floor((n_samples-n_samples_nan)/n_samples_per_block),
