@@ -421,8 +421,6 @@ def _smooth_rir(
     data = np.atleast_2d(data)
     n_samples = data.shape[-1]
     n_samples_nan = np.count_nonzero(np.isnan(data), axis=-1)
-    # if isinstance(smooth_block_length, np.ndarray):
-    #     assert False
     n_samples_per_block = int(np.round(smooth_block_length * sampling_rate, 0))
     n_blocks = np.asarray(
         np.floor((n_samples-n_samples_nan)/n_samples_per_block),
