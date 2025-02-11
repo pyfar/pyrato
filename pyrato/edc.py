@@ -985,7 +985,7 @@ def intersection_time_lundeby(
                                  + start_idx_loop)
             except IndexError as e:
                 raise Exception(
-                    'Regression failed: Low SNR. Estimation terminated.'
+                    'Regression failed: Low SNR. Estimation terminated.',
                     ) from e
 
             # regression_matrix*slope = edc
