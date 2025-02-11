@@ -15,14 +15,6 @@ import pyfar as pf
 test_data_path = os.path.join(os.path.dirname(__file__), 'test_data')
 
 
-def mock_shift_samples_1d(*args, **kwargs):
-    return np.array([76])
-
-
-def mock_shift_samples_2d(*args, **kwargs):
-    return np.array([76, 76])
-
-
 def test_substracted_1D():
     rir = genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
@@ -83,7 +75,7 @@ def test_edc_truncation_1D():
     npt.assert_allclose(actual.time, expected)
 
 
-def test_edc_truncation_2D(monkeypatch):
+def test_edc_truncation_2D():
     rir = pf.Signal(genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'),
         delimiter=','), 3000)
@@ -102,7 +94,7 @@ def test_edc_truncation_2D(monkeypatch):
     npt.assert_allclose(actual.time, expected)
 
 
-def test_edc_lundeby_1D(monkeypatch):
+def test_edc_lundeby_1D():
     rir = pf.Signal(genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
         delimiter=','), 3000)
@@ -110,11 +102,6 @@ def test_edc_lundeby_1D(monkeypatch):
         os.path.join(test_data_path, 'edc_lundeby_1D.csv'),
         delimiter=','))
 
-    # monkeypatch.setattr(
-    #     dsp,
-    #     "find_impulse_response_start",
-    #     mock_shift_samples_1d)
-
     actual = enh.energy_decay_curve_lundeby(
         rir,
         freq='broadband',
@@ -126,7 +113,7 @@ def test_edc_lundeby_1D(monkeypatch):
     npt.assert_allclose(actual.time, expected)
 
 
-def test_edc_lundeby_2D(monkeypatch):
+def test_edc_lundeby_2D():
     rir = pf.Signal(genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'),
         delimiter=','), 3000)
@@ -134,11 +121,6 @@ def test_edc_lundeby_2D(monkeypatch):
         os.path.join(test_data_path, 'edc_lundeby_2D.csv'),
         delimiter=','))
 
-    # monkeypatch.setattr(
-    #     dsp,
-    #     "find_impulse_response_start",
-    #     mock_shift_samples_2d)
-
     actual = enh.energy_decay_curve_lundeby(
         rir,
         freq='broadband',
@@ -150,7 +132,7 @@ def test_edc_lundeby_2D(monkeypatch):
     npt.assert_allclose(actual.time, expected)
 
 
-def test_edc_lundeby_chu_1D(monkeypatch):
+def test_edc_lundeby_chu_1D():
     rir = pf.Signal(genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
         delimiter=','), 3000)
@@ -158,11 +140,6 @@ def test_edc_lundeby_chu_1D(monkeypatch):
         os.path.join(test_data_path, 'edc_lundeby_chu_1D.csv'),
         delimiter=','))
 
-    # monkeypatch.setattr(
-    #     dsp,
-    #     "find_impulse_response_start",
-    #     mock_shift_samples_1d)
-
     actual = enh.energy_decay_curve_chu_lundeby(
         rir,
         freq='broadband',
@@ -174,7 +151,7 @@ def test_edc_lundeby_chu_1D(monkeypatch):
     npt.assert_allclose(actual.time, expected)
 
 
-def test_edc_lundeby_chu_2D(monkeypatch):
+def test_edc_lundeby_chu_2D():
     rir = pf.Signal(genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'),
         delimiter=','), 3000)
@@ -182,11 +159,6 @@ def test_edc_lundeby_chu_2D(monkeypatch):
         os.path.join(test_data_path, 'edc_lundeby_chu_2D.csv'),
         delimiter=','))
 
-    # monkeypatch.setattr(
-    #     dsp,
-    #     "find_impulse_response_start",
-    #     mock_shift_samples_2d)
-
     actual = enh.energy_decay_curve_chu_lundeby(
         rir,
         freq='broadband',
@@ -198,7 +170,7 @@ def test_edc_lundeby_chu_2D(monkeypatch):
     npt.assert_allclose(actual.time, expected)
 
 
-def test_edc_chu_1D(monkeypatch):
+def test_edc_chu_1D():
     rir = pf.Signal(genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
         delimiter=','), 3000)
@@ -236,18 +208,13 @@ def test_edc_chu_1D(monkeypatch):
     npt.assert_allclose(actual.time, expected)
 
 
-def test_edc_chu_2D(monkeypatch):
+def test_edc_chu_2D():
     rir = pf.Signal(genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'),
         delimiter=','), 3e3)
     expected = np.atleast_2d(genfromtxt(
         os.path.join(test_data_path, 'edc_chu_2D.csv'),
         delimiter=','))
-
-    # monkeypatch.setattr(
-    #     dsp,
-    #     "find_impulse_response_start",
-    #     mock_shift_samples_2d)
 
     actual = enh.energy_decay_curve_chu(
         rir,
@@ -260,18 +227,13 @@ def test_edc_chu_2D(monkeypatch):
     npt.assert_allclose(actual.time, expected)
 
 
-def test_intersection_time_1D(monkeypatch):
+def test_intersection_time_1D():
     rir = pf.Signal(genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
         delimiter=','), 3000)
     expected = np.atleast_2d(genfromtxt(
         os.path.join(test_data_path, 'intersection_time_1D.csv'),
         delimiter=',')).T
-
-    # monkeypatch.setattr(
-    #     dsp,
-    #     "find_impulse_response_start",
-    #     mock_shift_samples_1d)
 
     actual = enh.intersection_time_lundeby(
         rir,
@@ -283,18 +245,13 @@ def test_intersection_time_1D(monkeypatch):
     npt.assert_allclose(actual, expected)
 
 
-def test_intersection_time_2D(monkeypatch):
+def test_intersection_time_2D():
     rir = pf.Signal(genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'),
         delimiter=','), 3000)
     expected = np.atleast_2d(genfromtxt(
         os.path.join(test_data_path, 'intersection_time_2D.csv'),
         delimiter=','))
-
-    # monkeypatch.setattr(
-    #     dsp,
-    #     "find_impulse_response_start",
-    #     mock_shift_samples_2d)
 
     actual = enh.intersection_time_lundeby(
         rir,
