@@ -224,7 +224,7 @@ def test_analytic_pressure_shoebox_impedance():
         delimiter=',',
         dtype=complex)
 
-    k_ns = list((k_ns_x, k_ns_y, k_ns_z))
+    k_ns = [k_ns_x, k_ns_y, k_ns_z]
 
     mode_indices = np.loadtxt(
         'tests/data/analytic_impedance/mode_indices.csv',
@@ -268,7 +268,7 @@ def test_analytic_pressure_shoebox_impedance_multi_R():
         delimiter=',',
         dtype=complex)
 
-    k_ns = list((k_ns_x, k_ns_y, k_ns_z))
+    k_ns = [k_ns_x, k_ns_y, k_ns_z]
 
     mode_indices = np.loadtxt(
         'tests/data/analytic_impedance/mode_indices.csv',
@@ -316,7 +316,7 @@ def test_analytic_pressure_shoebox_impedance_zeta15():
         delimiter=',',
         dtype=complex)
 
-    k_ns = list((k_ns_x, k_ns_y, k_ns_z))
+    k_ns = [k_ns_x, k_ns_y, k_ns_z]
 
     mode_indices = np.loadtxt(
         'tests/data/analytic_impedance/mode_indices_zeta15.csv',
