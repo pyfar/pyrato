@@ -1017,7 +1017,8 @@ def intersection_time_lundeby(
             if loop_counter > 30:
                 # TO-DO: Paper says 5 iterations are sufficient in all cases!
                 warnings.warn(
-                    "Lundeby algorithm was terminated after 30 iterations.")
+                    "Lundeby algorithm was terminated after 30 iterations.",
+                    stacklevel=2)
                 break
 
         reverberation_time[ch] = -60/slope[1]

@@ -143,7 +143,8 @@ def find_impulse_response_maximum(
             np.any(max_sample > mask_start):
         warnings.warn(
             "The SNR seems lower than the specified threshold value. Check "
-            "if this is a valid impulse response with sufficient SNR.")
+            "if this is a valid impulse response with sufficient SNR.",
+            stacklevel=2)
 
     return max_sample
 
@@ -274,7 +275,7 @@ def center_frequencies_octaves():
     warnings.warn(
         "This function will be deprecated in version 0.5.0 "
         "Use pyfar.dsp.filter.fractional_octave_frequencies instead",
-        DeprecationWarning)
+        DeprecationWarning, stacklevel=2)
 
     nominal, exact = pf.dsp.filter.fractional_octave_frequencies(
         1, (20, 20e3), return_cutoff=False)
@@ -293,7 +294,7 @@ def center_frequencies_third_octaves():
     warnings.warn(
         "This function will be deprecated in version 0.5.0 "
         "Use pyfar.dsp.filter.fractional_octave_frequencies instead",
-        DeprecationWarning)
+        DeprecationWarning, stacklevel=2)
 
     nominal, exact = pf.dsp.filter.fractional_octave_frequencies(
         3, (20, 20e3), return_cutoff=False)
@@ -325,7 +326,7 @@ def filter_fractional_octave_bands(
     warnings.warn(
         "This function will be deprecated in version 0.5.0 "
         "Use pyfar.dsp.filter.fractional_octave_bands instead",
-        DeprecationWarning)
+        DeprecationWarning, stacklevel=2)
 
     return pf.dsp.filter.fractional_octave_bands(
         signal, num_fractions, freq_range=freq_range, order=order)

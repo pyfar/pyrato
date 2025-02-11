@@ -9,7 +9,7 @@ lint.ignore = []
 lint.select = [
     "A",      # Avoid builtin function and type shadowing
     "ARG",    # Remove unused function/method arguments
-    # "B",      # bugbear extension
+    "B",      # bugbear extension
     # "C4",     # Check for common security issues
     # "COM",    # trailing comma rules
     # "D",      # Docstring guidelines
