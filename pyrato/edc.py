@@ -890,9 +890,9 @@ def intersection_time_lundeby(
                 time_window_data_current_channel[start_idx+1:-1]) >
                     (10*np.log10(noise_estimation[ch]) +
                         dB_above_noise))[-1, 0] + start_idx)
-        except IndexError:
+        except IndexError as e:
             raise Exception(
-                'Regression failed: Low SNR. Estimation terminated.')
+                'Regression failed: Low SNR. Estimation terminated.') from e
 
         dyn_range = np.diff(10*np.log10(np.take(
             time_window_data_current_channel, [start_idx, stop_idx])))
@@ -983,9 +983,10 @@ def intersection_time_lundeby(
                         10*np.log10(noise_estimation_current_channel)
                         + dB_above_noise))[0, 0]
                                  + start_idx_loop)
-            except IndexError:
+            except IndexError as e:
                 raise Exception(
-                    'Regression failed: Low SNR. Estimation terminated.')
+                    'Regression failed: Low SNR. Estimation terminated.'
+                    ) from e
 
             # regression_matrix*slope = edc
             regression_matrix = np.vstack((np.ones(
@@ -1016,7 +1017,8 @@ def intersection_time_lundeby(
             if loop_counter > 30:
                 # TO-DO: Paper says 5 iterations are sufficient in all cases!
                 warnings.warn(
-                    "Lundeby algorithm was terminated after 30 iterations.")
+                    "Lundeby algorithm was terminated after 30 iterations.",
+                    stacklevel=2)
                 break
 
         reverberation_time[ch] = -60/slope[1]

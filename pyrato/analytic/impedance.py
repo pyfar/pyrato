@@ -231,7 +231,7 @@ def normal_eigenfrequencies_rectangular_room_impedance(
         each room dimension.
     """
     k_ns = []
-    for dim, L_l, zeta_l in zip(count(), L, zeta):
+    for _, L_l, zeta_l in zip(count(), L, zeta):
         k_ns_l = eigenfrequencies_rectangular_room_1d(
             L_l, ks, k_max, zeta_l)
         k_ns.append(k_ns_l)
