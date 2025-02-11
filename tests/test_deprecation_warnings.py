@@ -9,7 +9,7 @@ from pyfar.classes.warnings import PyfarDeprecationWarning
 def test_warning_fractional_octave_bands():
 
     with pytest.warns(PyfarDeprecationWarning, match='0.5.0'):
-        sig = pf.Signal([1, 2, 3], 44100)
+        sig = pf.Signal([1, 2, 3], 48000)
         pyrato.dsp.filter_fractional_octave_bands(sig, 1)
 
 

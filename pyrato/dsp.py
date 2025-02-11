@@ -325,7 +325,7 @@ def filter_fractional_octave_bands(
         PyfarDeprecationWarning)
 
     return pf.dsp.filter.fractional_octave_bands(
-        signal, num_fractions, freq_range=freq_range, order=order)
+        signal, num_fractions, frequency_range=freq_range, order=order)
 
 
 def estimate_noise_energy(
@@ -481,7 +481,7 @@ def preprocess_rir(
     n_channels = np.prod(data.cshape)
 
     if shift:
-        rir_start_idx = find_impulse_response_start(data)
+        rir_start_idx = pf.dsp.find_impulse_response_start(data)
 
         if channel_independent and not n_channels == 1:
             shift_samples = -rir_start_idx
