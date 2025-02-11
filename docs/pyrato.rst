@@ -1,6 +1,9 @@
 pyrato
 ======
 
+Python Room Acoustics Tools - A collection of functions for commonly used
+operations in room acoustics
+
 .. toctree::
    :maxdepth: 3
    :hidden:
@@ -9,9 +12,6 @@ pyrato
    api_reference
    contributing
    history
-
-
-Python Boilerplate contains all the boilerplate you need to create a Python package.
 
 .. grid:: 1 2 2 2
     :gutter: 4
