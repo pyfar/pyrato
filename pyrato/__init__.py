@@ -3,7 +3,7 @@
 __author__ = \
     """The pyfar developers"""
 __email__ = 'info@pyfar.org'
-__version__ = '0.3.2'
+__version__ = '0.4.0'
 
 
 from .parametric import (
@@ -15,6 +15,8 @@ from . import rap
 from . import dsp
 from . import analytic
 from . import parametric
+
+from . import analytic
 
 __all__ = [
     'edc',

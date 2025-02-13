@@ -9,6 +9,7 @@ import numpy as np
 def reverberation_time_linear_regression(
         energy_decay_curve, T='T20', return_intercept=False):
     """Estimate the reverberation time from a given energy decay curve.
+
     The linear regression is performed using least squares error minimization
     according to the ISO standard 3382 [#]_.
 
@@ -21,8 +22,8 @@ def reverberation_time_linear_regression(
     T : 'T20', 'T30', 'T40', 'T50', 'T60', 'EDT', 'LDT'
         Decay interval to be used for the reverberation time extrapolation. EDT
         corresponds to the early decay time extrapolated from the interval
-        [0, -10] dB, LDT corresponds to the late decay time extrapolated from
-        the interval [-25, -35] dB.
+        ``[0, -10]`` dB, LDT corresponds to the late decay time extrapolated
+        from the interval ``[-25, -35]`` dB.
     normalize : bool, True
         Normalize the EDC to the steady state energy level
 
@@ -33,8 +34,8 @@ def reverberation_time_linear_regression(
 
     References
     ----------
-    .. [#]  ISO 3382, Acoustics - Measurement of the reverberation time of
-            rooms with reference to other acoustical parameters.
+    .. [#] ISO 3382, Acoustics - Measurement of the reverberation time of
+           rooms with reference to other acoustical parameters.
 
     Examples
     --------

@@ -5,7 +5,7 @@
 
 from setuptools import setup, find_packages
 
-with open('README.rst') as readme_file:
+with open('README.md') as readme_file:
     readme = readme_file.read()
 
 with open('HISTORY.rst') as history_file:
@@ -17,18 +17,21 @@ requirements = [
     'scipy>=1.5.0',
     'matplotlib']
 
-setup_requirements = ['pytest-runner', ]
+setup_requirements = [
+    'pytest-runner',
+]
 
 test_requirements = [
     'pytest',
     'bump2version',
     'wheel',
     'watchdog',
-    'flake8',
-    'tox',
+    'ruff',
     'coverage',
-    'Sphinx',
+    'Sphinx<8',
     'twine'
+    'pydata-sphinx-theme',
+    'sphinx_mdinclude',
 ]
 
 setup(
@@ -49,16 +52,23 @@ setup(
     description="Collection of functions commonly used in room acoustics",
     install_requires=requirements,
     license="MIT license",
+    long_description_content_type='text/markdown',
     long_description=readme,
     include_package_data=True,
     keywords='pyrato',
     name='pyrato',
-    packages=find_packages(include=['pyrato']),
+    packages=find_packages(),
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/pyfar/pyrato',
-    version='0.3.2',
+    download_url="https://pypi.org/project/pyrato/",
+    project_urls={
+        "Bug Tracker": "https://github.com/pyfar/pyrato/issues",
+        "Documentation": "https://pyrato.readthedocs.io/",
+        "Source Code": "https://github.com/pyfar/pyrato",
+    },
+    version='0.4.0',
     zip_safe=False,
-    python_requires='>=3.8'
+    python_requires='>=3.8',
 )

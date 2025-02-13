@@ -12,7 +12,9 @@ def energy_decay_curve_analytic(
         receiver=None, method='eyring', c=343.4, frequency=None,
         air_absorption=True):
     """Calculate the energy decay curve analytically by using Eyring's or
-    Sabine's equation [#]_.
+    Sabine's equation.
+
+    Calculation according to [#]_.
 
     Parameters
     ----------
@@ -43,7 +45,7 @@ def energy_decay_curve_analytic(
 
     References
     ----------
-    .. [#]  H. Kuttruff, Room acoustics, 4th Ed. Taylor & Francis, 2009.
+    .. [#] H. Kuttruff, Room acoustics, 4th Ed. Taylor & Francis, 2009.
 
     """
 

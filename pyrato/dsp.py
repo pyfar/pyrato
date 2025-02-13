@@ -12,6 +12,7 @@ def find_impulse_response_start(
         impulse_response,
         threshold=20):
     """Find the start sample of an impulse response.
+
     The start sample is identified as the first sample which is below the
     ``threshold`` level relative to the maximum level of the impulse response.
     For room impulse responses, ISO 3382 [#]_ specifies a threshold of 20 dB.
@@ -24,10 +25,12 @@ def find_impulse_response_start(
         The impulse response
     threshold : float, optional
         The threshold level in dB, by default 20, which complies with ISO 3382.
+
     Returns
     -------
     start_sample : numpy.ndarray, int
         Sample at which the impulse response starts
+
     Notes
     -----
     The function tries to estimate the PSNR in the IR based on the signal
@@ -35,15 +38,19 @@ def find_impulse_response_start(
     if the noise spectrum is not white or the impulse response contains
     non-linear distortions. If the PSNR is lower than the specified threshold,
     the function will issue a warning.
+
     References
     ----------
-    .. [#]  ISO 3382-1:2009-10, Acoustics - Measurement of the reverberation
-            time of rooms with reference to other acoustical parameters. pp. 22
+    .. [#] ISO 3382-1:2009-10, Acoustics - Measurement of the reverberation
+           time of rooms with reference to other acoustical parameters. pp. 22
+
     Examples
     --------
     Create a band-limited impulse shifted by 0.5 samples and estimate the
     starting sample of the impulse and plot.
+
     .. plot::
+
         >>> import pyfar as pf
         >>> import numpy as np
         >>> n_samples = 256
@@ -59,11 +66,14 @@ def find_impulse_response_start(
         ...     20*np.log10(np.max(np.abs(ir.time)))-20,
         ...     color='k', linestyle=':', label='threshold')
         >>> ax.legend()
+
     Create a train of weighted impulses with levels below and above the
     threshold, serving as a very abstract room impulse response. The starting
     sample is identified as the last sample below the threshold relative to the
     maximum of the impulse response.
+
     .. plot::
+
         >>> import pyfar as pf
         >>> import numpy as np
         >>> n_samples = 64
@@ -325,22 +335,23 @@ def estimate_noise_energy(
         data,
         interval=[0.9, 1.0],
         is_energy=False):
-    """ This function estimates the noise energy level of a given room impulse
+    """This function estimates the noise energy level of a given room impulse
     response. The noise is assumed to be Gaussian.
 
     Parameters
     ----------
     data: np.array
-        The room impulse response with dimension [..., n_samples]
-    interval : tuple, float, [0.9, 1.]
+        The room impulse response with shape ``(..., n_samples)``.
+    interval : tuple, float
         Defines the interval of the RIR to be evaluated for the estimation.
-        The interval is relative to the length of the RIR [0 = 0%, 1=100%)]
-    is_energy: Boolean
+        The interval is relative to the length of the RIR ``0 = 0%, 1=100%``.
+        By default ``(0.9, 1.0)``.
+    is_energy: bool
         Defines if the data is already squared.
 
     Returns
     -------
-    noise_energy: float
+    noise_energy : float
         The energy of the background noise.
     """
 
@@ -356,22 +367,23 @@ def estimate_noise_energy(
 def _estimate_noise_energy(
         energy_data,
         interval=[0.9, 1.0]):
-    """ This function estimates the noise energy level of a given room impulse
+    """This function estimates the noise energy level of a given room impulse
     response. The noise is assumed to be Gaussian.
 
     Parameters
     ----------
     data: np.array
-        The room impulse response with dimension [..., n_samples]
-    interval : tuple, float, [0.9, 1.]
+        The room impulse response with shape ``(..., n_samples)``.
+    interval : tuple, float
         Defines the interval of the RIR to be evaluated for the estimation.
-        The interval is relative to the length of the RIR [0 = 0%, 1=100%)]
-    is_energy: Boolean
+        The interval is relative to the length of the RIR ``0 = 0%, 1=100%``.
+        By default ``(0.9, 1.0)``.
+    is_energy: bool
         Defines if the data is already squared.
 
     Returns
     -------
-    noise_energy: float
+    noise_energy : float
         The energy of the background noise.
     """
 
@@ -395,7 +407,7 @@ def _smooth_rir(
     Parameters
     ----------
     data : ndarray, double
-        The room impulse response with dimension [..., n_samples]
+        The room impulse response with dimension ``(..., n_samples)``.
     sampling_rate: integer
         Defines the sampling rate of the room impulse response.
     smooth_block_length : double
@@ -455,7 +467,7 @@ def preprocess_rir(
     Parameters
     ----------
     data : ndarray, double
-        The room impulse response with dimension [..., n_samples]
+        The room impulse response with dimension (..., n_samples).
     is_energy : boolean
         Defines, if the data is already squared.
     shift : boolean
