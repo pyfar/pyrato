@@ -266,6 +266,7 @@ def time_shift(signal, shift, circular_shift=True, unit='samples'):
 def center_frequencies_octaves():
     """Return the octave center frequencies according to the IEC 61260:1:2014
     standard.
+
     Returns
     -------
     frequencies : ndarray, float
@@ -285,6 +286,7 @@ def center_frequencies_octaves():
 def center_frequencies_third_octaves():
     """Return the third octave center frequencies according
     to the ICE 61260:1:2014 standard.
+
     Returns
     -------
     frequencies : ndarray, float

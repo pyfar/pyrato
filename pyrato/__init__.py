@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-__author__ = \
-    """The pyfar developers"""
+"""Top-level package for pyrato."""
+
+__author__ = """The pyfar developers"""
 __email__ = 'info@pyfar.org'
 __version__ = '0.4.0'
 

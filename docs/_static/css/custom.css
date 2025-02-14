@@ -1,0 +1,22 @@
+
+html[data-theme="light"] {
+    --pst-color-primary: #126CB0; /* pyfar blue as primary color */
+}
+
+html[data-theme="dark"] {
+    --pst-color-primary: #126CB0; /* pyfar blue as primary color */
+}
+html {
+    --pst-icon-external-link: "";
+}
+
+/* css style for icons on package index pages */
+.icon-style {
+    color: #126CB0;
+    font-size: 5.2rem;
+    margin: 1rem;
+}
+
+img {
+    background-color: transparent !important;
+}
