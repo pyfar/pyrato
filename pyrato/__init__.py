@@ -11,16 +11,14 @@ from .parametric import (
 )
 
 from . import edc
-from . import rap
+from . import parameters
 from . import dsp
 from . import analytic
 from . import parametric
 
-from . import analytic
-
 __all__ = [
     'edc',
-    'rap',
+    'parameters',
     'dsp',
     'analytic',
     'parametric',
