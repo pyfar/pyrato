@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-    The test_edc_noise_handling module provides the functionality to test
-    the functions of the module edc_noise_handling.
+The test_edc_noise_handling module provides the functionality to test
+the functions of the module edc_noise_handling.
 """
 
 import numpy as np

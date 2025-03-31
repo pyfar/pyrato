@@ -79,6 +79,8 @@ find = {}  # Scan the project directory with the default parameters
 exclude = [
     ".git",
     "docs",
+    "examples",
+    "tests/test_data/*",
 ]
 line-length = 79
 lint.ignore = [
@@ -98,7 +100,7 @@ lint.select = [
     "B",      # bugbear extension
     "C4",     # Check for common security issues
     "COM",    # trailing comma rules
-    # "D",      # Docstring guidelines
+    "D",      # Docstring guidelines
     # "D417",   # Missing argument descriptions in the docstring
     # "E",      # PEP8 errors
     # "ERA",    # No commented out code

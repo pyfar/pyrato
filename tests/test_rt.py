@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-""" Tests for reverberation time related things. """
+"""Tests for reverberation time related things."""
 from pytest import raises
 
 import numpy as np

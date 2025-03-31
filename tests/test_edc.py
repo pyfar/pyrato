@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-""" Tests for edc related things. """
+"""Tests for edc related things."""
 
 import numpy as np
 from numpy import array

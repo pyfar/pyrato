@@ -405,7 +405,7 @@ def _smooth_rir(
         data,
         sampling_rate,
         smooth_block_length=0.075):
-    """ Smoothens the RIR by averaging the data in an specified interval.
+    """Smoothens the RIR by averaging the data in an specified interval.
 
     Parameters
     ----------
@@ -458,7 +458,7 @@ def preprocess_rir(
         is_energy=False,
         shift=False,
         channel_independent=False):
-    """ Preprocess the room impulse response for further processing:
+    """Preprocess the room impulse response for further processing:
         - Square data
         - Shift the RIR to the first sample of the array, compensating for the
           delay of the time of arrival of the direct sound. The time shift is

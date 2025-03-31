@@ -1,3 +1,4 @@
+"""Analytic functions for impedance calculations."""
 from itertools import count
 
 import numpy as np
@@ -121,7 +122,7 @@ def gradient_trancendental_equation_eigenfrequencies_impedance(
 
 
 def initial_solution_transcendental_equation(k, L, zeta):
-    """ Initial solution to the transcendental equation for the complex
+    """Initial solution to the transcendental equation for the complex
     eigenfrequencies of the rectangular room with uniform impedance at
     the boundaries. This will approximate the zeroth order mode.
 
@@ -435,7 +436,7 @@ def rectangular_room_impedance(
         c=343.9,
         n_samples=2**12,
         remove_cavity_mode=False):
-    r""" Calculate the room impulse response and room transfer function for a
+    r"""Calculate the room impulse response and room transfer function for a
     rectangular room with arbitrary boundary impedances.
 
     Parameters
