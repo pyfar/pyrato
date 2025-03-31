@@ -3,7 +3,7 @@
 * pyrato version:
 * Python version:
 * Operating System:
-* Did you install pyfar via pip:
+* Did you install pyrato via pip:
 
 ## Description
 
