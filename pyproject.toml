@@ -103,7 +103,7 @@ lint.select = [
     "D",      # Docstring guidelines
     # "D417",   # Missing argument descriptions in the docstring
     "E",      # PEP8 errors
-    # "ERA",    # No commented out code
+    "ERA",    # No commented out code
     # "F",      # Pyflakes
     "FIX",    # Code should not contain FIXME, TODO, etc
     "I002",   # missing required import
