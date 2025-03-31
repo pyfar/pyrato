@@ -56,10 +56,10 @@ def test_time_shift_return_vals():
     ir = pf.signals.impulse(n_samples, delay=20)
 
     ir_shifted = dsp.time_shift(ir, 1, circular_shift=True)
-    assert type(ir_shifted) == pf.Signal
+    assert type(ir_shifted) is pf.Signal
 
     ir_shifted = dsp.time_shift(ir, 1, circular_shift=False)
-    assert type(ir_shifted) == pf.TimeData
+    assert type(ir_shifted) is pf.TimeData
 
 
 def test_time_shift_non_circular_left_right():
