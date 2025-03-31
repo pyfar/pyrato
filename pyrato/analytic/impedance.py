@@ -1,3 +1,4 @@
+"""Analytic functions for impedance calculations."""
 from itertools import count
 
 import numpy as np
@@ -121,7 +122,7 @@ def gradient_trancendental_equation_eigenfrequencies_impedance(
 
 
 def initial_solution_transcendental_equation(k, L, zeta):
-    """ Initial solution to the transcendental equation for the complex
+    """Initial solution to the transcendental equation for the complex
     eigenfrequencies of the rectangular room with uniform impedance at
     the boundaries. This will approximate the zeroth order mode.
 
@@ -231,7 +232,7 @@ def normal_eigenfrequencies_rectangular_room_impedance(
         each room dimension.
     """
     k_ns = []
-    for dim, L_l, zeta_l in zip(count(), L, zeta):
+    for _, L_l, zeta_l in zip(count(), L, zeta):
         k_ns_l = eigenfrequencies_rectangular_room_1d(
             L_l, ks, k_max, zeta_l)
         k_ns.append(k_ns_l)
@@ -284,7 +285,7 @@ def eigenfrequencies_rectangular_room_impedance(
     mask = ks >= 0.02
     ks_search = ks[mask]
     k_ns = normal_eigenfrequencies_rectangular_room_impedance(
-        L, ks_search, k_max, zeta
+        L, ks_search, k_max, zeta,
     )
     for idx in range(0, len(L)):
         k_ns[idx] = np.hstack((
@@ -322,7 +323,7 @@ def eigenfrequencies_rectangular_room_impedance(
 def mode_function_impedance(position, eigenvalue, phase):
     r"""The modal function for a room with boundary impedances.
 
-    See [#]_ .
+    See [#]_.
 
     .. math::
 
@@ -396,7 +397,7 @@ def pressure_modal_superposition(
     k_ns_xyz = np.array([
         k_ns[0][mode_indices[:, 0]],
         k_ns[1][mode_indices[:, 1]],
-        k_ns[2][mode_indices[:, 2]]
+        k_ns[2][mode_indices[:, 2]],
         ])
 
     phi = np.arctanh(ks/(zeta_0 * k_ns_xyz.T).T)
@@ -435,7 +436,7 @@ def rectangular_room_impedance(
         c=343.9,
         n_samples=2**12,
         remove_cavity_mode=False):
-    r""" Calculate the room impulse response and room transfer function for a
+    r"""Calculate the room impulse response and room transfer function for a
     rectangular room with arbitrary boundary impedances.
 
     Parameters
@@ -493,7 +494,7 @@ def rectangular_room_impedance(
     k_ns_xyz = np.array([
         k_ns[0][mode_indices[:, 0]],
         k_ns[1][mode_indices[:, 1]],
-        k_ns[2][mode_indices[:, 2]]
+        k_ns[2][mode_indices[:, 2]],
         ])
 
     return rir, spectrum, k_ns_xyz

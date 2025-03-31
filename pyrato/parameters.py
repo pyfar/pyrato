@@ -39,7 +39,6 @@ def reverberation_time_linear_regression(
 
     Examples
     --------
-
     Estimate the reverberation time from an energy decay curve.
 
     >>> import numpy as np
@@ -62,12 +61,11 @@ def reverberation_time_linear_regression(
     >>> rir = rir + awgn
     ...
     >>> edc = ra.energy_decay_curve_chu_lundeby(rir)
-    >>> t_20 = ra.reverberation_time_linear_regression(edc, 'T20')
+    >>> t_20 = ra.parameters.reverberation_time_linear_regression(edc, 'T20')
     >>> t_20
     ...     array([0.99526253])
 
     """
-    intervals = [20, 30, 40, 50, 60]
 
     if T == 'EDT':
         upper = -0.1
@@ -76,12 +74,9 @@ def reverberation_time_linear_regression(
         upper = -25.
         lower = -35.
     else:
-        try:
-            (int(re.findall(r'\d+', T)[0]) in intervals)
-        except IndexError:
+        if T not in ['T20', 'T30', 'T40', 'T50', 'T60']:
             raise ValueError(
-                "{} is not a valid interval for the regression.".format(T))
-
+                f"{T} is not a valid interval for the regression.")
         upper = -5
         lower = -np.double(re.findall(r'\d+', T)) + upper
 

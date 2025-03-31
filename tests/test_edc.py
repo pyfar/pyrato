@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-""" Tests for edc related things. """
+"""Tests for edc related things."""
 
 import numpy as np
 from numpy import array
@@ -16,7 +16,7 @@ def test_edc_eyring():
     surfaces = [2, 5*2]
     volume = 2*2*2
     times = np.linspace(0, 0.25, 50)
-    edc = ra.energy_decay_curve_analytic(
+    edc = ra.parametric.energy_decay_curve_analytic(
         surfaces, alphas, volume, times, method='eyring', air_absorption=False)
 
     truth = array([
@@ -32,7 +32,7 @@ def test_edc_eyring():
             1.86488165e-03, 1.56615966e-03, 1.31528780e-03, 1.10460130e-03,
             9.27663155e-04, 7.79067460e-04, 6.54274242e-04, 5.49470753e-04,
             4.61454981e-04, 3.87537824e-04, 3.25460924e-04, 2.73327678e-04,
-            2.29545281e-04, 1.92776072e-04
+            2.29545281e-04, 1.92776072e-04,
             ])
 
     npt.assert_almost_equal(edc, truth)
@@ -43,7 +43,7 @@ def test_edc_sabine():
     surfaces = [2, 5*2]
     volume = 2*2*2
     times = np.linspace(0, 0.25, 50)
-    edc = ra.energy_decay_curve_analytic(
+    edc = ra.parametric.energy_decay_curve_analytic(
         surfaces, alphas, volume, times, method='sabine', air_absorption=False)
 
     truth = array([
@@ -59,6 +59,6 @@ def test_edc_sabine():
         4.01014222e-03, 3.44017773e-03, 2.95122272e-03, 2.53176324e-03,
         2.17192185e-03, 1.86322499e-03, 1.59840344e-03, 1.37122117e-03,
         1.17632849e-03, 1.00913605e-03, 8.65706791e-04, 7.42663242e-04,
-        6.37107964e-04, 5.46555336e-04
+        6.37107964e-04, 5.46555336e-04,
         ])
     npt.assert_almost_equal(edc, truth)

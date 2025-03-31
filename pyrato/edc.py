@@ -179,7 +179,7 @@ def energy_decay_curve_truncation(
         normalize=True,
         threshold=15,
         plot=False):
-    """ This function truncates a given room impulse response by the
+    """This function truncates a given room impulse response by the
     intersection time after Lundeby and calculates the energy decay curve.
 
     Parameters
@@ -224,7 +224,6 @@ def energy_decay_curve_truncation(
 
     Examples
     --------
-
     Plot the RIR and the EDC calculated truncating the integration at the
     intersection time.
 
@@ -364,7 +363,6 @@ def energy_decay_curve_lundeby(
 
     Examples
     --------
-
     Plot the RIR and the EDC calculated after Lundeby.
 
     .. plot::
@@ -651,7 +649,6 @@ def energy_decay_curve_chu_lundeby(
 
     Examples
     --------
-
     Calculate and plot the EDC using a combination of Chu's and Lundeby's
     methods.
 
@@ -805,7 +802,6 @@ def intersection_time_lundeby(
 
     Examples
     --------
-
     Estimate the intersection time :math:`T_i` and plot the RIR and the
     estimated noise power.
 
@@ -890,9 +886,8 @@ def intersection_time_lundeby(
                     (10*np.log10(noise_estimation[ch]) +
                         dB_above_noise))[-1, 0] + start_idx)
         except IndexError as e:
-            raise ValueError(
-                'Regression failed: Low SNR. Estimation terminated.'
-            ) from e
+            raise Exception(
+                'Regression failed: Low SNR. Estimation terminated.') from e
 
         dyn_range = np.diff(10*np.log10(np.take(
             time_window_data_current_channel, [start_idx, stop_idx])))
@@ -984,7 +979,7 @@ def intersection_time_lundeby(
                         + dB_above_noise))[0, 0] + start_idx_loop
             except IndexError as e:
                 raise ValueError(
-                    'Regression failed: Low SNR. Estimation terminated.'
+                    'Regression failed: Low SNR. Estimation terminated.',
                 ) from e
 
             # regression_matrix*slope = edc
@@ -1017,7 +1012,8 @@ def intersection_time_lundeby(
             if loop_counter > 30:
                 # TO-DO: Paper says 5 iterations are sufficient in all cases!
                 warnings.warn(
-                    "Lundeby algorithm was terminated after 30 iterations.")
+                    "Lundeby algorithm was terminated after 30 iterations.",
+                    stacklevel=2)
                 break
 
         reverberation_time[ch] = -60/slope[1]

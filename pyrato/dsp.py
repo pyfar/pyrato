@@ -143,7 +143,8 @@ def find_impulse_response_maximum(
             np.any(max_sample > mask_start):
         warnings.warn(
             "The SNR seems lower than the specified threshold value. Check "
-            "if this is a valid impulse response with sufficient SNR.")
+            "if this is a valid impulse response with sufficient SNR.",
+            stacklevel=2)
 
     return max_sample
 
@@ -275,7 +276,7 @@ def center_frequencies_octaves():
     warnings.warn(
         "This function will be deprecated in version 0.5.0 "
         "Use pyfar.dsp.filter.fractional_octave_frequencies instead",
-        PyfarDeprecationWarning)
+        PyfarDeprecationWarning, stacklevel=2)
 
     nominal, exact = pf.dsp.filter.fractional_octave_frequencies(
         1, (20, 20e3), return_cutoff=False)
@@ -295,7 +296,7 @@ def center_frequencies_third_octaves():
     warnings.warn(
         "This function will be deprecated in version 0.5.0 "
         "Use pyfar.dsp.filter.fractional_octave_frequencies instead",
-        PyfarDeprecationWarning)
+        PyfarDeprecationWarning, stacklevel=2)
 
     nominal, exact = pf.dsp.filter.fractional_octave_frequencies(
         3, (20, 20e3), return_cutoff=False)
@@ -327,7 +328,7 @@ def filter_fractional_octave_bands(
     warnings.warn(
         "This function will be deprecated in version 0.5.0 "
         "Use pyfar.dsp.filter.fractional_octave_bands instead",
-        PyfarDeprecationWarning)
+        PyfarDeprecationWarning, stacklevel=2)
 
     return pf.dsp.filter.fractional_octave_bands(
         signal, num_fractions, frequency_range=freq_range, order=order)
@@ -404,7 +405,7 @@ def _smooth_rir(
         data,
         sampling_rate,
         smooth_block_length=0.075):
-    """ Smoothens the RIR by averaging the data in an specified interval.
+    """Smoothens the RIR by averaging the data in an specified interval.
 
     Parameters
     ----------
@@ -457,7 +458,7 @@ def preprocess_rir(
         is_energy=False,
         shift=False,
         channel_independent=False):
-    """ Preprocess the room impulse response for further processing:
+    """Preprocess the room impulse response for further processing:
         - Square data
         - Shift the RIR to the first sample of the array, compensating for the
           delay of the time of arrival of the direct sound. The time shift is

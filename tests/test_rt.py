@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-""" Tests for reverberation time related things. """
-from pytest import raises
-
+"""Tests for reverberation time related things."""
 import numpy as np
 import numpy.testing as npt
 
@@ -19,7 +17,7 @@ def test_rt_from_edc(tx):
     m = -60
     edc = times * m
     edc_exp = pf.TimeData(10**(edc/10), times)
-    RT_est = ra.reverberation_time_linear_regression(
+    RT_est = ra.parameters.reverberation_time_linear_regression(
         edc_exp, T=tx)
     npt.assert_allclose(RT_est, 1.)
 
@@ -32,7 +30,7 @@ def test_rt_from_edc_mulitchannel(tx):
     m = -60
     edc = np.atleast_2d(m/Ts).T @ np.atleast_2d(times)
     edc_exp = pf.TimeData(10**(edc/10), times)
-    RT_est = ra.reverberation_time_linear_regression(
+    RT_est = ra.parameters.reverberation_time_linear_regression(
         edc_exp, T=tx)
     npt.assert_allclose(RT_est, Ts)
 
@@ -49,7 +47,7 @@ def test_rt_from_edc_mulitchannel_amplitude(tx):
         edc[idx] = As[idx] + m*times/Ts[idx]
 
     edc_exp = pf.TimeData(10**(edc/10), times)
-    RT_est, A_est = ra.reverberation_time_linear_regression(
+    RT_est, A_est = ra.parameters.reverberation_time_linear_regression(
         edc_exp, T=tx, return_intercept=True)
     npt.assert_allclose(RT_est, Ts)
     npt.assert_allclose(A_est, 10**(As/10))
@@ -62,5 +60,5 @@ def test_rt_from_edc_error():
     edc_exp = pf.TimeData(10**(edc/10), times)
     T = 'Bla'
 
-    with raises(ValueError, match='is not a valid interval.'):
-        ra.reverberation_time_linear_regression(edc_exp, T=T)
+    with pytest.raises(ValueError, match='is not a valid interval.'):
+        ra.parameters.reverberation_time_linear_regression(edc_exp, T=T)

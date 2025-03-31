@@ -45,7 +45,7 @@ tests = [
     "pytest",
     "pytest-cov",
     "watchdog",
-    "ruff==0.4.1",
+    "ruff==0.11.2",
     "coverage",
 ]
 docs = [
@@ -79,6 +79,8 @@ find = {}  # Scan the project directory with the default parameters
 exclude = [
     ".git",
     "docs",
+    "examples",
+    "tests/test_data/*",
 ]
 line-length = 79
 lint.ignore = [
@@ -94,21 +96,21 @@ lint.ignore = [
 ]
 lint.select = [
     "A",      # Avoid builtin function and type shadowing
-    # "ARG",    # Remove unused function/method arguments
-    # "B",      # bugbear extension
-    # "C4",     # Check for common security issues
-    # "COM",    # trailing comma rules
-    # "D",      # Docstring guidelines
+    "ARG",    # Remove unused function/method arguments
+    "B",      # bugbear extension
+    "C4",     # Check for common security issues
+    "COM",    # trailing comma rules
+    "D",      # Docstring guidelines
     # "D417",   # Missing argument descriptions in the docstring
-    # "E",      # PEP8 errors
-    # "ERA",    # No commented out code
-    # "F",      # Pyflakes
+    "E",      # PEP8 errors
+    "ERA",    # No commented out code
+    "F",      # Pyflakes
     "FIX",    # Code should not contain FIXME, TODO, etc
     "I002",   # missing required import
-    # "NPY",    # Check all numpy related deprecations
-    # "PT",     # Pytest style
+    "NPY",    # Check all numpy related deprecations
+    "PT",     # Pytest style
     "TID252", # Use absolute over relative imports
-    # "W",      # PEP8 warnings
+    "W",      # PEP8 warnings
 ]
 
 # Ignore missing docstrings in tests

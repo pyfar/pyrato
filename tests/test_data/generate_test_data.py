@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-    The generate_test_data module provides the functionallity to generate
-    adequate test data for automatic testing.
+The generate_test_data module provides the functionality to generate
+adequate test data for automatic testing.
 """
 
 __author__ = "Johannes Imort"
