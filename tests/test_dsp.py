@@ -145,8 +145,7 @@ def test_max_ir():
 
     snr = 60
 
-    noise = pf.Signal(
-        np.random.randn(n_samples) * 10**(-snr/20), 44100)
+    noise = pf.signals.noise(n_samples, rms=10**(-snr/20), seed=1)
 
     start_sample = 24
     ir[start_sample] = 1

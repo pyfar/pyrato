@@ -74,7 +74,7 @@ def reverberation_time_linear_regression(
     else:
         if T not in ['T15', 'T20', 'T30', 'T40', 'T50', 'T60']:
             raise ValueError(
-                f"{T} is not a valid interval for the regression.") 
+                f"{T} is not a valid interval for the regression.")
         upper = -5
         lower = -np.double(re.findall(r'\d+', T)) + upper
 
