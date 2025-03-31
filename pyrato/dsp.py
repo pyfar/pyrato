@@ -6,7 +6,7 @@ import warnings
 
 import pyfar as pf
 import numpy as np
-
+from pyfar.classes.warnings import PyfarDeprecationWarning
 
 def find_impulse_response_start(
         impulse_response,
@@ -97,7 +97,7 @@ def find_impulse_response_start(
     warnings.warn(
         "This function will be deprecated in version 0.5.0 "
         "Use pyfar.dsp.find_impulse_response_start instead",
-        DeprecationWarning)
+        PyfarDeprecationWarning, stacklevel=2)
 
     return pf.dsp.find_impulse_response_start(impulse_response, threshold)
 
@@ -275,7 +275,7 @@ def center_frequencies_octaves():
     warnings.warn(
         "This function will be deprecated in version 0.5.0 "
         "Use pyfar.dsp.filter.fractional_octave_frequencies instead",
-        DeprecationWarning)
+        PyfarDeprecationWarning)
 
     nominal, exact = pf.dsp.filter.fractional_octave_frequencies(
         1, (20, 20e3), return_cutoff=False)
@@ -295,7 +295,7 @@ def center_frequencies_third_octaves():
     warnings.warn(
         "This function will be deprecated in version 0.5.0 "
         "Use pyfar.dsp.filter.fractional_octave_frequencies instead",
-        DeprecationWarning)
+        PyfarDeprecationWarning)
 
     nominal, exact = pf.dsp.filter.fractional_octave_frequencies(
         3, (20, 20e3), return_cutoff=False)
@@ -327,10 +327,10 @@ def filter_fractional_octave_bands(
     warnings.warn(
         "This function will be deprecated in version 0.5.0 "
         "Use pyfar.dsp.filter.fractional_octave_bands instead",
-        DeprecationWarning)
+        PyfarDeprecationWarning)
 
     return pf.dsp.filter.fractional_octave_bands(
-        signal, num_fractions, freq_range=freq_range, order=order)
+        signal, num_fractions, frequency_range=freq_range, order=order)
 
 
 def estimate_noise_energy(
@@ -487,7 +487,7 @@ def preprocess_rir(
     n_channels = np.prod(data.cshape)
 
     if shift:
-        rir_start_idx = find_impulse_response_start(data)
+        rir_start_idx = pf.dsp.find_impulse_response_start(data)
 
         if channel_independent and not n_channels == 1:
             shift_samples = -rir_start_idx

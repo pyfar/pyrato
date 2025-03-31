@@ -27,7 +27,7 @@ classifiers = [
 
 ]
 dependencies = [
-    'pyfar>=0.5.0',
+    'pyfar>=0.6.0',
     'numpy>=1.14.0',
     'scipy>=1.5.0',
     'matplotlib',
