@@ -16,7 +16,7 @@ def test_edc_eyring():
     surfaces = [2, 5*2]
     volume = 2*2*2
     times = np.linspace(0, 0.25, 50)
-    edc = ra.energy_decay_curve_analytic(
+    edc = ra.parametric.energy_decay_curve_analytic(
         surfaces, alphas, volume, times, method='eyring', air_absorption=False)
 
     truth = array([
@@ -43,7 +43,7 @@ def test_edc_sabine():
     surfaces = [2, 5*2]
     volume = 2*2*2
     times = np.linspace(0, 0.25, 50)
-    edc = ra.energy_decay_curve_analytic(
+    edc = ra.parametric.energy_decay_curve_analytic(
         surfaces, alphas, volume, times, method='sabine', air_absorption=False)
 
     truth = array([
