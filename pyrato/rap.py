@@ -37,7 +37,6 @@ def reverberation_time_linear_regression(
 
     Examples
     --------
-
     Estimate the reverberation time from an energy decay curve.
 
     >>> import numpy as np

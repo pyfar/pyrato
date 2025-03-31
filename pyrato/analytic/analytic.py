@@ -1,3 +1,4 @@
+"""Analytic functions for room acoustics."""
 # -*- coding: utf-8 -*-
 import pyfar as pf
 import numpy as np
@@ -35,7 +36,6 @@ def eigenfrequencies_rectangular_room_rigid(
 
     Examples
     --------
-
     Calculate the eigenfrequencies under 75 Hz of a small room and plot.
 
     .. plot::

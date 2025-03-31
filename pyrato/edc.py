@@ -179,7 +179,7 @@ def energy_decay_curve_truncation(
         normalize=True,
         threshold=15,
         plot=False):
-    """ This function truncates a given room impulse response by the
+    """This function truncates a given room impulse response by the
     intersection time after Lundeby and calculates the energy decay curve.
 
     Parameters
@@ -224,7 +224,6 @@ def energy_decay_curve_truncation(
 
     Examples
     --------
-
     Plot the RIR and the EDC calculated truncating the integration at the
     intersection time.
 
@@ -364,7 +363,6 @@ def energy_decay_curve_lundeby(
 
     Examples
     --------
-
     Plot the RIR and the EDC calculated after Lundeby.
 
     .. plot::
@@ -651,7 +649,6 @@ def energy_decay_curve_chu_lundeby(
 
     Examples
     --------
-
     Calculate and plot the EDC using a combination of Chu's and Lundeby's
     methods.
 
@@ -805,7 +802,6 @@ def intersection_time_lundeby(
 
     Examples
     --------
-
     Estimate the intersection time :math:`T_i` and plot the RIR and the
     estimated noise power.
 
