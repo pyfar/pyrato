@@ -1,79 +1,10 @@
 # -*- coding: utf-8 -*-
 
+"""Parametric room acoustics calculations using simple geometric considerations
+such as Sabine's theory of sound in rooms.
+"""
+
 import numpy as np
-from pyrato.rap import reverberation_time_linear_regression
-import warnings
-from pyfar.classes.warnings import PyfarDeprecationWarning
-
-
-def reverberation_time_energy_decay_curve(
-        energy_decay_curve,
-        T='T20'):
-    """Estimate the reverberation time from a given energy decay curve.
-
-    The linear regression is performed using least squares error minimization
-    according to the ISO standard 3382 [#]_.
-
-    Parameters
-    ----------
-    energy_decay_curve : ndarray, double
-        Energy decay curve. The time needs to be the arrays last dimension.
-    times : ndarray, double
-        Time vector corresponding to each sample of the EDC.
-    T : 'T20', 'T30', 'T40', 'T50', 'T60', 'EDT', 'LDT'
-        Decay interval to be used for the reverberation time extrapolation. EDT
-        corresponds to the early decay time extrapolated from the interval
-        (0, -10) dB, LDT corresponds to the late decay time extrapolated from
-        the interval (-25, -35) dB.
-    normalize : bool, True
-        Normalize the EDC to the steady state energy level
-
-    Returns
-    -------
-    reverberation_time : double
-        The reverberation time
-
-    References
-    ----------
-    .. [#]  ISO 3382, Acoustics - Measurement of the reverberation time of
-            rooms with reference to other acoustical parameters.
-
-    Examples
-    --------
-
-    Estimate the reverberation time from an energy decay curve.
-
-    >>> import numpy as np
-    >>> import pyfar as pf
-    >>> import pyrato as ra
-    >>> from pyrato.analytic import rectangular_room_rigid_walls
-    ...
-    >>> L = np.array([8, 5, 3])/10
-    >>> source_pos = np.array([5, 3, 1.2])/10
-    >>> receiver_pos = np.array([1, 1, 1.2])/10
-    >>> rir, _ = rectangular_room_rigid_walls(
-    ...     L, source_pos, receiver_pos,
-    ...     reverberation_time=1, max_freq=1.5e3, n_samples=2**12,
-    ...     speed_of_sound=343.9, samplingrate=3e3)
-    >>> rir = rir/rir.time.max()
-    ...
-    >>> awgn = pf.signals.noise(
-    ...     rir.n_samples, rms=10**(-50/20),
-    ...     sampling_rate=rir.sampling_rate)
-    >>> rir = rir + awgn
-    ...
-    >>> edc = ra.energy_decay_curve_chu_lundeby(rir)
-    >>> t_20 = ra.reverberation_time_energy_decay_curve(edc, 'T20')
-    >>> t_20
-    ...     array([0.99526253])
-
-    """
-    warnings.warn(
-        "This function will be deprecated in version 0.5.0 "
-        "Use pyrato.reverberation_time_linear_regression instead",
-        PyfarDeprecationWarning, stacklevel=2)
-
-    return reverberation_time_linear_regression(energy_decay_curve, T)
 
 
 def energy_decay_curve_analytic(
@@ -82,8 +13,8 @@ def energy_decay_curve_analytic(
         air_absorption=True):
     """Calculate the energy decay curve analytically by using Eyring's or
     Sabine's equation.
-    
-    Based on [#]_.
+
+    Calculation according to [#]_.
 
     Parameters
     ----------
@@ -114,8 +45,7 @@ def energy_decay_curve_analytic(
 
     References
     ----------
-    .. [#]  H. Kuttruff, Room acoustics, 4th Ed. Taylor & Francis,
-            2009.
+    .. [#] H. Kuttruff, Room acoustics, 4th Ed. Taylor & Francis, 2009.
 
     """
 
@@ -176,6 +106,13 @@ def air_attenuation_coefficient(
         The resulting attenuation coefficient.
 
     """
+    from pyfar.classes.warnings import PyfarDeprecationWarning
+    import warnings
+
+    warnings.warn(
+        'Will be replaced by respective function in pyfar before v1.0.0',
+        PyfarDeprecationWarning)
+
     # room temperature in Kelvin
     t_K = temperature + 273.16
     p_ref_kPa = 101.325

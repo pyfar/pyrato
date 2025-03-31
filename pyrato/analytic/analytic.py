@@ -162,6 +162,7 @@ def rectangular_room_rigid_walls(
     time for a given source and receiver combination.
 
     .. plot::
+
         >>> import numpy as np
         >>> import pyfar as pf
         >>> from pyrato.analytic import rectangular_room_rigid_walls
