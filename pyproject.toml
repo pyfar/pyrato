@@ -1,8 +1,85 @@
+[project]
+name = "pyrato"
+version = "0.4.0"
+description = "Collection of functions commonly used in room acoustics."
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.8"
+authors = [
+    { name = "The pyfar developers", email = "info@pyfar.org" },
+]
+keywords = [
+    "acoustics",
+    "pyfar",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    
+]
+dependencies = [
+    'pyfar>=0.5.0',
+    'numpy>=1.14.0',
+    'scipy>=1.5.0',
+    'matplotlib',
+]
+
+[project.optional-dependencies]
+deploy = [
+    "twine",
+    "wheel",
+    "build",
+    "setuptools",
+    "bump-my-version",
+    ]
+tests = [
+    "pytest",
+    "pytest-cov",
+    "watchdog",
+    "ruff==0.8.3",
+    "coverage",
+    
+]
+docs = [
+    "sphinx",
+    "autodocsumm>=0.2.14",
+    "pydata-sphinx-theme",
+    "sphinx_mdinclude",
+    "sphinx-design",
+    "sphinx-favicon",
+    "sphinx-reredirects",
+]
+dev = ["pyrato[deploy,tests,docs]"]
+
+[project.urls]
+Tracker = "https://github.com/pyfar/pyrato/issues"
+Documentation = "https://pyrato.readthedocs.io/"
+Download = "https://pypi.org/project/pyrato/"
+Homepage = "https://pyfar.org/"
+Source = "https://github.com/pyfar/pyrato"
+Changelog = "https://github.com/pyfar/pyrato/blob/main/HISTORY.rst"
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages]
+find = {}  # Scan the project directory with the default parameters
+
+
 [tool.ruff]
 exclude = [
     ".git",
     "docs",
-    "setup.py",
 ]
 line-length = 79
 lint.ignore = []

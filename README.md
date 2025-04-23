@@ -1,10 +1,11 @@
-
 <h1 align="center">
 <img src="https://github.com/pyfar/gallery/raw/main/docs/resources/logos/pyfar_logos_fixed_size_pyrato.png" width="300">
 </h1><br>
 
+
+
 [![PyPI version](https://badge.fury.io/py/pyrato.svg)](https://badge.fury.io/py/pyrato)
-[![Documentation Status](https://readthedocs.org/projects/pyrato/badge/?version=stable)](https://pyrato.readthedocs.io/en/stable/?badge=stable)
+[![Documentation Status](https://readthedocs.org/projects/pyrato/badge/?version=latest)](https://pyrato.readthedocs.io/en/latest/?badge=latest)
 [![CircleCI](https://circleci.com/gh/pyfar/pyrato.svg?style=shield)](https://circleci.com/gh/pyfar/pyrato)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/pyfar/gallery/main?labpath=docs/gallery/interactive/pyfar_introduction.ipynb)
 
@@ -26,6 +27,7 @@ Use pip to install pyrato
 
 If the installation fails, please check out the [help section](https://pyfar-gallery.readthedocs.io/en/latest/help).
 
-## Contributing
+Contributing
+============
 
 Check out the [contributing guidelines](https://pyfar.readthedocs.io/en/stable/contributing.html) if you want to become part of pyfar.
