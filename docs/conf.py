@@ -10,6 +10,7 @@ import os
 import sys
 import urllib3
 import shutil
+import numpy as np
 sys.path.insert(0, os.path.abspath('..'))
 
 import pyrato  # noqa
@@ -54,9 +55,9 @@ source_suffix = {
 master_doc = 'index'
 
 # General information about the project.
-project = u'pyrato'
-copyright = u"2021-2023, Marco Berzborn; 2023, The pyfar developers"
-author = u"The pyfar developers"
+project = 'pyrato'
+copyright = "2025, The pyfar developers"
+author = "The pyfar developers"
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
@@ -94,7 +95,6 @@ intersphinx_mapping = {
     'numpy': ('https://numpy.org/doc/stable/', None),
     'scipy': ('https://docs.scipy.org/doc/scipy/', None),
     'matplotlib': ('https://matplotlib.org/stable/', None),
-    'spharpy': ('https://spharpy.readthedocs.io/en/stable/', None),
     'pyfar': ('https://pyfar.readthedocs.io/en/stable/', None),
     }
 
@@ -111,13 +111,15 @@ html_favicon = '_static/favicon.ico'
 # -- HTML theme options
 # https://pydata-sphinx-theme.readthedocs.io/en/stable/user_guide/layout.html
 html_sidebars = {
-    "pyrato": []
+  "pyrato": []
 }
+
 html_theme_options = {
     "navbar_start": ["navbar-logo"],
     "navbar_end": ["navbar-icon-links", "theme-switcher"],
     "navbar_align": "content",
-    "header_links_before_dropdown": 8,
+    "header_links_before_dropdown": None,  # will be automatically set later based on headers.rst
+    "header_dropdown_text": "Packages",  # Change dropdown name from "More" to "Packages"
     "icon_links": [
         {
           "name": "GitHub",
@@ -140,7 +142,7 @@ html_context = {
 
 # redirect index to pyfar.html
 redirects = {
-     "index": f"{project}.html"
+     "index": "pyrato.html"
 }
 
 # -- download navbar and style files from gallery -----------------------------
@@ -152,16 +154,44 @@ folders_in = [
     '_static/header.rst',
     'resources/logos/pyfar_logos_fixed_size_pyrato.png',
     ]
-c = urllib3.PoolManager()
-for file in folders_in:
-    url = link + file
-    filename = file
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-    with c.request('GET', url, preload_content=False) as res, open(filename, 'wb') as out_file:
-        shutil.copyfileobj(res, out_file)
 
-# replace pyfar hard link to internal link
+def download_files_from_gallery(link, folders_in):
+    c = urllib3.PoolManager()
+    for file in folders_in:
+        url = link + file
+        filename = file
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        with c.request('GET', url, preload_content=False) as res:
+            if res.status == 200:
+                with open(filename, 'wb') as out_file:
+                    shutil.copyfileobj(res, out_file)
+
+download_files_from_gallery(link, folders_in)
+# if logo does not exist, use pyfar logo
+if not os.path.exists(html_logo):
+    download_files_from_gallery(
+        link, ['resources/logos/pyfar_logos_fixed_size_pyfar.png'])
+    shutil.copyfile(
+        'resources/logos/pyfar_logos_fixed_size_pyfar.png', html_logo)
+
+# replace pyrato hard link to internal link
 with open("_static/header.rst", "rt") as fin:
     with open("header.rst", "wt") as fout:
-        for line in fin:
-            fout.write(line.replace(f'https://{project}.readthedocs.io', project))
+        lines = [line.replace(f'https://{project}.readthedocs.io', project) for line in fin]
+        contains_project = any(project in line for line in lines)
+
+        fout.writelines(lines)
+
+        # add project to the list of projects if not in header
+        if not contains_project:
+            fout.write(f'   {project} <{project}>\n')
+        
+        # count the number of gallery headings
+        count_gallery_headings = np.sum(
+            ['https://pyfar-gallery.readthedocs.io' in line for line in lines])
+
+
+# set dropdown header after gallery headings
+html_theme_options['header_links_before_dropdown'] = count_gallery_headings+1
+
+
