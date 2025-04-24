@@ -5,7 +5,7 @@
 
 
 [![PyPI version](https://badge.fury.io/py/pyrato.svg)](https://badge.fury.io/py/pyrato)
-[![Documentation Status](https://readthedocs.org/projects/pyrato/badge/?version=latest)](https://pyrato.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/pyrato/badge/?version=stable)](https://pyrato.readthedocs.io/en/stable/?badge=stable)
 [![CircleCI](https://circleci.com/gh/pyfar/pyrato.svg?style=shield)](https://circleci.com/gh/pyfar/pyrato)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/pyfar/gallery/main?labpath=docs/gallery/interactive/pyfar_introduction.ipynb)
 
