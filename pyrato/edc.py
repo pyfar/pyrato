@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-    The edc_noise_handling module provides various methods for noise
-    compensation of room impulse responses.
+Sub-module implementing different methods for the calculation of energy decay
+curves (EDCs) from measured or simulated room impulse responses (RIRs).
 """
 
 import numpy as np
