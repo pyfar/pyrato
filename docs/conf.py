@@ -56,7 +56,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'pyrato'
-copyright = "2025, The pyfar developers"
+copyright = "2021-2023, Marco Berzborn; 2023, The pyfar developers"
 author = "The pyfar developers"
 
 # The version info for the project you're documenting, acts as replacement
