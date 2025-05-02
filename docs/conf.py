@@ -142,7 +142,7 @@ html_context = {
 
 # redirect index to pyfar.html
 redirects = {
-     "index": "pyrato.html"
+     "index": f"{project}.html"
 }
 
 # -- download navbar and style files from gallery -----------------------------
