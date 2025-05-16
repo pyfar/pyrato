@@ -46,9 +46,7 @@ Ready to contribute? Here's how to set up `pyrato` for local development using t
 
     $ conda create --name pyrato python
     $ conda activate pyrato
-    $ conda install pip
-    $ pip install -e .
-    $ pip install -r requirements_dev.txt
+    $ pip install -e ".[dev]"
 
 4. Create a branch for local development. Indicate the intention of your branch in its respective name (i.e. `feature/branch-name` or `bugfix/branch-name`)::
 
