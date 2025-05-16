@@ -13,7 +13,7 @@ import pytest
 
 
 @pytest.mark.parametrize(
-    'tx', ['T20', 'T30', 'T40', 'T50', 'T60', 'LDT', 'EDT'])
+    'tx', ['T15', 'T20', 'T30', 'T40', 'T50', 'T60', 'LDT', 'EDT'])
 def test_rt_from_edc(tx):
     times = np.linspace(0, 1.5, 2**9)
     m = -60
@@ -25,7 +25,7 @@ def test_rt_from_edc(tx):
 
 
 @pytest.mark.parametrize(
-    'tx', ['T20', 'T30', 'T40', 'T50', 'T60', 'LDT', 'EDT'])
+    'tx', ['T15', 'T20', 'T30', 'T40', 'T50', 'T60', 'LDT', 'EDT'])
 def test_rt_from_edc_mulitchannel(tx):
     times = np.linspace(0, 1.5, 2**9)
     Ts = np.array([1, 2, 1.5])
@@ -38,7 +38,7 @@ def test_rt_from_edc_mulitchannel(tx):
 
 
 @pytest.mark.parametrize(
-    'tx', ['T20', 'T30', 'T40', 'T50', 'T60', 'LDT', 'EDT'])
+    'tx', ['T15', 'T20', 'T30', 'T40', 'T50', 'T60', 'LDT', 'EDT'])
 def test_rt_from_edc_mulitchannel_amplitude(tx):
     times = np.linspace(0, 5/2, 2**9)
     Ts = np.array([[1, 2, 1.5], [3, 4, 5]])
