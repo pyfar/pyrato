@@ -14,9 +14,7 @@ lint.ignore = [
     "D401",   # First line should be in imperative mood
     "D404",   # First word of the docstring should not be "This"
     "B006",   # Do not use mutable data structures for argument defaults
-    "B008",   # Do not perform calls in argument defaults
-    "PT018",  # Assertion should be broken down into multiple parts
-    "PT019",  # Fixture `_` without value is injected as parameter
+
 ]
 lint.select = [
     "A",      # Avoid builtin function and type shadowing
