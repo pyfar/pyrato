@@ -17,7 +17,7 @@ def reverberation_time_linear_regression(
         Energy decay curve. The time needs to be the arrays last dimension.
     times : ndarray, double
         Time vector corresponding to each sample of the EDC.
-    T : 'T20', 'T30', 'T40', 'T50', 'T60', 'EDT', 'LDT'
+    T : 'T15', 'T20', 'T30', 'T40', 'T50', 'T60', 'EDT', 'LDT'
         Decay interval to be used for the reverberation time extrapolation. EDT
         corresponds to the early decay time extrapolated from the interval
         ``[0, -10]`` dB, LDT corresponds to the late decay time extrapolated
@@ -65,7 +65,7 @@ def reverberation_time_linear_regression(
     ...     array([0.99526253])
 
     """
-    intervals = [20, 30, 40, 50, 60]
+    intervals = [15, 20, 30, 40, 50, 60]
 
     if T == 'EDT':
         upper = -0.1
