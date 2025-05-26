@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-    The edc_noise_handling module provides various methods for noise
-    compensation of room impulse responses.
+The edc_noise_handling module provides various methods for noise
+compensation of room impulse responses.
 """
 
 import numpy as np
@@ -887,7 +887,7 @@ def intersection_time_lundeby(
                         dB_above_noise))[-1, 0] + start_idx)
         except IndexError as e:
             raise ValueError(
-                'Regression failed: Low SNR. Estimation terminated.'
+                'Regression failed: Low SNR. Estimation terminated.',
             ) from e
 
         dyn_range = np.diff(10*np.log10(np.take(
@@ -980,7 +980,7 @@ def intersection_time_lundeby(
                         + dB_above_noise))[0, 0] + start_idx_loop
             except IndexError as e:
                 raise ValueError(
-                    'Regression failed: Low SNR. Estimation terminated.'
+                    'Regression failed: Low SNR. Estimation terminated.',
                 ) from e
 
             # regression_matrix*slope = edc

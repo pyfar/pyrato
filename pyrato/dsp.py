@@ -97,7 +97,7 @@ def find_impulse_response_start(
     warnings.warn(
         "This function will be deprecated in version 0.5.0 "
         "Use pyfar.dsp.find_impulse_response_start instead",
-        DeprecationWarning)
+        DeprecationWarning, stacklevel=2)
 
     return pf.dsp.find_impulse_response_start(impulse_response, threshold)
 
@@ -267,6 +267,7 @@ def time_shift(signal, shift, circular_shift=True, unit='samples'):
 def center_frequencies_octaves():
     """Return the octave center frequencies according to the IEC 61260:1:2014
     standard.
+
     Returns
     -------
     frequencies : ndarray, float
@@ -286,6 +287,7 @@ def center_frequencies_octaves():
 def center_frequencies_third_octaves():
     """Return the third octave center frequencies according
     to the ICE 61260:1:2014 standard.
+
     Returns
     -------
     frequencies : ndarray, float

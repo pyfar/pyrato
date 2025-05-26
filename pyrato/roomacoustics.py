@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""Module for room acoustics related functions.
+"""
 
 import numpy as np
 from pyrato.rap import reverberation_time_linear_regression
@@ -39,7 +41,6 @@ def reverberation_time_energy_decay_curve(
 
     Examples
     --------
-
     Estimate the reverberation time from an energy decay curve.
 
     >>> import numpy as np

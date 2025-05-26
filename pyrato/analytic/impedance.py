@@ -321,7 +321,7 @@ def eigenfrequencies_rectangular_room_impedance(
 
 
 def mode_function_impedance(position, eigenvalue, phase):
-    r""" The modal function for a room with boundary impedances.
+    r"""The modal function for a room with boundary impedances.
 
     See [#]_ .
 
@@ -356,7 +356,7 @@ def mode_function_impedance(position, eigenvalue, phase):
 
 def pressure_modal_superposition(
         ks, omegas, k_ns, mode_indices, r_R, r_S, L, zeta):
-    r""" Calculate modal composition for a rectangular room with arbitrary
+    r"""Calculate modal composition for a rectangular room with arbitrary
     boundary impedances.
 
     Parameters

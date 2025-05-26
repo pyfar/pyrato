@@ -1,4 +1,4 @@
-"""Room acoustic parameters
+"""Room acoustic parameters.
 """
 import re
 import numpy as np

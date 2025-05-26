@@ -12,13 +12,6 @@ import pyrato.dsp as dsp
 test_data_path = os.path.join(os.path.dirname(__file__), 'test_data')
 
 
-def mock_shift_samples_1d(*args, **kwargs):
-    return np.array([76])
-
-
-def mock_shift_samples_2d(*args, **kwargs):
-    return np.array([76, 76])
-
 
 def test_start_ir_insufficient_snr():
     n_samples = 2**9
@@ -28,7 +21,8 @@ def test_start_ir_insufficient_snr():
 
     snr = 15
 
-    noise = np.random.randn(n_samples)
+    rng = np.random.default_rng(42)
+    noise = rng.standard_normal((n_samples, ))
     noise = noise / np.sqrt(np.mean(np.abs(noise**2))) * 10**(-snr/20)
     noise = pf.Signal(noise, 44100)
 
@@ -42,8 +36,10 @@ def test_start_ir():
     n_samples = 2**10
     ir = np.zeros(n_samples)
     snr = 60
+    rng = np.random.default_rng(42)
 
-    noise = pf.Signal(np.random.randn(n_samples) * 10**(-snr/20), 44100)
+    noise = pf.Signal(
+        rng.standard_normal((n_samples, )) * 10**(-snr/20), 44100)
 
     start_sample = 24
     ir[start_sample] = 1
@@ -76,11 +72,13 @@ def test_start_ir_multidim():
     n_samples = 2**10
     n_channels = 3
     ir = np.zeros((n_channels, n_samples))
+    rng = np.random.default_rng(42)
 
     snr = 60
 
     noise = pf.Signal(
-        np.random.randn(n_channels, n_samples) * 10**(-snr/20), 44100)
+        rng.standard_normal(
+            (n_channels, n_samples)) * 10**(-snr/20), 44100)
 
     start_sample = [24, 5, 43]
     ir[[0, 1, 2], start_sample] = 1
@@ -94,7 +92,8 @@ def test_start_ir_multidim():
 
     ir = np.zeros((2, n_channels, n_samples))
     noise = pf.Signal(
-        np.random.randn(2, n_channels, n_samples) * 10**(-snr/20), 44100)
+        rng.standard_normal(
+            (2, n_channels, n_samples)) * 10**(-snr/20), 44100)
 
     start_sample_1 = [24, 5, 43]
     ir[0, [0, 1, 2], start_sample_1] = 1
@@ -125,7 +124,7 @@ def test_start_room_impulse_response():
     npt.assert_allclose(actual, expected)
 
 
-def test_start_room_impulse_response_shfted(monkeypatch):
+def test_start_room_impulse_response_shfted():
     rir = genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
         delimiter=',')
