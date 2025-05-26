@@ -516,7 +516,6 @@ def energy_decay_curve_chu(
 
     Examples
     --------
-
     .. plot::
 
         >>> import numpy as np
