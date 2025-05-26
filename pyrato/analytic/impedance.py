@@ -122,7 +122,7 @@ def gradient_trancendental_equation_eigenfrequencies_impedance(
 
 
 def initial_solution_transcendental_equation(k, L, zeta):
-    """Initial solution to the transcendental equation for the complex
+    r"""Initial solution to the transcendental equation for the complex
     eigenfrequencies of the rectangular room with uniform impedance at
     the boundaries. This will approximate the zeroth order mode.
 
@@ -130,6 +130,11 @@ def initial_solution_transcendental_equation(k, L, zeta):
     ----------
     k : array, double
         Wave number array
+    L : ndarray, double, (3,)
+        The room dimensions in meters
+    zeta : ndarray, double, (3, 2)
+        The normalized impedance :math:`\zeta_i = \frac{Z_i}{\rho_o c}`
+        for each wall.
 
     Returns
     -------
@@ -368,6 +373,9 @@ def pressure_modal_superposition(
     k_ns : list, complex
         List containing the complex eigenvalues for each dimension and
         wavenumber
+    mode_indices : ndarray (n_modes, 3)
+        The indices of the eigenvalues in `k_ns` corresponding to the
+        respective mode in x, y, z direction. Should be of shape (n_modes, 3).
     r_R : ndarray, double, (3, n_receivers)
         The receiver positions in Cartesian coordinates
     r_S : ndarray, double, (3)

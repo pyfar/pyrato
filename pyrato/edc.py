@@ -43,6 +43,10 @@ def _subtract_noise_from_squared_rir(data, noise_level='auto'):
     ----------
     data : ndarray, double
         The squared room impulse response with dimension ``(..., n_samples)``
+    noise_level: ndarray, double OR string
+        If ``'auto'``, the noise level is calculated based on the last 10
+        percent of the RIR. Otherwise specify manually for each channel
+        as array.
 
     Returns
     -------
@@ -772,8 +776,8 @@ def intersection_time_lundeby(
         The frequency band. If set to 'broadband',
         the time window of the Lundeby-algorithm will not be set in dependence
         of frequency.
-    noise_level: ndarray, double OR string
-        If not specified, the noise level is calculated based on the last 10
+    initial_noise_power: ndarray, double OR string
+        If ``'auto'``, the noise level is calculated based on the last 10
         percent of the RIR. Otherwise specify manually for each channel
         as array.
     is_energy: boolean

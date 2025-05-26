@@ -25,7 +25,7 @@ lint.select = [
     "C4",     # Check for common security issues
     "COM",    # trailing comma rules
     "D",      # Docstring guidelines
-    # "D417",   # Missing argument descriptions in the docstring
+    "D417",   # Missing argument descriptions in the docstring
     "E",      # PEP8 errors
     "ERA",    # No commented out code
     "F",      # Pyflakes

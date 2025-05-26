@@ -135,6 +135,8 @@ def rectangular_room_rigid_walls(
         The source position in Cartesian coordinates [x, y, z]
     receiver : double, ndarray
         The receiver position in Cartesian coordinates [x, y, z]
+    reverberation_time : double
+        The reverberation time of the room in seconds.
     max_freq : double
         The maximum frequency to consider for the calculation of the
         eigenfrequencies of the room

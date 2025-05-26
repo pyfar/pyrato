@@ -115,6 +115,10 @@ def find_impulse_response_maximum(
         The impulse response
     threshold : double, optional
         Threshold SNR value in dB
+    noise_energy : float, str, optional
+        If ``'auto'``, the noise level is calculated based on the last 10
+        percent of the RIR. Otherwise specify manually for each channel
+        as array.
 
     Returns
     -------
@@ -317,6 +321,8 @@ def filter_fractional_octave_bands(
         input signal to be filtered
     num_fractions : integer
         number of octave fractions
+    freq_range : tuple of float, optional
+        frequency range of the filter bank, by default (20.0, 20e3)
     order : integer, optional
         order of the butterworth filter
 
@@ -375,14 +381,12 @@ def _estimate_noise_energy(
 
     Parameters
     ----------
-    data: np.array
+    energy_data: np.array
         The room impulse response with shape ``(..., n_samples)``.
     interval : tuple, float
         Defines the interval of the RIR to be evaluated for the estimation.
         The interval is relative to the length of the RIR ``0 = 0%, 1=100%``.
         By default ``(0.9, 1.0)``.
-    is_energy: bool
-        Defines if the data is already squared.
 
     Returns
     -------
@@ -525,6 +529,10 @@ def peak_signal_to_noise_ratio(
     noise_power : float, str, optional
         The noise power. The default is 'auto', in which case the noise power
         is estimated from the last 10 % of the impulse response.
+    is_energy : bool, optional
+        Defines if the impulse response is already squared. If set to True,
+        the function assumes that the input is already energy data, otherwise
+        it squares the input data. The default is False.
 
     Returns
     -------

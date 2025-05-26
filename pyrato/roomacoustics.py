@@ -106,6 +106,9 @@ def energy_decay_curve_analytic(
     frequency : double, optional
         Center frequency of the respective octave band. This is only used for
         the air absorption calculation.
+    air_absorption : bool, optional
+        If True, the air absorption is included in the calculation.
+        Default is True.
 
     Returns
     -------

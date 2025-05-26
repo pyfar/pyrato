@@ -13,17 +13,16 @@ def reverberation_time_linear_regression(
 
     Parameters
     ----------
-    energy_decay_curve : ndarray, double
+    energy_decay_curve : pyfar.TimeData
         Energy decay curve. The time needs to be the arrays last dimension.
-    times : ndarray, double
-        Time vector corresponding to each sample of the EDC.
     T : 'T15', 'T20', 'T30', 'T40', 'T50', 'T60', 'EDT', 'LDT'
         Decay interval to be used for the reverberation time extrapolation. EDT
         corresponds to the early decay time extrapolated from the interval
         ``[0, -10]`` dB, LDT corresponds to the late decay time extrapolated
         from the interval ``[-25, -35]`` dB.
-    normalize : bool, True
-        Normalize the EDC to the steady state energy level
+    return_intercept : bool
+        If True, the intercept of the linear regression is returned in addition
+        to the reverberation time. The default is False.
 
     Returns
     -------
