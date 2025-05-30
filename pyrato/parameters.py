@@ -1,4 +1,7 @@
-"""Room acoustic parameters."""
+"""
+Sub-module implementing calculations of room acoustic parameters from
+simulated or experimental data.
+"""
 import re
 import numpy as np
 
