@@ -1,3 +1,4 @@
+"""Analytic functions for room acoustics."""
 # -*- coding: utf-8 -*-
 import pyfar as pf
 import numpy as np
@@ -35,7 +36,6 @@ def eigenfrequencies_rectangular_room_rigid(
 
     Examples
     --------
-
     Calculate the eigenfrequencies under 75 Hz of a small room and plot.
 
     .. plot::
@@ -76,7 +76,7 @@ def eigenfrequencies_rectangular_room_rigid(
         for n_y in range(0, n_y_max):
             n_modes += int(np.floor(np.real(
                 np.sqrt(
-                    (2*f_max/c)**2 - (n_x/L_x)**2 - (n_y/L_y)**2
+                    (2*f_max/c)**2 - (n_x/L_x)**2 - (n_y/L_y)**2,
                 ) * L_z))) + 1
 
     n = np.zeros((3, n_modes), dtype=int)
@@ -89,7 +89,7 @@ def eigenfrequencies_rectangular_room_rigid(
         for n_y in range(0, n_y_max):
             n_z_max = int(np.floor(np.real(
                 np.sqrt(
-                    (2*f_max/c)**2 - (n_x/L_x)**2 - (n_y/L_y)**2
+                    (2*f_max/c)**2 - (n_x/L_x)**2 - (n_y/L_y)**2,
                 ) * L_z))) + 1
 
             idx_end = idx + n_z_max
@@ -135,6 +135,8 @@ def rectangular_room_rigid_walls(
         The source position in Cartesian coordinates [x, y, z]
     receiver : double, ndarray
         The receiver position in Cartesian coordinates [x, y, z]
+    reverberation_time : double
+        The reverberation time of the room in seconds.
     max_freq : double
         The maximum frequency to consider for the calculation of the
         eigenfrequencies of the room

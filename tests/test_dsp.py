@@ -12,13 +12,6 @@ import pyrato.dsp as dsp
 test_data_path = os.path.join(os.path.dirname(__file__), 'test_data')
 
 
-def mock_shift_samples_1d(*args, **kwargs):
-    return np.array([76])
-
-
-def mock_shift_samples_2d(*args, **kwargs):
-    return np.array([76, 76])
-
 
 def test_start_ir_insufficient_snr():
     n_samples = 2**9
@@ -28,7 +21,8 @@ def test_start_ir_insufficient_snr():
 
     snr = 15
 
-    noise = np.random.randn(n_samples)
+    rng = np.random.default_rng(42)
+    noise = rng.standard_normal((n_samples, ))
     noise = noise / np.sqrt(np.mean(np.abs(noise**2))) * 10**(-snr/20)
     noise = pf.Signal(noise, 44100)
 
@@ -42,8 +36,10 @@ def test_start_ir():
     n_samples = 2**10
     ir = np.zeros(n_samples)
     snr = 60
+    rng = np.random.default_rng(42)
 
-    noise = pf.Signal(np.random.randn(n_samples) * 10**(-snr/20), 44100)
+    noise = pf.Signal(
+        rng.standard_normal((n_samples, )) * 10**(-snr/20), 44100)
 
     start_sample = 24
     ir[start_sample] = 1
@@ -76,11 +72,13 @@ def test_start_ir_multidim():
     n_samples = 2**10
     n_channels = 3
     ir = np.zeros((n_channels, n_samples))
+    rng = np.random.default_rng(42)
 
     snr = 60
 
     noise = pf.Signal(
-        np.random.randn(n_channels, n_samples) * 10**(-snr/20), 44100)
+        rng.standard_normal(
+            (n_channels, n_samples)) * 10**(-snr/20), 44100)
 
     start_sample = [24, 5, 43]
     ir[[0, 1, 2], start_sample] = 1
@@ -94,7 +92,8 @@ def test_start_ir_multidim():
 
     ir = np.zeros((2, n_channels, n_samples))
     noise = pf.Signal(
-        np.random.randn(2, n_channels, n_samples) * 10**(-snr/20), 44100)
+        rng.standard_normal(
+            (2, n_channels, n_samples)) * 10**(-snr/20), 44100)
 
     start_sample_1 = [24, 5, 43]
     ir[0, [0, 1, 2], start_sample_1] = 1
@@ -125,7 +124,7 @@ def test_start_room_impulse_response():
     npt.assert_allclose(actual, expected)
 
 
-def test_start_room_impulse_response_shfted(monkeypatch):
+def test_start_room_impulse_response_shfted():
     rir = genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
         delimiter=',')
@@ -145,8 +144,7 @@ def test_max_ir():
 
     snr = 60
 
-    noise = pf.Signal(
-        np.random.randn(n_samples) * 10**(-snr/20), 44100)
+    noise = pf.signals.noise(n_samples, rms=10**(-snr/20), seed=1)
 
     start_sample = 24
     ir[start_sample] = 1
@@ -183,10 +181,10 @@ def test_time_shift_return_vals():
     ir = pf.signals.impulse(n_samples, delay=20)
 
     ir_shifted = dsp.time_shift(ir, 1, circular_shift=True)
-    assert type(ir_shifted) == pf.Signal
+    assert type(ir_shifted) is pf.Signal
 
     ir_shifted = dsp.time_shift(ir, 1, circular_shift=False)
-    assert type(ir_shifted) == pf.TimeData
+    assert type(ir_shifted) is pf.TimeData
 
 
 def test_time_shift_non_circular_left_right():
@@ -314,13 +312,7 @@ def test_preprocessing_2D():
     npt.assert_allclose(actual.time, expected)
 
 
-def test_preprocessing_time_shift_1D(monkeypatch):
-    # Patch the RIR start finding to always return same number of samples
-    # monkeypatch.setattr(
-    #     dsp,
-    #     "find_impulse_response_start",
-    #     mock_shift_samples_1d)
-
+def test_preprocessing_time_shift_1D():
     rir = genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
         delimiter=',')
@@ -338,13 +330,7 @@ def test_preprocessing_time_shift_1D(monkeypatch):
     npt.assert_allclose(actual.time, expected)
 
 
-def test_preprocessing_time_shift_2D(monkeypatch):
-    # Patch the RIR start finding to always return same number of samples
-    # monkeypatch.setattr(
-    #     dsp,
-    #     "find_impulse_response_start",
-    #     mock_shift_samples_2d)
-
+def test_preprocessing_time_shift_2D():
     rir = pf.Signal(
         genfromtxt(
             os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'),
@@ -363,13 +349,7 @@ def test_preprocessing_time_shift_2D(monkeypatch):
     npt.assert_allclose(actual.time, expected)
 
 
-def test_preprocessing_time_shift_channel_independent_1D(monkeypatch):
-    # Patch the RIR start finding to always return same number of samples
-    # monkeypatch.setattr(
-    #     dsp,
-    #     "find_impulse_response_start",
-    #     mock_shift_samples_1d)
-
+def test_preprocessing_time_shift_channel_independent_1D():
     rir = pf.Signal(
         genfromtxt(
             os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
@@ -389,12 +369,7 @@ def test_preprocessing_time_shift_channel_independent_1D(monkeypatch):
     npt.assert_allclose(actual.time, expected)
 
 
-def test_preprocessing_time_shift_channel_independent_2D(monkeypatch):
-    # Patch the RIR start finding to always return same number of samples
-    # monkeypatch.setattr(
-    #     dsp,
-    #     "find_impulse_response_start",
-    #     mock_shift_samples_2d)
+def test_preprocessing_time_shift_channel_independent_2D():
 
     rir = pf.Signal(genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'),

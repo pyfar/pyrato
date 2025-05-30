@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Module for room acoustics related functions."""
 
 import numpy as np
 from pyrato.rap import reverberation_time_linear_regression
@@ -39,7 +40,6 @@ def reverberation_time_energy_decay_curve(
 
     Examples
     --------
-
     Estimate the reverberation time from an energy decay curve.
 
     >>> import numpy as np
@@ -70,7 +70,7 @@ def reverberation_time_energy_decay_curve(
     warnings.warn(
         "This function will be deprecated in version 0.5.0 "
         "Use pyrato.reverberation_time_linear_regression instead",
-        DeprecationWarning)
+        DeprecationWarning, stacklevel=2)
 
     return reverberation_time_linear_regression(energy_decay_curve, T)
 
@@ -105,6 +105,9 @@ def energy_decay_curve_analytic(
     frequency : double, optional
         Center frequency of the respective octave band. This is only used for
         the air absorption calculation.
+    air_absorption : bool, optional
+        If True, the air absorption is included in the calculation.
+        Default is True.
 
     Returns
     -------
