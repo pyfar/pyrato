@@ -1,3 +1,4 @@
+"""Module for room acoustics related functions."""
 # -*- coding: utf-8 -*-
 
 __author__ = \
@@ -6,7 +7,7 @@ __email__ = 'info@pyfar.org'
 __version__ = '0.4.0'
 
 from .rap import (
-    reverberation_time_linear_regression
+    reverberation_time_linear_regression,
 )
 from .roomacoustics import (
     reverberation_time_energy_decay_curve,

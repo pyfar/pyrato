@@ -97,7 +97,7 @@ def find_impulse_response_start(
     warnings.warn(
         "This function will be deprecated in version 0.5.0 "
         "Use pyfar.dsp.find_impulse_response_start instead",
-        DeprecationWarning)
+        DeprecationWarning, stacklevel=2)
 
     return pf.dsp.find_impulse_response_start(impulse_response, threshold)
 
@@ -115,6 +115,10 @@ def find_impulse_response_maximum(
         The impulse response
     threshold : double, optional
         Threshold SNR value in dB
+    noise_energy : float, str, optional
+        If ``'auto'``, the noise level is calculated based on the last 10
+        percent of the RIR. Otherwise specify manually for each channel
+        as array.
 
     Returns
     -------
@@ -143,7 +147,8 @@ def find_impulse_response_maximum(
             np.any(max_sample > mask_start):
         warnings.warn(
             "The SNR seems lower than the specified threshold value. Check "
-            "if this is a valid impulse response with sufficient SNR.")
+            "if this is a valid impulse response with sufficient SNR.",
+            stacklevel=2)
 
     return max_sample
 
@@ -266,6 +271,7 @@ def time_shift(signal, shift, circular_shift=True, unit='samples'):
 def center_frequencies_octaves():
     """Return the octave center frequencies according to the IEC 61260:1:2014
     standard.
+
     Returns
     -------
     frequencies : ndarray, float
@@ -274,7 +280,7 @@ def center_frequencies_octaves():
     warnings.warn(
         "This function will be deprecated in version 0.5.0 "
         "Use pyfar.dsp.filter.fractional_octave_frequencies instead",
-        DeprecationWarning)
+        DeprecationWarning, stacklevel=2)
 
     nominal, exact = pf.dsp.filter.fractional_octave_frequencies(
         1, (20, 20e3), return_cutoff=False)
@@ -285,6 +291,7 @@ def center_frequencies_octaves():
 def center_frequencies_third_octaves():
     """Return the third octave center frequencies according
     to the ICE 61260:1:2014 standard.
+
     Returns
     -------
     frequencies : ndarray, float
@@ -293,7 +300,7 @@ def center_frequencies_third_octaves():
     warnings.warn(
         "This function will be deprecated in version 0.5.0 "
         "Use pyfar.dsp.filter.fractional_octave_frequencies instead",
-        DeprecationWarning)
+        DeprecationWarning, stacklevel=2)
 
     nominal, exact = pf.dsp.filter.fractional_octave_frequencies(
         3, (20, 20e3), return_cutoff=False)
@@ -314,6 +321,8 @@ def filter_fractional_octave_bands(
         input signal to be filtered
     num_fractions : integer
         number of octave fractions
+    freq_range : tuple of float, optional
+        frequency range of the filter bank, by default (20.0, 20e3)
     order : integer, optional
         order of the butterworth filter
 
@@ -325,7 +334,7 @@ def filter_fractional_octave_bands(
     warnings.warn(
         "This function will be deprecated in version 0.5.0 "
         "Use pyfar.dsp.filter.fractional_octave_bands instead",
-        DeprecationWarning)
+        DeprecationWarning, stacklevel=2)
 
     return pf.dsp.filter.fractional_octave_bands(
         signal, num_fractions, freq_range=freq_range, order=order)
@@ -372,14 +381,12 @@ def _estimate_noise_energy(
 
     Parameters
     ----------
-    data: np.array
+    energy_data: np.array
         The room impulse response with shape ``(..., n_samples)``.
     interval : tuple, float
         Defines the interval of the RIR to be evaluated for the estimation.
         The interval is relative to the length of the RIR ``0 = 0%, 1=100%``.
         By default ``(0.9, 1.0)``.
-    is_energy: bool
-        Defines if the data is already squared.
 
     Returns
     -------
@@ -402,7 +409,7 @@ def _smooth_rir(
         data,
         sampling_rate,
         smooth_block_length=0.075):
-    """ Smoothens the RIR by averaging the data in an specified interval.
+    """Smoothens the RIR by averaging the data in an specified interval.
 
     Parameters
     ----------
@@ -455,7 +462,7 @@ def preprocess_rir(
         is_energy=False,
         shift=False,
         channel_independent=False):
-    """ Preprocess the room impulse response for further processing:
+    """Preprocess the room impulse response for further processing:
         - Square data
         - Shift the RIR to the first sample of the array, compensating for the
           delay of the time of arrival of the direct sound. The time shift is
@@ -522,6 +529,10 @@ def peak_signal_to_noise_ratio(
     noise_power : float, str, optional
         The noise power. The default is 'auto', in which case the noise power
         is estimated from the last 10 % of the impulse response.
+    is_energy : bool, optional
+        Defines if the impulse response is already squared. If set to True,
+        the function assumes that the input is already energy data, otherwise
+        it squares the input data. The default is False.
 
     Returns
     -------
