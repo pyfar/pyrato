@@ -2,6 +2,18 @@
 History
 =======
 
+0.4.1 (2024-06-??)
+------------------
+* fix: include analytic module in the package (PR #27)
+* fix: allow T15 reverberation time estimation in ``reverberation_time_linear_regression`` (PR #51)
+* fix: several deprecation warnings (PR #54, #55, #56)
+* fix: Correct index selection in truncation time estimation (#32)
+* doc: apply Documentation style changes to match with pyfar (PR #30, #34, #48)
+* ci: apply pyfar's packaging style (PR #49)
+* ci: change from flake8 to ruff and apply pyfar rule set (PR #52)
+
+
+
 0.4.0 (2024-03-20)
 ------------------
 * Use pyfar audio objects to store RIRs and EDCs (PR #7)
