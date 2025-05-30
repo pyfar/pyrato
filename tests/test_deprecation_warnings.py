@@ -8,7 +8,8 @@ def test_warning_fractional_octave_bands():
 
     with pytest.warns(DeprecationWarning, match='0.5.0'):
         sig = pf.Signal([1, 2, 3], 44100)
-        pyrato.dsp.filter_fractional_octave_bands(sig, 1)
+        pyrato.dsp.filter_fractional_octave_bands(
+            sig, 3, freq_range=(20, 16000))
 
 
 def test_warning_center_frequencies_thirds():
@@ -38,6 +39,10 @@ def test_warning_start_ir():
 
 
 def test_warning_rt_edc():
+    times = np.linspace(0, 1.5, 2**9)
+    m = -60
+    edc = times * m
+    edc_exp = pf.TimeData(10**(edc/10), times)
     with pytest.warns(DeprecationWarning, match='0.5.0'):
-        edc = pf.TimeData([-5., -60.], [0.1, 1])
-        pyrato.reverberation_time_energy_decay_curve(edc)
+        pyrato.reverberation_time_energy_decay_curve(
+            edc_exp)

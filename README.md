@@ -1,7 +1,8 @@
-
 <h1 align="center">
 <img src="https://github.com/pyfar/gallery/raw/main/docs/resources/logos/pyfar_logos_fixed_size_pyrato.png" width="300">
 </h1><br>
+
+
 
 [![PyPI version](https://badge.fury.io/py/pyrato.svg)](https://badge.fury.io/py/pyrato)
 [![Documentation Status](https://readthedocs.org/projects/pyrato/badge/?version=stable)](https://pyrato.readthedocs.io/en/stable/?badge=stable)
@@ -22,10 +23,11 @@ Use pip to install pyrato
 
     pip install pyrato
 
-(Requires Python 3.8 or higher)
+(Requires Python 3.9 or higher)
 
 If the installation fails, please check out the [help section](https://pyfar-gallery.readthedocs.io/en/latest/help).
 
-## Contributing
+Contributing
+============
 
 Check out the [contributing guidelines](https://pyfar.readthedocs.io/en/stable/contributing.html) if you want to become part of pyfar.

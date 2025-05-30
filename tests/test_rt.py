@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-""" Tests for reverberation time related things. """
-from pytest import raises
-
+"""Tests for reverberation time related things."""
 import numpy as np
 import numpy.testing as npt
 
@@ -13,7 +11,7 @@ import pytest
 
 
 @pytest.mark.parametrize(
-    'tx', ['T20', 'T30', 'T40', 'T50', 'T60', 'LDT', 'EDT'])
+    'tx', ['T15', 'T20', 'T30', 'T40', 'T50', 'T60', 'LDT', 'EDT'])
 def test_rt_from_edc(tx):
     times = np.linspace(0, 1.5, 2**9)
     m = -60
@@ -25,7 +23,7 @@ def test_rt_from_edc(tx):
 
 
 @pytest.mark.parametrize(
-    'tx', ['T20', 'T30', 'T40', 'T50', 'T60', 'LDT', 'EDT'])
+    'tx', ['T15', 'T20', 'T30', 'T40', 'T50', 'T60', 'LDT', 'EDT'])
 def test_rt_from_edc_mulitchannel(tx):
     times = np.linspace(0, 1.5, 2**9)
     Ts = np.array([1, 2, 1.5])
@@ -38,7 +36,7 @@ def test_rt_from_edc_mulitchannel(tx):
 
 
 @pytest.mark.parametrize(
-    'tx', ['T20', 'T30', 'T40', 'T50', 'T60', 'LDT', 'EDT'])
+    'tx', ['T15', 'T20', 'T30', 'T40', 'T50', 'T60', 'LDT', 'EDT'])
 def test_rt_from_edc_mulitchannel_amplitude(tx):
     times = np.linspace(0, 5/2, 2**9)
     Ts = np.array([[1, 2, 1.5], [3, 4, 5]])
@@ -62,5 +60,5 @@ def test_rt_from_edc_error():
     edc_exp = pf.TimeData(10**(edc/10), times)
     T = 'Bla'
 
-    with raises(ValueError, match='is not a valid interval.'):
+    with pytest.raises(ValueError, match='is not a valid interval.'):
         ra.reverberation_time_linear_regression(edc_exp, T=T)

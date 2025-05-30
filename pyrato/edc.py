@@ -43,6 +43,10 @@ def _subtract_noise_from_squared_rir(data, noise_level='auto'):
     ----------
     data : ndarray, double
         The squared room impulse response with dimension ``(..., n_samples)``
+    noise_level: ndarray, double OR string
+        If ``'auto'``, the noise level is calculated based on the last 10
+        percent of the RIR. Otherwise specify manually for each channel
+        as array.
 
     Returns
     -------
@@ -179,7 +183,7 @@ def energy_decay_curve_truncation(
         normalize=True,
         threshold=15,
         plot=False):
-    """ This function truncates a given room impulse response by the
+    """This function truncates a given room impulse response by the
     intersection time after Lundeby and calculates the energy decay curve.
 
     Parameters
@@ -224,7 +228,6 @@ def energy_decay_curve_truncation(
 
     Examples
     --------
-
     Plot the RIR and the EDC calculated truncating the integration at the
     intersection time.
 
@@ -364,7 +367,6 @@ def energy_decay_curve_lundeby(
 
     Examples
     --------
-
     Plot the RIR and the EDC calculated after Lundeby.
 
     .. plot::
@@ -514,7 +516,6 @@ def energy_decay_curve_chu(
 
     Examples
     --------
-
     .. plot::
 
         >>> import numpy as np
@@ -651,7 +652,6 @@ def energy_decay_curve_chu_lundeby(
 
     Examples
     --------
-
     Calculate and plot the EDC using a combination of Chu's and Lundeby's
     methods.
 
@@ -775,8 +775,8 @@ def intersection_time_lundeby(
         The frequency band. If set to 'broadband',
         the time window of the Lundeby-algorithm will not be set in dependence
         of frequency.
-    noise_level: ndarray, double OR string
-        If not specified, the noise level is calculated based on the last 10
+    initial_noise_power: ndarray, double OR string
+        If ``'auto'``, the noise level is calculated based on the last 10
         percent of the RIR. Otherwise specify manually for each channel
         as array.
     is_energy: boolean
@@ -805,7 +805,6 @@ def intersection_time_lundeby(
 
     Examples
     --------
-
     Estimate the intersection time :math:`T_i` and plot the RIR and the
     estimated noise power.
 
@@ -891,7 +890,7 @@ def intersection_time_lundeby(
                         dB_above_noise))[-1, 0] + start_idx)
         except IndexError as e:
             raise ValueError(
-                'Regression failed: Low SNR. Estimation terminated.'
+                'Regression failed: Low SNR. Estimation terminated.',
             ) from e
 
         dyn_range = np.diff(10*np.log10(np.take(
@@ -930,12 +929,12 @@ def intersection_time_lundeby(
         # (5) NEW LOCAL TIME INTERVAL LENGTH
         n_blocks_in_decay = (np.diff(
             10*np.log10(np.take(
-                time_window_data_current_channel, [start_idx, stop_idx])))
+                time_window_data_current_channel, [start_idx, stop_idx])))[0]
             / -10 * n_intervals_per_10dB)
 
         n_samples_per_block = np.round(np.diff(np.take(
             time_vector_window,
-            [start_idx, stop_idx])) / n_blocks_in_decay * sampling_rate)
+            [start_idx, stop_idx]))[0] / n_blocks_in_decay * sampling_rate)
 
         window_time = n_samples_per_block/sampling_rate
 
@@ -984,7 +983,7 @@ def intersection_time_lundeby(
                         + dB_above_noise))[0, 0] + start_idx_loop
             except IndexError as e:
                 raise ValueError(
-                    'Regression failed: Low SNR. Estimation terminated.'
+                    'Regression failed: Low SNR. Estimation terminated.',
                 ) from e
 
             # regression_matrix*slope = edc
@@ -1017,7 +1016,8 @@ def intersection_time_lundeby(
             if loop_counter > 30:
                 # TO-DO: Paper says 5 iterations are sufficient in all cases!
                 warnings.warn(
-                    "Lundeby algorithm was terminated after 30 iterations.")
+                    "Lundeby algorithm was terminated after 30 iterations.",
+                    stacklevel=2)
                 break
 
         reverberation_time[ch] = -60/slope[1]
