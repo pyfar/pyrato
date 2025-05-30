@@ -1,5 +1,4 @@
-"""Module for room acoustics related functions.
-"""
+"""Module for room acoustics related functions."""
 # -*- coding: utf-8 -*-
 
 __author__ = \

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Module for room acoustics related functions.
-"""
+"""Module for room acoustics related functions."""
 
 import numpy as np
 from pyrato.rap import reverberation_time_linear_regression
