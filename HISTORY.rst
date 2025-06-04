@@ -12,6 +12,7 @@ History
 * doc: apply Documentation style changes to match with pyfar (PR #30, #34, #48)
 * ci: apply pyfar's packaging style (PR #49)
 * ci: change from flake8 to ruff and apply pyfar rule set (PR #52)
+* ci: configure and change to bumpversion for release (PR #60)
 
 
 
