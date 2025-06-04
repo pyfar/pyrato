@@ -2,7 +2,7 @@
 History
 =======
 
-0.4.1 (2024-06-??)
+0.4.1 (2024-06-04)
 ------------------
 * fix: include analytic module in the package (PR #27)
 * fix: allow T15 reverberation time estimation in ``reverberation_time_linear_regression`` (PR #51)
