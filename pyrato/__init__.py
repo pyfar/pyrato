@@ -4,7 +4,7 @@
 __author__ = \
     """The pyfar developers"""
 __email__ = 'info@pyfar.org'
-__version__ = '0.4.0'
+__version__ = '0.4.1'
 
 from .rap import (
     reverberation_time_linear_regression,
