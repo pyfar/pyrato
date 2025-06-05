@@ -133,7 +133,7 @@ html_theme_options = {
     "secondary_sidebar_items": ["page-toc"],  # Omit 'show source' link that that shows notebook in json format
     "navigation_with_keys": True,
     # Configure navigation depth for section navigation
-    "navigation_depth": 1,
+    "navigation_depth": 2,
 }
 
 html_context = {
@@ -142,7 +142,7 @@ html_context = {
 
 # redirect index to pyfar.html
 redirects = {
-     "index": f"{project}.html"
+     "index": "pyrato.html"
 }
 
 # -- download navbar and style files from gallery -----------------------------
@@ -174,24 +174,52 @@ if not os.path.exists(html_logo):
     shutil.copyfile(
         'resources/logos/pyfar_logos_fixed_size_pyfar.png', html_logo)
 
-# replace pyrato hard link to internal link
+
+# -- modify downloaded header file from the gallery to   ----------------------
+# -- aline with the local toctree ---------------------------------------------
+
+# read the header file from the gallery
 with open("_static/header.rst", "rt") as fin:
-    with open("header.rst", "wt") as fout:
-        lines = [line.replace(f'https://{project}.readthedocs.io', project) for line in fin]
-        contains_project = any(project in line for line in lines)
+    lines = [line for line in fin]
 
-        fout.writelines(lines)
+# replace readthedocs link with internal link to this documentation
+lines_mod = [
+    line.replace(f'https://{project}.readthedocs.io', project) for line in lines]
 
-        # add project to the list of projects if not in header
-        if not contains_project:
-            fout.write(f'   {project} <{project}>\n')
-        
-        # count the number of gallery headings
-        count_gallery_headings = np.sum(
-            ['https://pyfar-gallery.readthedocs.io' in line for line in lines])
+# if not found, add this documentation link to the end of the list, so that
+# it is in the doc tree
+contains_project = any(project in line for line in lines_mod)
+if not contains_project:
+    lines_mod.append(f'   {project} <{project}>\n')
+
+# write the modified header file
+# to the doc\header.rst folder, so that it can be used in the documentation
+with open("header.rst", "wt") as fout:
+    fout.writelines(lines_mod)
 
 
-# set dropdown header after gallery headings
-html_theme_options['header_links_before_dropdown'] = count_gallery_headings+1
+# -- find position of pyfar package in toctree --------------------------------
+# -- this is required to define the dropdown of Packages in the header --------
 
+# find line where pyfar package is mentioned, to determine the start of 
+# the packages list in the header
+n_line_pyfar = 0
+for i, line in enumerate(lines):
+    if 'https://pyfar.readthedocs.io' in line:
+        n_line_pyfar = i
+        break
 
+# the first 4 lines of the header file are defining the settings and a empty
+# line of the toctree, therefore we need to subtract 4 from the line number
+# of the pyfar package to get the correct position in the toctree
+n_toctree_pyfar = n_line_pyfar - 4
+
+if n_toctree_pyfar < 1:	
+    raise ValueError(
+        "Could not find the line where pyfar package is mentioned. "
+        "Please check the header.rst file in the gallery."
+    )
+
+# set dropdown header at pyfar appearance, so that pyfar is the first item in
+# the dropdown called Packages
+html_theme_options['header_links_before_dropdown'] = n_toctree_pyfar
