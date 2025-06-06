@@ -85,6 +85,27 @@ jobs:
             cd docs/
             make html SPHINXOPTS="-W"
 
+  test_deprecation_warnings:
+    parameters:
+      version:
+        description: "version tag"
+        default: "latest"
+        type: string
+    executor:
+      name: python-docker
+      version: <<parameters.version>>
+    steps:
+      - checkout
+      
+      - run:
+          name: install dependencies
+          command: pip install ".[tests]"
+      - run: |
+          python --version
+      - run:
+          name: Run tests
+          command: pytest tests -W error::DeprecationWarning
+
   test_pypi_publish:
     parameters:
       version:
@@ -147,12 +168,12 @@ workflows:
                 - "3.11"
                 - "3.12"
                 - "3.13"
-
+                
       - ruff:
           matrix:
             parameters:
               version:
-                - "3.9"
+                - "3.13"
           requires:
             - build_and_test
 
@@ -160,7 +181,15 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.9"
+                - "3.13"
+          requires:
+            - build_and_test
+
+      - test_deprecation_warnings:
+          matrix:
+            parameters:
+              version:
+                - "3.13"
           requires:
             - build_and_test
 
@@ -168,7 +197,7 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.9"
+                - "3.13"
           requires:
             - build_and_test
 
@@ -185,7 +214,7 @@ workflows:
                 - "3.11"
                 - "3.12"
                 - "3.13"
-
+                
           filters:
             branches:
               ignore: /.*/
@@ -197,7 +226,7 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.9"
+                - "3.13"
           requires:
             - build_and_test
           filters:
@@ -211,7 +240,21 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.9"
+                - "3.13"
+          requires:
+            - build_and_test
+          filters:
+            branches:
+              ignore: /.*/
+            # only act on version tags
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*$/
+
+      - test_deprecation_warnings:
+          matrix:
+            parameters:
+              version:
+                - "3.13"
           requires:
             - build_and_test
           filters:
@@ -225,11 +268,12 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.9"
+                - "3.13"
           requires:
             - build_and_test
             - ruff
             - test_documentation_build
+            - test_deprecation_warnings
           filters:
             branches:
               ignore: /.*/
