@@ -75,7 +75,7 @@ def schroeder_integration(room_impulse_response, is_energy=False):
     Parameters
     ----------
     room_impulse_response : pyfar.Signal, pyfar.TimeData
-        Room impulse response as pyfar object.
+        Room impulse response as pyfar audio object.
     is_energy : boolean, optional
         Whether the input represents energy data or sound pressure values.
 
