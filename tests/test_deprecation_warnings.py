@@ -36,13 +36,3 @@ def test_warning_start_ir():
 
         sig = pf.Signal([0, 0, 1, 0, 0], 44100)
         pyrato.dsp.find_impulse_response_start(sig)
-
-
-def test_warning_rt_edc():
-    times = np.linspace(0, 1.5, 2**9)
-    m = -60
-    edc = times * m
-    edc_exp = pf.TimeData(10**(edc/10), times)
-    with pytest.warns(DeprecationWarning, match='0.5.0'):
-        pyrato.reverberation_time_energy_decay_curve(
-            edc_exp)
