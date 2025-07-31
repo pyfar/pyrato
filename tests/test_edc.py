@@ -7,8 +7,34 @@ import numpy as np
 from numpy import array
 
 import numpy.testing as npt
+import pyfar as pf
+import pytest
 
 import pyrato as ra
+
+
+@pytest.mark.parametrize("is_energy", [True, False])
+def test_schroeder_integration(is_energy):
+    """Simple impulse response."""
+    factor = 2 if is_energy else np.sqrt(2)
+    data = pf.Signal(np.ones((1, 10))*factor, sampling_rate=10)
+    energy_decay_curve = ra.schroeder_integration(data, is_energy=is_energy)
+
+    truth = (np.arange(10, dtype=float)[::-1] + 1) * 2
+    npt.assert_almost_equal(energy_decay_curve.time[0], truth)
+
+
+@pytest.mark.parametrize("is_energy", [True, False])
+def test_schroeder_integration_multi_cdim(is_energy):
+    """Simple impulse response."""
+    factor = 2 if is_energy else np.sqrt(2)
+    data = pf.Signal(np.ones((2, 1, 10))*factor, sampling_rate=10)
+    energy_decay_curve = ra.schroeder_integration(data, is_energy=is_energy)
+
+    truth = (np.arange(10, dtype=float)[::-1] + 1) * 2
+    npt.assert_almost_equal(energy_decay_curve.time[0, 0], truth)
+    npt.assert_almost_equal(energy_decay_curve.time[1, 0], truth)
+
 
 
 def test_edc_eyring():
