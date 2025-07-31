@@ -20,6 +20,10 @@ def test_schroeder_integration(is_energy):
     data = pf.Signal(np.ones((1, 10))*factor, sampling_rate=10)
     energy_decay_curve = ra.schroeder_integration(data, is_energy=is_energy)
 
+    # test if the shape is correct
+    npt.assert_array_equal(energy_decay_curve.time.shape, data.time.shape)
+
+    # test if the values are correct
     truth = (np.arange(10, dtype=float)[::-1] + 1) * 2
     npt.assert_almost_equal(energy_decay_curve.time[0], truth)
 
@@ -31,6 +35,10 @@ def test_schroeder_integration_multi_cdim(is_energy):
     data = pf.Signal(np.ones((2, 1, 10))*factor, sampling_rate=10)
     energy_decay_curve = ra.schroeder_integration(data, is_energy=is_energy)
 
+    # test if the shape is correct
+    npt.assert_array_equal(energy_decay_curve.time.shape, data.time.shape)
+
+    # test if the values are correct
     truth = (np.arange(10, dtype=float)[::-1] + 1) * 2
     npt.assert_almost_equal(energy_decay_curve.time[0, 0], truth)
     npt.assert_almost_equal(energy_decay_curve.time[1, 0], truth)
