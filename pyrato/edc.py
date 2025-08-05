@@ -78,6 +78,9 @@ def schroeder_integration(room_impulse_response, is_energy=False):
         Room impulse response as pyfar audio object.
     is_energy : boolean, optional
         Whether the input represents energy data or sound pressure values.
+        By default, this is set to ``False``, in which case the upper equation
+        is applied. If set to ``True``, the function :math:`h(\tau)` is used
+        without squaring.
 
     Returns
     -------
