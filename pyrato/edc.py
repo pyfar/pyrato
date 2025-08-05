@@ -67,7 +67,7 @@ def schroeder_integration(room_impulse_response, is_energy=False):
     The result is the energy decay curve for the given room impulse response
     after [#]_.
 
-    .. math:
+    .. math::
 
         \langle e^2(t) \rangle = N\cdot \int_{t}^{\infty} h^2(\tau)
         \mathrm{d} \tau
