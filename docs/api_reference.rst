@@ -13,7 +13,7 @@ Modules
    :maxdepth: 1
 
    modules/analytic
-   modules/dsp
+   modules/dspp
    modules/edc
    modules/parameters
    modules/parametric
