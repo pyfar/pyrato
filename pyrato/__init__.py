@@ -23,5 +23,5 @@ __all__ = [
     'dsp',
     'analytic',
     'parametric',
-    'air_attenuation_coefficient'
+    'air_attenuation_coefficient',
 ]

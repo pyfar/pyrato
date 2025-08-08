@@ -1,12 +1,9 @@
-# -*- coding: utf-8 -*-
-"""Module for room acoustics related functions."""
+"""Module for room acoustics related functions.
 
-"""Parametric room acoustics calculations using simple geometric considerations
+Parametric room acoustics calculations using simple geometric considerations
 such as Sabine's theory of sound in rooms.
 """
-
 import numpy as np
-
 
 def energy_decay_curve_analytic(
         surfaces, alphas, volume, times, source=None,
@@ -115,7 +112,7 @@ def air_attenuation_coefficient(
 
     warnings.warn(
         'Will be replaced by respective function in pyfar before v1.0.0',
-        PyfarDeprecationWarning)
+        PyfarDeprecationWarning, stacklevel=2)
 
     # room temperature in Kelvin
     t_K = temperature + 273.16
