@@ -78,9 +78,9 @@ def schroeder_integration(room_impulse_response, is_energy=False):
         The room impulse response.
     is_energy : boolean, optional
         Whether the input represents energy data or sound pressure values.
-        By default, this is set to ``False``. If set to ``True``, the variable :math:`h(\tau)` is
-        assumed to represent energy and the power two is omitted from the given
-        equation.
+        By default, this is set to ``False``. If set to ``True``,
+        the variable :math:`h(\tau)` is assumed to represent energy and
+        the power two is omitted from the given equation.
 
     Returns
     -------
