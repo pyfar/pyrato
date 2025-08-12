@@ -1,4 +1,4 @@
-analytic
+pyrato.analytic
 ========
 
 .. automodule:: pyrato.analytic
