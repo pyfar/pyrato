@@ -1,4 +1,4 @@
-parametric
+pyrato.parametric
 ========
 
 .. automodule:: pyrato.parametric

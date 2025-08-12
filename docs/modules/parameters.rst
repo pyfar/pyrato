@@ -1,4 +1,4 @@
-parameters
+pyrato.parameters
 ========
 
 .. automodule:: pyrato.parameters

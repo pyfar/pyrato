@@ -1,4 +1,4 @@
-edc
+pyrato.edc
 ========
 
 .. automodule:: pyrato.edc

@@ -1,4 +1,4 @@
-dsp
+pyrato.dsp
 ========
 
 .. automodule:: pyrato.dsp
