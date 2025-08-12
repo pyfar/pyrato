@@ -211,7 +211,7 @@ def time_shift(signal, shift, circular_shift=True, unit='samples'):
         >>> import matplotlib.pyplot as plt
         >>> impulse = pf.signals.impulse(
         ...     32, amplitude=(1, 1.5, 1), delay=(14, 15, 16))
-        >>> shifted = ra.time_shift(impulse, [-2, 0, 2])
+        >>> shifted = ra.dsp.time_shift(impulse, [-2, 0, 2])
         >>> pf.plot.use('light')
         >>> _, axs = plt.subplots(2, 1)
         >>> pf.plot.time(impulse, ax=axs[0])
@@ -228,7 +228,7 @@ def time_shift(signal, shift, circular_shift=True, unit='samples'):
         >>> import pyrato as ra
         >>> import matplotlib.pyplot as plt
         >>> impulse = pf.signals.impulse(32, delay=15)
-        >>> shifted = ra.time_shift(impulse, -10, circular_shift=False)
+        >>> shifted = ra.dsp.time_shift(impulse, -10, circular_shift=False)
         >>> pf.plot.use('light')
         >>> _, axs = plt.subplots(2, 1)
         >>> pf.plot.time(impulse, ax=axs[0])

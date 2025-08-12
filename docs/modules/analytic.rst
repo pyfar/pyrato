@@ -1,5 +1,5 @@
 pyrato.analytic
-========
+===============
 
 .. automodule:: pyrato.analytic
    :members:

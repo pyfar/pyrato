@@ -1,5 +1,5 @@
 pyrato.dsp
-========
+==========
 
 .. automodule:: pyrato.dsp
    :members:

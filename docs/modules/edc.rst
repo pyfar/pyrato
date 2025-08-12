@@ -1,5 +1,5 @@
 pyrato.edc
-========
+==========
 
 .. automodule:: pyrato.edc
    :members:

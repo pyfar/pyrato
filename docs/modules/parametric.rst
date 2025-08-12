@@ -1,5 +1,5 @@
 pyrato.parametric
-========
+=================
 
 .. automodule:: pyrato.parametric
    :members:
