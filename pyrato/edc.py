@@ -67,17 +67,20 @@ def schroeder_integration(room_impulse_response, is_energy=False):
     The result is the energy decay curve for the given room impulse response
     after [#]_.
 
-    .. math:
+    .. math::
 
-        \langle e^2(t) \rangle = N\cdot \int_{t}^{\infty} h^2(\tau)
+        \langle e^2(t) \rangle = \int_{t}^{\infty} h^2(\tau)
         \mathrm{d} \tau
 
     Parameters
     ----------
-    room_impulse_response : pyfar.Signal
-        Room impulse response as array
+    room_impulse_response : pyfar.Signal, pyfar.TimeData
+        The room impulse response.
     is_energy : boolean, optional
         Whether the input represents energy data or sound pressure values.
+        By default, this is set to ``False``. If set to ``True``,
+        the variable :math:`h(\tau)` is assumed to represent energy and
+        the power two is omitted from the given equation.
 
     Returns
     -------
@@ -134,9 +137,9 @@ def _schroeder_integration(impulse_response, is_energy=False):
     The result is the energy decay curve for the given room impulse
     response [#]_.
 
-    .. math:
+    .. math::
 
-        \langle e^2(t) \rangle = N\cdot \int_{t}^{\infty} h^2(\tau)
+        \langle e^2(t) \rangle = \int_{t}^{\infty} h^2(\tau)
         \mathrm{d} \tau
 
     Parameters
@@ -165,7 +168,8 @@ def _schroeder_integration(impulse_response, is_energy=False):
 
     ndim = data.ndim
     data = np.atleast_2d(data)
-    energy_decay_curve = np.fliplr(np.nancumsum(np.fliplr(data), axis=-1))
+    energy_decay_curve = np.flip(
+        np.nancumsum(np.flip(data, axis=-1), axis=-1), axis=-1)
 
     if ndim < energy_decay_curve.ndim:
         energy_decay_curve = np.squeeze(energy_decay_curve)
