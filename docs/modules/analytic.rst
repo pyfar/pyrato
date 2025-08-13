@@ -5,4 +5,4 @@ pyrato.analytic
    :members:
    :undoc-members:
    :show-inheritance:
-
+   
