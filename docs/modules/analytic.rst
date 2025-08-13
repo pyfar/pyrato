@@ -1,9 +1,8 @@
 pyrato.analytic
 ===============
 
-.. toctree::
-   :maxdepth: 1
-
-   analytic/analytic
-   analytic/impedance
+.. automodule:: pyrato.analytic
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
