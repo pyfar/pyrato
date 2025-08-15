@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-The edc_noise_handling module provides various methods for noise
-compensation of room impulse responses.
+Sub-module implementing different methods for the calculation of energy decay
+curves (EDCs) from measured or simulated room impulse responses (RIRs).
 """
 
 import numpy as np
@@ -117,7 +117,7 @@ def schroeder_integration(room_impulse_response, is_energy=False):
         ...     L, source_pos, receiver_pos,
         ...     reverberation_time=1, max_freq=1e3, n_samples=2**16,
         ...     speed_of_sound=343.9)
-        >>> edc = ra.schroeder_integration(rir)
+        >>> edc = ra.edc.schroeder_integration(rir)
         >>> pf.plot.time(rir/np.abs(rir.time).max(), dB=True, label='RIR')
         >>> ax = pf.plot.time(
         ...     edc/edc.time[..., 0], dB=True, log_prefix=10, label='EDC')
@@ -255,7 +255,7 @@ def energy_decay_curve_truncation(
         ...     rir.n_samples, rms=rir.time.max()*10**(-50/20),
         ...     sampling_rate=rir.sampling_rate)
         >>> rir = rir + awgn
-        >>> edc = ra.energy_decay_curve_truncation(rir)
+        >>> edc = ra.edc.energy_decay_curve_truncation(rir)
         ...
         >>> ax = pf.plot.time(rir, dB=True, label='RIR')
         >>> pf.plot.time(edc, dB=True, log_prefix=10, label='EDC')
@@ -393,7 +393,7 @@ def energy_decay_curve_lundeby(
         ...     rir.n_samples, rms=rir.time.max()*10**(-50/20),
         ...     sampling_rate=rir.sampling_rate)
         >>> rir = rir + awgn
-        >>> edc = ra.energy_decay_curve_lundeby(rir)
+        >>> edc = ra.edc.energy_decay_curve_lundeby(rir)
         ...
         >>> ax = pf.plot.time(rir, dB=True, label='RIR')
         >>> pf.plot.time(edc, dB=True, log_prefix=10, label='EDC')
@@ -539,7 +539,7 @@ def energy_decay_curve_chu(
         ...     rir.n_samples, rms=rir.time.max()*10**(-40/20),
         ...     sampling_rate=rir.sampling_rate)
         >>> rir = rir + awgn
-        >>> edc = ra.energy_decay_curve_chu(rir)
+        >>> edc = ra.edc.energy_decay_curve_chu(rir)
         ...
         >>> pf.plot.time(rir/np.abs(rir.time).max(), dB=True, label='RIR')
         >>> ax = pf.plot.time(
@@ -679,7 +679,7 @@ def energy_decay_curve_chu_lundeby(
         ...     rir.n_samples, rms=rir.time.max()*10**(-50/20),
         ...     sampling_rate=rir.sampling_rate)
         >>> rir = rir + awgn
-        >>> edc = ra.energy_decay_curve_chu_lundeby(rir)
+        >>> edc = ra.edc.energy_decay_curve_chu_lundeby(rir)
         ...
         >>> ax = pf.plot.time(rir, dB=True, label='RIR')
         >>> pf.plot.time(edc, dB=True, log_prefix=10, label='EDC')
@@ -832,7 +832,7 @@ def intersection_time_lundeby(
         ...     rir.n_samples, rms=rir.time.max()*10**(-40/20),
         ...     sampling_rate=rir.sampling_rate)
         >>> rir = rir + awgn
-        >>> inter_time, _, noise_power = ra.intersection_time_lundeby(rir)
+        >>> inter_time, _, noise_power = ra.edc.intersection_time_lundeby(rir)
         ...
         >>> ax = pf.plot.time(rir, dB=True, label='RIR')
         >>> ax.axvline(inter_time, c='k', linestyle='--', label='$T_i$')
