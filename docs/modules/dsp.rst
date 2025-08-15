@@ -1,7 +1,7 @@
-pyrato
-======
+pyrato.dsp
+==========
 
-.. automodule:: pyrato
+.. automodule:: pyrato.dsp
    :members:
    :undoc-members:
    :show-inheritance:
