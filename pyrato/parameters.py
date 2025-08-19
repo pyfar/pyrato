@@ -4,6 +4,9 @@ simulated or experimental data.
 """
 import re
 import numpy as np
+import pyfar.signals as pysi
+from . import dsp
+import warnings
 
 
 def reverberation_time_linear_regression(
@@ -102,3 +105,90 @@ def reverberation_time_linear_regression(
         return reverberation_times, intercepts
     else:
         return reverberation_times
+
+
+
+
+
+import numpy as np
+import pyfar as pf
+import pyfar.dsp as dsp
+
+def clarity(RIR, early_time_limit=80):
+    """Calculate the clarity of a signal in a room. 
+    
+    The clarity parameter is calculated with the early-to-late index at 50 ms or 80 ms and describes how 
+    clearly someone can hear sound and music in a room
+
+    Parameters
+    ----------
+    RIR : pyfar.Signal
+        Room impulse response (or energy decay curve)
+    early_time_limit : float [s]
+        Early time limit to calculate the clarity as a scalar in seconds
+        Typically 0.05 (C50) or 0.08 (C80).
+
+    Returns
+    -------
+    clarity : ndarray [dB]
+        Clarity index (early-to-late energy ratio) in decibel,
+        shaped according to the channel structure of RIR.
+
+    Reference
+    ---------
+    ISO3382-1 : Annex A
+    """
+    if not hasattr(RIR, "cshape") or not hasattr(RIR, "sampling_rate"):
+        raise AttributeError("clarity() requires a Signal object as input.")
+
+    # warnign for unusual early_time_limit
+    if early_time_limit not in (50, 80):
+        warnings.warn(
+            f"early_time_limit={early_time_limit}s is unusual. "
+            "Typically 50ms (C50) or 80ms (C80) are used.",
+            UserWarning
+        )
+
+    # get channel shape & flatten audio object
+    channel_shape = RIR.cshape
+    RIR_flat = RIR.flatten()
+
+    clarity_vals = []
+
+    # iterate over flattended channels
+    for rir in RIR_flat:
+
+        # start-index
+        start_index = dsp.find_impulse_response_start(rir)[0]
+
+        # early_time_limit-index
+        early_time_limit_index = int(rir.find_nearest_time(early_time_limit/1000))
+
+        # calculate edc
+        if rir.signal_type == "energy":
+            energy_decay = rir.time
+        else:
+            energy_decay = rir.time**2
+
+        # late- and early energy
+        energy_decay_early = np.sum(energy_decay[:,start_index:early_time_limit_index])
+        energy_decay_late = np.sum(energy_decay[:,early_time_limit_index:])
+
+        # clarity fraction incl. edge case handling
+        if energy_decay_early == 0 and energy_decay_late == 0:
+            val = np.nan
+        elif energy_decay_early == 0:
+            val = -np.inf
+        elif energy_decay_late == 0:
+            val = np.inf
+        else:
+            val = 10 * np.log10(energy_decay_early / energy_decay_late)
+
+        clarity_vals.append(val)
+
+    # reshape array to channel_shape
+    clarity_vals = np.array(clarity_vals).reshape(channel_shape)
+
+    return clarity_vals
+
+
