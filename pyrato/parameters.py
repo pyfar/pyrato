@@ -4,8 +4,7 @@ simulated or experimental data.
 """
 import re
 import numpy as np
-import pyfar.signals as pysi
-from . import dsp
+import pyfar as pf
 import warnings
 
 
@@ -110,85 +109,106 @@ def reverberation_time_linear_regression(
 
 
 
-import numpy as np
-import pyfar as pf
-import pyfar.dsp as dsp
 
 def clarity(RIR, early_time_limit=80):
-    """Calculate the clarity of a signal in a room. 
-    
-    The clarity parameter is calculated with the early-to-late index at 50 ms or 80 ms and describes how 
-    clearly someone can hear sound and music in a room
+    """
+    Calculate the clarity of a room impulse response.
+
+    The clarity parameter (C50 or C80) is defined as the ratio of early-to-late
+    arriving energy in an impulse response and describes how clearly speech or
+    music can be perceived in a room. The early-to-late boundary is typically
+    set at 50 ms (C50) or 80 ms (C80).
 
     Parameters
     ----------
     RIR : pyfar.Signal
-        Room impulse response (or energy decay curve)
-    early_time_limit : float [s]
-        Early time limit to calculate the clarity as a scalar in seconds
-        Typically 0.05 (C50) or 0.08 (C80).
+        Room impulse response (time-domain signal).
+    early_time_limit : float, optional
+        Early time limit in milliseconds. Defaults to 80 (C80). Typical values
+        are 50 ms (C50) or 80 ms (C80).
+    frequencies : None or ndarray, optional
+        Placeholder for octave/third-octave band center frequencies if the
+        result should be returned as a frequency-domain representation. The
+        filtering must be applied by the user prior to calling this function.
 
     Returns
     -------
-    clarity : ndarray [dB]
-        Clarity index (early-to-late energy ratio) in decibel,
-        shaped according to the channel structure of RIR.
+    clarity : ndarray of float
+        Clarity index (early-to-late energy ratio) in decibels, shaped according
+        to the channel structure of ``RIR``.
 
-    Reference
-    ---------
-    ISO3382-1 : Annex A
+    References
+    ----------
+    ISO 3382-1 : Annex A
+
+    Examples
+    --------
+
+    Estimate the clarity from a real room impulse response and octave-band
+    filtering:
+
+    >>> import numpy as np
+    >>> import pyfar as pf
+    >>> import pyrato as ra
+    >>> RIR = pf.signals.files.room_impulse_response(sampling_rate=44100)
+    >>> RIR = pf.dsp.filter.fractional_octave_bands(RIR, bands_per_octave=3)
+    >>> C80 = ra.parameters.clarity(RIR, early_time_limit=80)
+
     """
+
     if not hasattr(RIR, "cshape") or not hasattr(RIR, "sampling_rate"):
-        raise AttributeError("clarity() requires a Signal object as input.")
+        raise AttributeError("clarity() requires a signal object as input.")
 
     # warnign for unusual early_time_limit
     if early_time_limit not in (50, 80):
         warnings.warn(
-            f"early_time_limit={early_time_limit}s is unusual. "
-            "Typically 50ms (C50) or 80ms (C80) are used.",
+            f"early_time_limit={early_time_limit}ms is unusual. "
+            "Typically 50ms (C50) or 80ms (C80) are chosen.",
             UserWarning
         )
+    signal_length_ms = (RIR.signal_length) * 1000
+    if early_time_limit > signal_length_ms:
+        raise ValueError("early_time_limit cannot be larger than signal length.")
+    if early_time_limit <= 0:
+        raise ValueError("early_time_limit must be positive.")
 
-    # get channel shape & flatten audio object
+    if RIR.complex:
+        warnings.warn(
+            "Complex-valued input detected. Clarity is only defined for real "
+            "signals and will be computed using |x(t)|^2.",
+            UserWarning,
+        )
+    
+    # convert milliseconds to seconds for index lookup
+    early_time_limit_sec = early_time_limit / 1000
+
     channel_shape = RIR.cshape
     RIR_flat = RIR.flatten()
 
     clarity_vals = []
 
-    # iterate over flattended channels
     for rir in RIR_flat:
+        start_index = pf.dsp.find_impulse_response_start(rir)[0]
+        early_time_limit_index = int(rir.find_nearest_time(early_time_limit_sec))
 
-        # start-index
-        start_index = dsp.find_impulse_response_start(rir)[0]
+        # energy from squared amplitude
+        energy_decay = np.abs(rir.time) ** 2
 
-        # early_time_limit-index
-        early_time_limit_index = int(rir.find_nearest_time(early_time_limit/1000))
+        early_energy = np.sum(energy_decay[:, start_index:early_time_limit_index])
+        late_energy = np.sum(energy_decay[:, early_time_limit_index:])
 
-        # calculate edc
-        if rir.signal_type == "energy":
-            energy_decay = rir.time
-        else:
-            energy_decay = rir.time**2
-
-        # late- and early energy
-        energy_decay_early = np.sum(energy_decay[:,start_index:early_time_limit_index])
-        energy_decay_late = np.sum(energy_decay[:,early_time_limit_index:])
-
-        # clarity fraction incl. edge case handling
-        if energy_decay_early == 0 and energy_decay_late == 0:
+        if early_energy == 0 and late_energy == 0:
             val = np.nan
-        elif energy_decay_early == 0:
+        elif early_energy == 0:
             val = -np.inf
-        elif energy_decay_late == 0:
+        elif late_energy == 0:
             val = np.inf
         else:
-            val = 10 * np.log10(energy_decay_early / energy_decay_late)
+            val = 10 * np.log10(early_energy / late_energy)
 
         clarity_vals.append(val)
 
-    # reshape array to channel_shape
-    clarity_vals = np.array(clarity_vals).reshape(channel_shape)
-
-    return clarity_vals
+    clarity = np.array(clarity_vals).reshape(channel_shape)
+    return clarity
 
 
