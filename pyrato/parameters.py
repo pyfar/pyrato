@@ -112,7 +112,7 @@ def reverberation_time_linear_regression(
 
 def clarity(EDC, te=80):
     """
-    Calculate the clarity from EDC of a room impulse response.
+    Calculate the clarity from the energy decay curve (EDC) of a room impulse response.
 
     The clarity parameter (C50 or C80) is defined as the ratio of early-to-late
     arriving energy in an impulse response and describes how clearly speech or
@@ -122,7 +122,8 @@ def clarity(EDC, te=80):
     Parameters
     ----------
     EDC : pyfar.TimeData
-        EDC of Room impulse response (time-domain signal). EDC must be normalised to 1 at time zero.
+        Energy decay curve of the room impulse response (time-domain signal). The
+        EDC must be normalized to 1 at time zero.
     te : float, optional
         Early time limit (te) in milliseconds. Defaults to 80 (C80). Typical values
         are 50 ms (C50) or 80 ms (C80).
@@ -131,7 +132,7 @@ def clarity(EDC, te=80):
     -------
     clarity : ndarray of float
         Clarity index (early-to-late energy ratio) in decibels, shaped according
-        to the channel structure of ``RIR``.
+        to the channel structure of the input EDC.
 
     References
     ----------
@@ -139,19 +140,15 @@ def clarity(EDC, te=80):
 
     Examples
     --------
-
-    Estimate the clarity from a real room impulse response and octave-band
-    filtering:
+    Estimate the clarity from a real room impulse response and octave-band filtering:
 
     >>> import numpy as np
     >>> import pyfar as pf
     >>> import pyrato as ra
-    >>> RIR = pf.signals.files.room_impulse_response(sampling_rate=44100)
-    >>> RIR = pf.dsp.filter.fractional_octave_bands(RIR, bands_per_octave=3)
-
-    # EDC calculation tutorial
-
-    >>> C80 = ra.parameters.clarity(RIR, te=80)
+    >>> rir = pf.signals.files.room_impulse_response(sampling_rate=44100)
+    >>> rir = pf.dsp.filter.fractional_octave_bands(rir, bands_per_octave=3)
+    >>> edc = ra.edc.energy_decay_curve_chu(rir)
+    >>> C80 = ra.parameters.clarity(edc, te=80)
     """
 
     # cherck input type
