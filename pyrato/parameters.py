@@ -151,30 +151,33 @@ def clarity(EDC, te=80):
     >>> C80 = ra.parameters.clarity(edc, te=80)
     """
 
-    # cherck input type
+    # Check input type
     if not isinstance(EDC, pf.TimeData):
-        raise TypeError("Input must be pyfar.TimeData")
+        raise TypeError("Input must be a pyfar.TimeData object.")
 
-    # warnign for unusual te
+    # Warn for unusual te
     if te not in (50, 80):
         warnings.warn(
-            f"te={te}ms is unusual. "
-            "According to DIN EN ISO 3382-3 typically 50ms (C50) or 80ms (C80) are chosen.", # "according to IEC XXX"
-            UserWarning
+            f"te={te} ms is unusual. "
+            "According to DIN EN ISO 3382-3, typically 50 ms (C50) or 80 ms (C80) are chosen.",
+            UserWarning,
         )
-    
-    # Value Error if TimeData is complex
+
+    # Raise error if TimeData is complex
     if EDC.complex:
-        raise ValueError("Complex-valued input detected. Clarity is only defined for real TimeData.")
-    
-    # Value Error milliseconds to seconds for index lookup
-    EDC_length_ms = (EDC.signal_length) * 1000
+        raise ValueError(
+            "Complex-valued input detected. Clarity is only defined for real TimeData."
+        )
+
+    # Validate time range
+    EDC_length_ms = EDC.signal_length * 1000
     if te > EDC_length_ms:
         raise ValueError("te cannot be larger than signal length.")
     if te <= 0:
         raise ValueError("te must be positive.")
-    
-    te_sec = te / 1000
+
+    # Convert milliseconds to seconds
+    te_sec = te / 1000.0
 
     channel_shape = EDC.cshape
     EDC_flat = EDC.flatten()
@@ -183,15 +186,17 @@ def clarity(EDC, te=80):
 
     for edc in EDC_flat:
         te_idx = int(edc.find_nearest_time(te_sec))
-        edc_val = edc.time[0, te_idx] 
+        edc_val = edc.time[0, te_idx]
+
         if edc_val <= 0:
             val = np.nan
         elif edc_val == 1:
-            val = -np.inf 
+            val = -np.inf
         else:
             val = 10 * np.log10(1 / edc_val - 1)
 
         clarity_vals.append(val)
+
     clarity = np.array(clarity_vals).reshape(channel_shape)
     return clarity
 
