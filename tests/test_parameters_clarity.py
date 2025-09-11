@@ -26,7 +26,7 @@ def test_clarity_accepts_timedata_and_returns_correct_type():
     energy = np.concatenate(([1, 1, 1, 1], np.zeros(124)))
     edc = make_edc_from_energy(energy, sampling_rate=1000)
 
-    result = clarity(edc, early_time_limit=2)  # 2 ms
+    result = clarity(edc, te=2)  # 2 ms
     assert isinstance(result, (float, np.ndarray))
     assert result.shape == edc.cshape
 
@@ -43,7 +43,7 @@ def test_clarity_preserves_multichannel_shape():
     # Build a dummy EDC for both channels
     energy = np.abs(rir.time) ** 2
     edc = make_edc_from_energy(energy, rir.sampling_rate)
-    output = clarity(edc, early_time_limit=80)
+    output = clarity(edc, te=80)
     assert edc.cshape == output.shape
 
 
@@ -57,16 +57,16 @@ def test_clarity_warns_for_unusually_short_time_limit():
     energy = np.ones(128)
     edc = make_edc_from_energy(energy, sampling_rate=44100)
     with pytest.warns(UserWarning):
-        clarity(edc, early_time_limit=0.05)
+        clarity(edc, te=0.05)
 
 
 def test_clarity_calculates_known_reference_value():
-    # Linear decay → early_time_limit at 1/2 energy -> ratio = 1 -> 0 dB
+    # Linear decay → te at 1/2 energy -> ratio = 1 -> 0 dB
     edc_vals = np.array([1.0, 0.75, 0.5, 0.0])  # monotonic decay
     times = np.arange(len(edc_vals)) / 1000
     edc = pf.TimeData(edc_vals[np.newaxis, :], times)
 
-    result = clarity(edc, early_time_limit=2)
+    result = clarity(edc, te=2)
     assert np.isclose(result, 0.0, atol=1e-6)
 
 
@@ -87,7 +87,7 @@ def test_clarity_matches_analytical_geometric_decay_solution():
     ) / (1 - squared_factor)
     expected_db = 10 * np.log10(early_energy / late_energy)
 
-    result = clarity(edc, early_time_limit=early_cutoff)
+    result = clarity(edc, te=early_cutoff)
     assert np.isclose(result, expected_db, atol=1e-6)
 
 
@@ -111,13 +111,13 @@ def test_clarity_from_truth_edc():
     times = np.linspace(0, 0.25, len(truth))
     edc = pf.TimeData(truth[np.newaxis, :], times)
 
-    t0 = 0.08  # 80 ms
-    idx = np.argmin(np.abs(times - t0))
+    te = 0.08  # 80 ms
+    idx = np.argmin(np.abs(times - te))
     edc_val = truth[idx]
 
     early_energy = truth[0] - edc_val
     late_energy = edc_val
     expected_c80 = 10 * np.log10(early_energy / late_energy)
 
-    result = clarity(edc, early_time_limit=80)
+    result = clarity(edc, te=80)
     assert np.isclose(result, expected_c80, atol=1e-6)

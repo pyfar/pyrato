@@ -110,7 +110,7 @@ def reverberation_time_linear_regression(
 
 
 
-def clarity(EDC, early_time_limit=80):
+def clarity(EDC, te=80):
     """
     Calculate the clarity from EDC of a room impulse response.
 
@@ -123,8 +123,8 @@ def clarity(EDC, early_time_limit=80):
     ----------
     EDC : pyfar.TimeData
         EDC of Room impulse response (time-domain signal). EDC must be normalised to 1 at time zero.
-    early_time_limit : float, optional
-        Early time limit in milliseconds. Defaults to 80 (C80). Typical values
+    te : float, optional
+        Early time limit (te) in milliseconds. Defaults to 80 (C80). Typical values
         are 50 ms (C50) or 80 ms (C80).
 
     Returns
@@ -151,17 +151,17 @@ def clarity(EDC, early_time_limit=80):
 
     # EDC calculation tutorial
 
-    >>> C80 = ra.parameters.clarity(RIR, early_time_limit=80)
+    >>> C80 = ra.parameters.clarity(RIR, te=80)
     """
 
     # cherck input type
     if not isinstance(EDC, pf.TimeData):
         raise TypeError("Input must be pyfar.TimeData")
 
-    # warnign for unusual early_time_limit
-    if early_time_limit not in (50, 80):
+    # warnign for unusual te
+    if te not in (50, 80):
         warnings.warn(
-            f"early_time_limit={early_time_limit}ms is unusual. "
+            f"te={te}ms is unusual. "
             "According to DIN EN ISO 3382-3 typically 50ms (C50) or 80ms (C80) are chosen.", # "according to IEC XXX"
             UserWarning
         )
@@ -170,18 +170,14 @@ def clarity(EDC, early_time_limit=80):
     if EDC.complex:
         raise ValueError("Complex-valued input detected. Clarity is only defined for real TimeData.")
     
-
-    EDC_length_ms = (EDC.signal_length) * 1000
-    if early_time_limit > EDC_length_ms:
-        raise ValueError("early_time_limit cannot be larger than signal length.")
-    if early_time_limit <= 0:
-        raise ValueError("early_time_limit must be positive.")
-
-    
-
-
     # Value Error milliseconds to seconds for index lookup
-    early_time_limit_sec = early_time_limit / 1000
+    EDC_length_ms = (EDC.signal_length) * 1000
+    if te > EDC_length_ms:
+        raise ValueError("te cannot be larger than signal length.")
+    if te <= 0:
+        raise ValueError("te must be positive.")
+    
+    te_sec = te / 1000
 
     channel_shape = EDC.cshape
     EDC_flat = EDC.flatten()
@@ -189,12 +185,12 @@ def clarity(EDC, early_time_limit=80):
     clarity_vals = []
 
     for edc in EDC_flat:
-        early_time_limit_index = int(edc.find_nearest_time(early_time_limit_sec))
-        edc_val = edc.time[0, early_time_limit_index]  # first channel, correct sample
+        te_idx = int(edc.find_nearest_time(te_sec))
+        edc_val = edc.time[0, te_idx] 
         if edc_val <= 0:
             val = np.nan
         elif edc_val == 1:
-            val = -np.inf  # or np.inf, depending on your convention
+            val = -np.inf 
         else:
             val = 10 * np.log10(1 / edc_val - 1)
 
