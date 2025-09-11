@@ -110,9 +110,9 @@ def reverberation_time_linear_regression(
 
 
 
-def clarity(RIR, early_time_limit=80):
+def clarity(EDC, early_time_limit=80):
     """
-    Calculate the clarity of a room impulse response.
+    Calculate the clarity from EDC of a room impulse response.
 
     The clarity parameter (C50 or C80) is defined as the ratio of early-to-late
     arriving energy in an impulse response and describes how clearly speech or
@@ -121,15 +121,11 @@ def clarity(RIR, early_time_limit=80):
 
     Parameters
     ----------
-    RIR : pyfar.Signal
-        Room impulse response (time-domain signal).
+    EDC : pyfar.TimeData
+        EDC of Room impulse response (time-domain signal). EDC must be normalised to 1 at time zero.
     early_time_limit : float, optional
         Early time limit in milliseconds. Defaults to 80 (C80). Typical values
         are 50 ms (C50) or 80 ms (C80).
-    frequencies : None or ndarray, optional
-        Placeholder for octave/third-octave band center frequencies if the
-        result should be returned as a frequency-domain representation. The
-        filtering must be applied by the user prior to calling this function.
 
     Returns
     -------
@@ -152,62 +148,57 @@ def clarity(RIR, early_time_limit=80):
     >>> import pyrato as ra
     >>> RIR = pf.signals.files.room_impulse_response(sampling_rate=44100)
     >>> RIR = pf.dsp.filter.fractional_octave_bands(RIR, bands_per_octave=3)
-    >>> C80 = ra.parameters.clarity(RIR, early_time_limit=80)
 
+    # EDC calculation tutorial
+
+    >>> C80 = ra.parameters.clarity(RIR, early_time_limit=80)
     """
 
-    if not hasattr(RIR, "cshape") or not hasattr(RIR, "sampling_rate"):
-        raise AttributeError("clarity() requires a signal object as input.")
+    # cherck input type
+    if not isinstance(EDC, pf.TimeData):
+        raise TypeError("Input must be pyfar.TimeData")
 
     # warnign for unusual early_time_limit
     if early_time_limit not in (50, 80):
         warnings.warn(
             f"early_time_limit={early_time_limit}ms is unusual. "
-            "Typically 50ms (C50) or 80ms (C80) are chosen.",
+            "According to DIN EN ISO 3382-3 typically 50ms (C50) or 80ms (C80) are chosen.", # "according to IEC XXX"
             UserWarning
         )
-    signal_length_ms = (RIR.signal_length) * 1000
-    if early_time_limit > signal_length_ms:
+    
+    # Value Error if TimeData is complex
+    if EDC.complex:
+        raise ValueError("Complex-valued input detected. Clarity is only defined for real TimeData.")
+    
+
+    EDC_length_ms = (EDC.signal_length) * 1000
+    if early_time_limit > EDC_length_ms:
         raise ValueError("early_time_limit cannot be larger than signal length.")
     if early_time_limit <= 0:
         raise ValueError("early_time_limit must be positive.")
 
-    if RIR.complex:
-        warnings.warn(
-            "Complex-valued input detected. Clarity is only defined for real "
-            "signals and will be computed using |x(t)|^2.",
-            UserWarning,
-        )
     
-    # convert milliseconds to seconds for index lookup
+
+
+    # Value Error milliseconds to seconds for index lookup
     early_time_limit_sec = early_time_limit / 1000
 
-    channel_shape = RIR.cshape
-    RIR_flat = RIR.flatten()
+    channel_shape = EDC.cshape
+    EDC_flat = EDC.flatten()
 
     clarity_vals = []
 
-    for rir in RIR_flat:
-        start_index = pf.dsp.find_impulse_response_start(rir)[0]
-        early_time_limit_index = int(rir.find_nearest_time(early_time_limit_sec))
-
-        # energy from squared amplitude
-        energy_decay = np.abs(rir.time) ** 2
-
-        early_energy = np.sum(energy_decay[:, start_index:early_time_limit_index])
-        late_energy = np.sum(energy_decay[:, early_time_limit_index:])
-
-        if early_energy == 0 and late_energy == 0:
+    for edc in EDC_flat:
+        early_time_limit_index = int(edc.find_nearest_time(early_time_limit_sec))
+        edc_val = edc.time[0, early_time_limit_index]  # first channel, correct sample
+        if edc_val <= 0:
             val = np.nan
-        elif early_energy == 0:
-            val = -np.inf
-        elif late_energy == 0:
-            val = np.inf
+        elif edc_val == 1:
+            val = -np.inf  # or np.inf, depending on your convention
         else:
-            val = 10 * np.log10(early_energy / late_energy)
+            val = 10 * np.log10(1 / edc_val - 1)
 
         clarity_vals.append(val)
-
     clarity = np.array(clarity_vals).reshape(channel_shape)
     return clarity
 
