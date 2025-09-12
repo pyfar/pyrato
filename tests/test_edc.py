@@ -18,7 +18,8 @@ def test_schroeder_integration(is_energy):
     """Simple impulse response."""
     factor = 2 if is_energy else np.sqrt(2)
     data = pf.Signal(np.ones((1, 10))*factor, sampling_rate=10)
-    energy_decay_curve = ra.edc.schroeder_integration(data, is_energy=is_energy)
+    energy_decay_curve = ra.edc.schroeder_integration(
+        data, is_energy=is_energy)
 
     # test if the shape is correct
     npt.assert_array_equal(energy_decay_curve.time.shape, data.time.shape)
@@ -33,7 +34,8 @@ def test_schroeder_integration_multi_cdim(is_energy):
     """Simple impulse response."""
     factor = 2 if is_energy else np.sqrt(2)
     data = pf.Signal(np.ones((2, 1, 10))*factor, sampling_rate=10)
-    energy_decay_curve = ra.edc.schroeder_integration(data, is_energy=is_energy)
+    energy_decay_curve = ra.edc.schroeder_integration(
+        data, is_energy=is_energy)
 
     # test if the shape is correct
     npt.assert_array_equal(energy_decay_curve.time.shape, data.time.shape)
