@@ -86,6 +86,17 @@ def test_clarity_matches_analytical_geometric_decay_solution():
     result = clarity(edc, te=early_cutoff)
     assert np.isclose(result, expected_db, atol=1e-6)
 
+def test_clarity_values_for_given_ratio():
+    energy_early = 1
+    energy_late = .5
+    etc = pf.TimeData(np.zeros((3, 1000)), np.arange(1000) / 1000)
+    etc.time[..., 10] = energy_early
+    etc.time[..., 100] = energy_late
+    edc = ra.edc.schroeder_integration(etc, is_energy=True)
+    edc = pf.dsp.normalize(edc, reference_method='max')
+    result = clarity(edc, te=80)
+    clarity_value_db = 10 * np.log10(energy_early/energy_late)
+    npt.assert_allclose(result, clarity_value_db, atol=1e-6)
 
 def test_clarity_from_truth_edc():
     # real-EDC from test_edc:test_edc_eyring
