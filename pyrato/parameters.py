@@ -135,7 +135,7 @@ def clarity(energy_decay_curve, early_time_limit=80):
     ----------
     energy_decay_curve : pyfar.TimeData
         Energy decay curve (EDC) of the room impulse response (time-domain signal). The
-        EDC must be normalized to 1 at time zero.
+        EDC must start at time zero.
     early_time_limit : float, optional
         Early time limit (te) in milliseconds. Defaults to 80 (C80). Typical values
         are 50 ms (C50) or 80 ms (C80) _[#].
@@ -172,7 +172,7 @@ def clarity(energy_decay_curve, early_time_limit=80):
     # Warn for unusual early_time_limit
     if early_time_limit not in (50, 80):
         warnings.warn(
-            f"early_time_limit={early_time_limit} ms is unusual. "
+            f"early_time_limit={early_time_limit} ms is unusual."
             "According to DIN EN ISO 3382-3, typically 50 ms (C50) or 80 ms (C80) are chosen.",
             UserWarning,
         )
@@ -180,7 +180,6 @@ def clarity(energy_decay_curve, early_time_limit=80):
     # Validate time range
     if (early_time_limit > energy_decay_curve.signal_length * 1000) or (early_time_limit <= 0):
         raise ValueError(f"early_time_limit must be in the range of 0 and {energy_decay_curve.signal_length * 1000}.")
-
 
     # Raise error if TimeData is complex
     if energy_decay_curve.complex:
@@ -191,11 +190,15 @@ def clarity(energy_decay_curve, early_time_limit=80):
     # Convert milliseconds to seconds
     early_time_limit_sec = early_time_limit / 1000.0
 
+    start_vals_energy_decay_curve = energy_decay_curve.time[..., 0]
+    start_vals_energy_decay_curve[start_vals_energy_decay_curve <= 0] = np.nan
+
     idx_early_time_limit = int(energy_decay_curve.find_nearest_time(early_time_limit_sec))
     vals_energy_decay_curve = energy_decay_curve.time[..., idx_early_time_limit]
     vals_energy_decay_curve[vals_energy_decay_curve <= 0] = np.nan
 
-    clarity = 1 / vals_energy_decay_curve - 1
+
+    clarity = start_vals_energy_decay_curve / vals_energy_decay_curve - 1
     clarity_db = 10 * np.log10(clarity)
 
     return clarity_db
