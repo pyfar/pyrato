@@ -167,3 +167,4 @@ def test_clarity_from_truth_edc():
 
     result = clarity(edc, early_time_limit=80)
     np.testing.assert_allclose(result, expected_c80, atol=1e-6)
+    

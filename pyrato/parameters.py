@@ -174,13 +174,13 @@ def clarity(energy_decay_curve, early_time_limit=80):
         warnings.warn(
             f"early_time_limit={early_time_limit} ms is unusual."
             "According to DIN EN ISO 3382-3, typically 50 ms (C50) or 80 ms (C80) are chosen.",
-            UserWarning,
+            stacklevel=2,
         )
-    
+
     # Validate time range
     if (early_time_limit > energy_decay_curve.signal_length * 1000) or (early_time_limit <= 0):
         raise ValueError(
-            f"early_time_limit must be in the range of 0 and {energy_decay_curve.signal_length * 1000}."
+            f"early_time_limit must be in the range of 0 and {energy_decay_curve.signal_length * 1000}.",
             )
 
     # Raise error if TimeData is complex
@@ -204,5 +204,3 @@ def clarity(energy_decay_curve, early_time_limit=80):
     clarity_db = 10 * np.log10(clarity)
 
     return clarity_db
-
-
