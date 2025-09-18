@@ -110,80 +110,94 @@ def reverberation_time_linear_regression(
 
 
 
-def clarity(EDC, te=80):
+def clarity(energy_decay_curve, early_time_limit=80):
     """
     Calculate the clarity from the energy decay curve (EDC) of a room impulse response.
 
     The clarity parameter (C50 or C80) is defined as the ratio of early-to-late
     arriving energy in an impulse response and describes how clearly speech or
     music can be perceived in a room. The early-to-late boundary is typically
-    set at 50 ms (C50) or 80 ms (C80).
+    set at 50 ms (C50) or 80 ms (C80) _[#].
+
+    The clarity is calculated as:
+
+    .. math::
+
+        C_{t_e} = 10 \cdot \lg \frac{
+            \int\limits_{0}^{t_e} p^2(t)  dt
+        }{
+            \int\limits_{t_e}^{\infty} p^2(t)  dt
+        }
+
+    where :math:`t_e` is the early time limit.
 
     Parameters
     ----------
-    EDC : pyfar.TimeData
-        Energy decay curve of the room impulse response (time-domain signal). The
+    energy_decay_curve : pyfar.TimeData
+        Energy decay curve (EDC) of the room impulse response (time-domain signal). The
         EDC must be normalized to 1 at time zero.
-    te : float, optional
+    early_time_limit : float, optional
         Early time limit (te) in milliseconds. Defaults to 80 (C80). Typical values
-        are 50 ms (C50) or 80 ms (C80).
+        are 50 ms (C50) or 80 ms (C80) _[#].
 
     Returns
     -------
     clarity : ndarray of float
         Clarity index (early-to-late energy ratio) in decibels, shaped according
-        to the channel structure of the input EDC.
+        to the channel shape of the input EDC.
 
     References
     ----------
-    ISO 3382-1 : Annex A
+    .. [#] ISO 3382-1
 
     Examples
     --------
-    Estimate the clarity from a real room impulse response and octave-band filtering:
+    Estimate the clarity from a real room impulse response filtered in octave bands:
 
     >>> import numpy as np
     >>> import pyfar as pf
     >>> import pyrato as ra
     >>> rir = pf.signals.files.room_impulse_response(sampling_rate=44100)
-    >>> rir = pf.dsp.filter.fractional_octave_bands(rir, bands_per_octave=3)
-    >>> edc = ra.edc.energy_decay_curve_chu(rir)
-    >>> C80 = ra.parameters.clarity(edc, te=80)
+    >>> rir = pf.dsp.filter.fractional_octave_bands(rir)
+    >>> edc = ra.edc.energy_decay_curve_lundeby(rir)
+    >>> C80 = clarity(edc, early_time_limit=80)
     """
 
     # Check input type
-    if not isinstance(EDC, pf.TimeData):
+    if not isinstance(energy_decay_curve, pf.TimeData):
         raise TypeError("Input must be a pyfar.TimeData object.")
+    if not isinstance(early_time_limit, (int, float)):
+        raise TypeError('early_time_limit must be a number.')
 
-    # Warn for unusual te
-    if te not in (50, 80):
+    # Warn for unusual early_time_limit
+    if early_time_limit not in (50, 80):
         warnings.warn(
-            f"te={te} ms is unusual. "
+            f"early_time_limit={early_time_limit} ms is unusual. "
             "According to DIN EN ISO 3382-3, typically 50 ms (C50) or 80 ms (C80) are chosen.",
             UserWarning,
         )
+    
+    # Validate time range
+    if (early_time_limit > energy_decay_curve.signal_length * 1000) or (early_time_limit <= 0):
+        raise ValueError(f"early_time_limit must be in the range of 0 and {energy_decay_curve.signal_length * 1000}.")
+
 
     # Raise error if TimeData is complex
-    if EDC.complex:
+    if energy_decay_curve.complex:
         raise ValueError(
             "Complex-valued input detected. Clarity is only defined for real TimeData."
         )
 
-    # Validate time range
-    EDC_length_ms = EDC.signal_length * 1000
-    if te > EDC_length_ms:
-        raise ValueError("te cannot be larger than signal length.")
-    if te <= 0:
-        raise ValueError("te must be positive.")
-
     # Convert milliseconds to seconds
-    te_sec = te / 1000.0
+    early_time_limit_sec = early_time_limit / 1000.0
 
-    te_idx = int(edc.find_nearest_time(te_sec)
-    edc_vals = edc.time[..., te_idx]
-    edc_vals[edc_vals <= 0] = np.nan
-    clarity = 1 / edc_vals - 1
+    idx_early_time_limit = int(energy_decay_curve.find_nearest_time(early_time_limit_sec))
+    vals_energy_decay_curve = energy_decay_curve.time[..., idx_early_time_limit]
+    vals_energy_decay_curve[vals_energy_decay_curve <= 0] = np.nan
+
+    clarity = 1 / vals_energy_decay_curve - 1
     clarity_db = 10 * np.log10(clarity)
-    return clarity
+
+    return clarity_db
 
 

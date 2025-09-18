@@ -3,7 +3,7 @@ import pytest
 import pyfar as pf
 import pyrato as ra
 from pyrato.parameters import clarity
-
+import numpy.testing as npt
 def make_edc_from_energy(energy, sampling_rate=1000):
     """Helper: build normalized EDC TimeData from an energy curve."""
     energy = np.asarray(energy, dtype=float)
@@ -26,7 +26,7 @@ def test_clarity_accepts_timedata_and_returns_correct_type():
     energy = np.concatenate(([1, 1, 1, 1], np.zeros(124)))
     edc = make_edc_from_energy(energy, sampling_rate=1000)
 
-    result = clarity(edc, te=2)  # 2 ms
+    result = clarity(edc, early_time_limit=2)  # 2 ms
     assert isinstance(result, (float, np.ndarray))
     assert result.shape == edc.cshape
 
@@ -38,8 +38,8 @@ def test_clarity_rejects_non_timedata_input():
 
 def test_clarity_preserves_multichannel_shape():
     energy = np.ones((2,2,10)) / (1+np.arange(10))
-    edc = make_edc_from_energy(energy, rir.sampling_rate)
-    output = clarity(edc, te=80)
+    edc = make_edc_from_energy(energy, 10)
+    output = clarity(edc, early_time_limit=80)
     assert edc.cshape == output.shape
 
 
@@ -53,7 +53,7 @@ def test_clarity_warns_for_unusually_short_time_limit():
     energy = np.ones(128)
     edc = make_edc_from_energy(energy, sampling_rate=44100)
     with pytest.warns(UserWarning):
-        clarity(edc, te=0.05)
+        clarity(edc, early_time_limit=0.05)
 
 
 def test_clarity_calculates_known_reference_value():
@@ -62,7 +62,7 @@ def test_clarity_calculates_known_reference_value():
     times = np.arange(len(edc_vals)) / 1000
     edc = pf.TimeData(edc_vals[np.newaxis, :], times)
 
-    result = clarity(edc, te=2)
+    result = clarity(edc, early_time_limit=2)
     assert np.isclose(result, 0.0, atol=1e-6)
 
 
@@ -83,7 +83,7 @@ def test_clarity_matches_analytical_geometric_decay_solution():
     ) / (1 - squared_factor)
     expected_db = 10 * np.log10(early_energy / late_energy)
 
-    result = clarity(edc, te=early_cutoff)
+    result = clarity(edc, early_time_limit=early_cutoff)
     assert np.isclose(result, expected_db, atol=1e-6)
 
 def test_clarity_values_for_given_ratio():
@@ -94,7 +94,7 @@ def test_clarity_values_for_given_ratio():
     etc.time[..., 100] = energy_late
     edc = ra.edc.schroeder_integration(etc, is_energy=True)
     edc = pf.dsp.normalize(edc, reference_method='max')
-    result = clarity(edc, te=80)
+    result = clarity(edc, early_time_limit=80)
     clarity_value_db = 10 * np.log10(energy_early/energy_late)
     npt.assert_allclose(result, clarity_value_db, atol=1e-6)
 
@@ -115,16 +115,16 @@ def test_clarity_from_truth_edc():
         4.61454981e-04, 3.87537824e-04, 3.25460924e-04, 2.73327678e-04,
         2.29545281e-04, 1.92776072e-04,
     ])
-    times = np.linspace(0, 0.25, len(truth))
-    edc = pf.TimeData(truth[np.newaxis, :], times)
+    times = np.linspace(0, 0.25, len(real_etc))
+    edc = pf.TimeData(real_etc[np.newaxis, :], times)
 
     te = 0.08  # 80 ms
     idx = np.argmin(np.abs(times - te))
-    edc_val = truth[idx]
+    edc_val = real_etc[idx]
 
-    early_energy = truth[0] - edc_val
+    early_energy = real_etc[0] - edc_val
     late_energy = edc_val
     expected_c80 = 10 * np.log10(early_energy / late_energy)
 
-    result = clarity(edc, te=80)
+    result = clarity(edc, early_time_limit=80)
     assert np.isclose(result, expected_c80, atol=1e-6)
