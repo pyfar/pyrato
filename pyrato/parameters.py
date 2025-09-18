@@ -179,25 +179,11 @@ def clarity(EDC, te=80):
     # Convert milliseconds to seconds
     te_sec = te / 1000.0
 
-    channel_shape = EDC.cshape
-    EDC_flat = EDC.flatten()
-
-    clarity_vals = []
-
-    for edc in EDC_flat:
-        te_idx = int(edc.find_nearest_time(te_sec))
-        edc_val = edc.time[0, te_idx]
-
-        if edc_val <= 0:
-            val = np.nan
-        elif edc_val == 1:
-            val = -np.inf
-        else:
-            val = 10 * np.log10(1 / edc_val - 1)
-
-        clarity_vals.append(val)
-
-    clarity = np.array(clarity_vals).reshape(channel_shape)
+    te_idx = int(edc.find_nearest_time(te_sec)
+    edc_vals = edc.time[..., te_idx]
+    edc_vals[edc_vals <= 0] = np.nan
+    clarity = 1 / edc_vals - 1
+    clarity_db = 10 * np.log10(clarity)
     return clarity
 
 
