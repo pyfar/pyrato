@@ -88,8 +88,8 @@ def test_clarity_matches_analytical_geometric_decay_solution():
 
 
 def test_clarity_from_truth_edc():
-    # Truth-EDC from test_edc.py
-    truth = np.array([
+    # real-EDC from test_edc:test_edc_eyring
+    real_etc = np.array([
         1.00000000e+00, 8.39817186e-01, 7.05292906e-01, 5.92317103e-01,
         4.97438083e-01, 4.17757051e-01, 3.50839551e-01, 2.94641084e-01,
         2.47444646e-01, 2.07808266e-01, 1.74520953e-01, 1.46565696e-01,
