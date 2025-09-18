@@ -37,11 +37,7 @@ def test_clarity_rejects_non_timedata_input():
 
 
 def test_clarity_preserves_multichannel_shape():
-    rir = pf.signals.files.binaural_room_impulse_response(
-        diffuse_field_compensation=False, sampling_rate=48000
-    )
-    # Build a dummy EDC for both channels
-    energy = np.abs(rir.time) ** 2
+    energy = np.ones((2,2,10)) / (1+np.arange(10))
     edc = make_edc_from_energy(energy, rir.sampling_rate)
     output = clarity(edc, te=80)
     assert edc.cshape == output.shape
