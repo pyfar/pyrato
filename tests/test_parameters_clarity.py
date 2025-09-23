@@ -51,7 +51,7 @@ def test_clarity_rejects_complex_timedata():
     # Create complex TimeData
     complex_data = pf.TimeData(np.array([1+1j, 2+2j, 3+3j]),
                                np.arange(3) / 1000, is_complex=True)
-    expected_error_message = "Complex-valued input detected. Clarity is " \
+    expected_error_message = "Complex-valued input detected. Clarity is"
     "only defined for real TimeData."
 
     with pytest.raises(ValueError, match=re.escape(expected_error_message)):

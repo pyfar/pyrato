@@ -201,7 +201,8 @@ def clarity(energy_decay_curve, early_time_limit=80):
     # Raise error if TimeData is complex
     if energy_decay_curve.complex:
         raise ValueError(
-            "Complex-valued input detected. Clarity is only defined for real TimeData."
+            "Complex-valued input detected. Clarity is"
+            "only defined for real TimeData.",
         )
 
     # Convert milliseconds to seconds
