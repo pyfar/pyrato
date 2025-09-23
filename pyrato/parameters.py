@@ -112,12 +112,13 @@ def reverberation_time_linear_regression(
 
 def clarity(energy_decay_curve, early_time_limit=80):
     r"""
-    Calculate the clarity from the energy decay curve (EDC) of a room impulse response.
+    Calculate the clarity from the energy decay curve (EDC) of
+    a room impulse response.
 
     The clarity parameter (C50 or C80) is defined as the ratio of early-to-late
     arriving energy in an impulse response and is a measure for how clearly
     speech or music can be perceived in a room. The early-to-late boundary is
-    typically set at 50 ms (C50) or 80 ms (C80) [#]_.
+    typically set at 50 ms (C50) or 80 ms (C80) [#iso]_.
 
     The clarity is calculated as:
 
@@ -129,9 +130,9 @@ def clarity(energy_decay_curve, early_time_limit=80):
             \displaystyle \int_{t_e}^{\infty} p^2(t) \, dt
         }
 
-    where :math:`t_e` is the early time limit and :math:`p(t)` is the pressure of
-    a room impulse response. The clarity can also be efficiently computed from
-    the EDC directly by:
+    where :math:`t_e` is the early time limit and :math:`p(t)` is the pressure
+    of a room impulse response. The clarity can also be efficiently computed
+    from the EDC directly by:
 
     .. math::
 
@@ -146,11 +147,11 @@ def clarity(energy_decay_curve, early_time_limit=80):
     Parameters
     ----------
     energy_decay_curve : pyfar.TimeData
-        Energy decay curve (EDC) of the room impulse response (time-domain signal).
-        The EDC must start at time zero.
+        Energy decay curve (EDC) of the room impulse response
+        (time-domain signal). The EDC must start at time zero.
     early_time_limit : float, optional
         Early time limit (:math:`t_e`) in milliseconds. Defaults to 80 (C80).
-        Typical values are 50 ms (C50) or 80 ms (C80) [#]_.
+        Typical values are 50 ms (C50) or 80 ms (C80) [#iso]_.
 
     Returns
     -------
@@ -160,7 +161,7 @@ def clarity(energy_decay_curve, early_time_limit=80):
 
     References
     ----------
-    .. [#] ISO 3382, Acoustics — Measurement of the reverberation time of
+    .. [#iso] ISO 3382, Acoustics — Measurement of the reverberation time of
         rooms with reference to other acoustical parameters.
 
     Examples
