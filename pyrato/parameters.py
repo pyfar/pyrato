@@ -139,7 +139,7 @@ def clarity(energy_decay_curve, early_time_limit=80):
             EDC(t_0)
         }{
             EDC(t_e)
-        } - 1)
+        } - 1 \right)
 
     where :math:`t_0` is the EDC start.
 
