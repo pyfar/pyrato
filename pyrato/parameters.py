@@ -112,39 +112,51 @@ def reverberation_time_linear_regression(
 
 def clarity(energy_decay_curve, early_time_limit=80):
     r"""
-    Calculate the clarity from the energy decay curve (EDC) of a room impulse response.
+    Calculate the clarity from the energy decay curve (EDC) of a room impulse
+    response.
 
     The clarity parameter (C50 or C80) is defined as the ratio of early-to-late
-    arriving energy in an impulse response and describes how clearly speech or
-    music can be perceived in a room. The early-to-late boundary is typically
-    set at 50 ms (C50) or 80 ms (C80) _[#].
+    arriving energy in an impulse response and is a measure for how clearly
+    speech or music can be perceived in a room. The early-to-late boundary is
+    typically set at 50 ms (C50) or 80 ms (C80) _[#].
 
     The clarity is calculated as:
 
     .. math::
 
-        C_{t_e} = 10 \cdot \lg \frac{
+        C_{t_e} = 10 \cdot \log_{10} \frac{
             \int\limits_{0}^{t_e} p^2(t)  dt
         }{
             \int\limits_{t_e}^{\infty} p^2(t)  dt
         }
 
-    where :math:`t_e` is the early time limit.
+    where :math:`t_e` is the early time limit and :math:`p` is the pressure of
+    a room impulse response. The clarity can also be efficiently computed from
+    the EDC directly by:
+
+    .. math::
+        C_{t_e} = 10 \cdot \log_{10} \left( \frac{
+            EDC(t_0)
+        }{
+            EDC(t_e)
+        } - 1)
+
+    where :math:`t_0` is the EDC start.
 
     Parameters
     ----------
     energy_decay_curve : pyfar.TimeData
-        Energy decay curve (EDC) of the room impulse response (time-domain signal). The
-        EDC must start at time zero.
+        Energy decay curve (EDC) of the room impulse response (time-domain
+        signal). The EDC must start at time zero.
     early_time_limit : float, optional
-        Early time limit (te) in milliseconds. Defaults to 80 (C80). Typical values
-        are 50 ms (C50) or 80 ms (C80) _[#].
+        Early time limit (:math:`t_e`) in milliseconds. Defaults to 80 (C80).
+        Typical values are 50 ms (C50) or 80 ms (C80) _[#].
 
     Returns
     -------
     clarity : ndarray of float
-        Clarity index (early-to-late energy ratio) in decibels, shaped according
-        to the channel shape of the input EDC.
+        Clarity index (early-to-late energy ratio) in decibels,
+        shaped according to the channel shape of the input EDC.
 
     References
     ----------
@@ -152,7 +164,8 @@ def clarity(energy_decay_curve, early_time_limit=80):
 
     Examples
     --------
-    Estimate the clarity from a real room impulse response filtered in octave bands:
+    Estimate the clarity from a real room impulse response filtered in
+    octave bands:
 
     >>> import numpy as np
     >>> import pyfar as pf
@@ -173,14 +186,16 @@ def clarity(energy_decay_curve, early_time_limit=80):
     if early_time_limit not in (50, 80):
         warnings.warn(
             f"early_time_limit={early_time_limit} ms is unusual."
-            "According to DIN EN ISO 3382-3, typically 50 ms (C50) or 80 ms (C80) are chosen.",
+            "According to DIN EN ISO 3382-3, typically 50 ms (C50) or 80 ms"
+            "(C80) are chosen.",
             stacklevel=2,
         )
 
     # Validate time range
-    if (early_time_limit > energy_decay_curve.signal_length * 1000) or (early_time_limit <= 0):
+    if (early_time_limit > energy_decay_curve.signal_length * 1000) or (early_time_limit <= 0): # noqa: E501
         raise ValueError(
-            f"early_time_limit must be in the range of 0 and {energy_decay_curve.signal_length * 1000}.",
+            "early_time_limit must be in the range of 0"
+            f"and {energy_decay_curve.signal_length * 1000}.",
             )
 
     # Raise error if TimeData is complex
@@ -195,8 +210,8 @@ def clarity(energy_decay_curve, early_time_limit=80):
     start_vals_energy_decay_curve = energy_decay_curve.time[..., 0]
     start_vals_energy_decay_curve[start_vals_energy_decay_curve <= 0] = np.nan
 
-    idx_early_time_limit = int(energy_decay_curve.find_nearest_time(early_time_limit_sec))
-    vals_energy_decay_curve = energy_decay_curve.time[..., idx_early_time_limit]
+    idx_early_time_limit = int(energy_decay_curve.find_nearest_time(early_time_limit_sec))  # noqa: E501
+    vals_energy_decay_curve = energy_decay_curve.time[..., idx_early_time_limit] # noqa: E501
     vals_energy_decay_curve[vals_energy_decay_curve <= 0] = np.nan
 
 

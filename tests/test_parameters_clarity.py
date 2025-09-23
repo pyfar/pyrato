@@ -16,7 +16,6 @@ def make_edc_from_energy(energy, sampling_rate=1000):
         edc_norm = energy / np.max(energy)
 
     times = np.arange(edc_norm.shape[-1]) / sampling_rate
-
     # ensure shape is (n_channels, n_samples)
     if edc_norm.ndim == 1:
         edc_norm = edc_norm[np.newaxis, :]
@@ -35,7 +34,7 @@ def test_clarity_accepts_timedata_and_returns_correct_type():
 def test_clarity_rejects_non_timedata_input():
     invalid_input = np.array([1, 2, 3])
     expected_error_message = "Input must be a pyfar.TimeData object."
-    
+
     with pytest.raises(TypeError, match=re.escape(expected_error_message)):
         clarity(invalid_input)
 
@@ -44,15 +43,17 @@ def test_clarity_rejects_non_numeric_early_time_limit():
     edc = make_edc_from_energy(energy, sampling_rate=44100)
     invalid_time_limit = "not_a_number"
     expected_error_message = "early_time_limit must be a number."
-    
+
     with pytest.raises(TypeError, match=re.escape(expected_error_message)):
         clarity(edc, invalid_time_limit)
 
 def test_clarity_rejects_complex_timedata():
     # Create complex TimeData
-    complex_data = pf.TimeData(np.array([1+1j, 2+2j, 3+3j]), np.arange(3) / 1000, is_complex=True)
-    expected_error_message = "Complex-valued input detected. Clarity is only defined for real TimeData."
-    
+    complex_data = pf.TimeData(np.array([1+1j, 2+2j, 3+3j]),
+                               np.arange(3) / 1000, is_complex=True)
+    expected_error_message = "Complex-valued input detected. Clarity is " \
+    "only defined for real TimeData."
+
     with pytest.raises(ValueError, match=re.escape(expected_error_message)):
         clarity(complex_data, early_time_limit=2)
 
@@ -60,12 +61,13 @@ def test_clarity_rejects_invalid_time_range():
     energy = np.zeros(128)
     edc = make_edc_from_energy(energy, sampling_rate=1000)
     actual_signal_length_ms = edc.signal_length * 1000
-    
+
     # Test negative time limit
-    expected_error_message = f"early_time_limit must be in the range of 0 and {actual_signal_length_ms}."
+    expected_error_message = "early_time_limit must be in the range of 0"
+    f"and {actual_signal_length_ms}." # noqa: E501
     with pytest.raises(ValueError, match=re.escape(expected_error_message)):
         clarity(edc, early_time_limit=-1)
-    
+
     # Test time limit beyond signal length
     with pytest.raises(ValueError, match=re.escape(expected_error_message)):
         clarity(edc, early_time_limit=200000)
@@ -89,9 +91,10 @@ def test_clarity_warns_for_unusually_short_early_time_limit():
     early_time_limit = 0.05
     expected_warning_message = (
         f"early_time_limit={early_time_limit} ms is unusual."
-        "According to DIN EN ISO 3382-3, typically 50 ms (C50) or 80 ms (C80) are chosen."
+        "According to DIN EN ISO 3382-3, typically 50 ms (C50) or 80 ms"
+        "(C80) are chosen."
     )
-    
+
     with pytest.warns(UserWarning, match=re.escape(expected_warning_message)):
         clarity(edc, early_time_limit)
 
@@ -128,10 +131,10 @@ def test_clarity_matches_analytical_geometric_decay_solution():
 def test_clarity_values_for_given_ratio():
     energy_early = 1
     energy_late = .5
-    etc = pf.TimeData(np.zeros((3, 1000)), np.arange(1000) / 1000)
-    etc.time[..., 10] = energy_early
-    etc.time[..., 100] = energy_late
-    edc = ra.edc.schroeder_integration(etc, is_energy=True)
+    edc = pf.TimeData(np.zeros((3, 1000)), np.arange(1000) / 1000)
+    edc.time[..., 10] = energy_early
+    edc.time[..., 100] = energy_late
+    edc = ra.edc.schroeder_integration(edc, is_energy=True)
     edc = pf.dsp.normalize(edc, reference_method='max')
     result = clarity(edc, early_time_limit=80)
     clarity_value_db = 10 * np.log10(energy_early/energy_late)
@@ -139,7 +142,7 @@ def test_clarity_values_for_given_ratio():
 
 def test_clarity_from_truth_edc():
     # real-EDC from test_edc:test_edc_eyring
-    real_etc = np.array([
+    real_edc = np.array([
         1.00000000e+00, 8.39817186e-01, 7.05292906e-01, 5.92317103e-01,
         4.97438083e-01, 4.17757051e-01, 3.50839551e-01, 2.94641084e-01,
         2.47444646e-01, 2.07808266e-01, 1.74520953e-01, 1.46565696e-01,
@@ -154,17 +157,16 @@ def test_clarity_from_truth_edc():
         4.61454981e-04, 3.87537824e-04, 3.25460924e-04, 2.73327678e-04,
         2.29545281e-04, 1.92776072e-04,
     ])
-    times = np.linspace(0, 0.25, len(real_etc))
-    edc = pf.TimeData(real_etc[np.newaxis, :], times)
+    times = np.linspace(0, 0.25, len(real_edc))
+    edc = pf.TimeData(real_edc[np.newaxis, :], times)
 
     te = 0.08  # 80 ms
     idx = np.argmin(np.abs(times - te))
-    edc_val = real_etc[idx]
+    edc_val = real_edc[idx]
 
-    early_energy = real_etc[0] - edc_val
+    early_energy = real_edc[0] - edc_val
     late_energy = edc_val
     expected_c80 = 10 * np.log10(early_energy / late_energy)
 
     result = clarity(edc, early_time_limit=80)
     np.testing.assert_allclose(result, expected_c80, atol=1e-6)
-    
