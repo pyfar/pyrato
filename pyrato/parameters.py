@@ -184,7 +184,8 @@ def clarity(energy_decay_curve, early_time_limit=80):
         raise TypeError('early_time_limit must be a number.')
 
     # Validate time range
-    if (early_time_limit > energy_decay_curve.signal_length * 1000) or (early_time_limit <= 0): # noqa: E501
+    if (early_time_limit > energy_decay_curve.signal_length * 1000) or (
+            early_time_limit <= 0):
         raise ValueError(
             "early_time_limit must be in the range of 0"
             f"and {energy_decay_curve.signal_length * 1000}.",
