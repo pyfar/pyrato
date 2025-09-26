@@ -120,7 +120,7 @@ def clarity(energy_decay_curve, early_time_limit=80):
     speech or music can be perceived in a room. The early-to-late boundary is
     typically set at 50 ms (C50) or 80 ms (C80) [#iso]_.
 
-    The clarity is calculated as:
+    Clarity is calculated as:
 
     .. math::
 
