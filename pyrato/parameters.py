@@ -5,7 +5,6 @@ simulated or experimental data.
 import re
 import numpy as np
 import pyfar as pf
-import warnings
 
 
 def reverberation_time_linear_regression(
