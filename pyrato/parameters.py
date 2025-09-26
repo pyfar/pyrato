@@ -203,7 +203,8 @@ def clarity(energy_decay_curve, early_time_limit=80):
 
     start_vals_energy_decay_curve = energy_decay_curve.time[..., 0]
 
-    idx_early_time_limit = int(energy_decay_curve.find_nearest_time(early_time_limit_sec))  # noqa: E501
+    idx_early_time_limit = int(
+        energy_decay_curve.find_nearest_time(early_time_limit_sec))
     vals_energy_decay_curve = energy_decay_curve.time[..., idx_early_time_limit] # noqa: E501
     vals_energy_decay_curve[vals_energy_decay_curve == 0] = np.nan
 
