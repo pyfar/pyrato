@@ -85,19 +85,6 @@ def test_clarity_returns_nan_for_zero_signal():
     assert np.isnan(result)
 
 
-def test_clarity_warns_for_unusually_short_early_time_limit():
-    energy = np.zeros(128)
-    edc = make_edc_from_energy(energy, sampling_rate=44100)
-    early_time_limit = 0.05
-    expected_warning_message = (
-        f"early_time_limit={early_time_limit} ms is unusual."
-        "According to DIN EN ISO 3382-3, typically 50 ms (C50) or 80 ms"
-        "(C80) are chosen."
-    )
-
-    with pytest.warns(UserWarning, match=re.escape(expected_warning_message)):
-        clarity(edc, early_time_limit)
-
 def test_clarity_calculates_known_reference_value():
     # Linear decay → early_time_limit at 1/2 energy -> ratio = 1 -> 0 dB
     edc_vals = np.array([1.0, 0.75, 0.5, 0.0])  # monotonic decay

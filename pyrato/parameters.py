@@ -184,15 +184,6 @@ def clarity(energy_decay_curve, early_time_limit=80):
     if not isinstance(early_time_limit, (int, float)):
         raise TypeError('early_time_limit must be a number.')
 
-    # Warn for unusual early_time_limit
-    if early_time_limit not in (50, 80):
-        warnings.warn(
-            f"early_time_limit={early_time_limit} ms is unusual."
-            "According to DIN EN ISO 3382-3, typically 50 ms (C50) or 80 ms"
-            "(C80) are chosen.",
-            stacklevel=2,
-        )
-
     # Validate time range
     if (early_time_limit > energy_decay_curve.signal_length * 1000) or (early_time_limit <= 0): # noqa: E501
         raise ValueError(
@@ -211,12 +202,10 @@ def clarity(energy_decay_curve, early_time_limit=80):
     early_time_limit_sec = early_time_limit / 1000.0
 
     start_vals_energy_decay_curve = energy_decay_curve.time[..., 0]
-    start_vals_energy_decay_curve[start_vals_energy_decay_curve <= 0] = np.nan
 
     idx_early_time_limit = int(energy_decay_curve.find_nearest_time(early_time_limit_sec))  # noqa: E501
     vals_energy_decay_curve = energy_decay_curve.time[..., idx_early_time_limit] # noqa: E501
-    vals_energy_decay_curve[vals_energy_decay_curve <= 0] = np.nan
-
+    vals_energy_decay_curve[vals_energy_decay_curve == 0] = np.nan
 
     clarity = start_vals_energy_decay_curve / vals_energy_decay_curve - 1
     clarity_db = 10 * np.log10(clarity)
