@@ -112,7 +112,7 @@ def definition(energy_decay_curve, early_time_limit=50):
     r"""
     Calculate the definition from the energy decay curve (EDC).
 
-    The clarity parameter (D50) is defined as the ratio of early-to-all
+    The clarity parameter (D50) is defined as the ratio of early-to-total
     arriving energy in an impulse response and is a measure for how clearly
     audio can be perceived in a room. The early-to-all boundary is
     typically set at 50 ms (D50) [#iso]_.
@@ -147,7 +147,7 @@ def definition(energy_decay_curve, early_time_limit=50):
     Returns
     -------
     definition : numpy.ndarray[float]
-        Definition index (early-to-all energy ratio) in decibels,
+        Definition index (early-to-total energy ratio) in decibels,
         shaped according to the channel shape of the input EDC.
 
     References
