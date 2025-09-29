@@ -107,8 +107,7 @@ def reverberation_time_linear_regression(
 
 def clarity(energy_decay_curve, early_time_limit=80):
     r"""
-    Calculate the clarity from the energy decay curve (EDC) of
-    a room impulse response.
+    Calculate the clarity from the energy decay curve (EDC).
 
     The clarity parameter (C50 or C80) is defined as the ratio of early-to-late
     arriving energy in an impulse response and is a measure for how clearly
