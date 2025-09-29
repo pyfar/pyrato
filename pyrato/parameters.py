@@ -143,7 +143,7 @@ def clarity(energy_decay_curve, early_time_limit=80):
 
     Returns
     -------
-    clarity : ndarray of float
+    clarity : numpy.ndarray[float]
         Clarity index (early-to-late energy ratio) in decibels,
         shaped according to the channel shape of the input EDC.
 
