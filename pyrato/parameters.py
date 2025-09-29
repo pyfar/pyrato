@@ -105,10 +105,6 @@ def reverberation_time_linear_regression(
         return reverberation_times
 
 
-
-
-
-
 def clarity(energy_decay_curve, early_time_limit=80):
     r"""
     Calculate the clarity from the energy decay curve (EDC) of
