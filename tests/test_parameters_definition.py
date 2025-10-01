@@ -129,7 +129,7 @@ def test_definition_values_for_given_ratio():
     clarity_value_db = 10 * np.log10(energy_early/(energy_late+energy_early))
     np.testing.assert_allclose(result, clarity_value_db, atol=1e-6)
 
-def test_clarity_from_truth_edc():
+def test_definition_from_truth_edc():
     # real-EDC from test_edc:test_edc_eyring
     real_edc = np.array([
         1.00000000e+00, 8.39817186e-01, 7.05292906e-01, 5.92317103e-01,
