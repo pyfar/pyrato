@@ -83,7 +83,12 @@ def test_clarity_geometric_decay_solution(make_edc_from_energy):
     total_samples = 200
     early_cutoff = 80  # ms
 
-    edc = make_edc_from_energy(case="geometric", sampling_rate=sampling_rate, decay_factor=decay_factor, total_samples=total_samples)
+    edc = make_edc_from_energy(
+        case="geometric",
+        sampling_rate=sampling_rate,
+        decay_factor=decay_factor,
+        total_samples=total_samples,
+    )
 
     squared_factor = decay_factor ** 2
     early_energy = (1 - squared_factor ** early_cutoff) / (1 - squared_factor)
