@@ -83,7 +83,7 @@ def test_clarity_geometric_decay_solution(make_edc_from_energy):
     total_samples = 200
     early_cutoff = 80  # ms
 
-    edc = make_edc_from_energy(case="geometric", sampling_rate=sampling_rate)
+    edc = make_edc_from_energy(case="geometric", sampling_rate=sampling_rate, decay_factor=decay_factor, total_samples=total_samples)
 
     squared_factor = decay_factor ** 2
     early_energy = (1 - squared_factor ** early_cutoff) / (1 - squared_factor)
@@ -110,31 +110,73 @@ def test_clarity_values_for_given_ratio(make_edc_from_energy):
 
 def test_clarity_from_truth_edc(make_edc_from_energy):
     # real-EDC from test_edc:test_edc_eyring
-    real_edc = np.array([
-        1.00000000e+00, 8.39817186e-01, 7.05292906e-01, 5.92317103e-01,
-        4.97438083e-01, 4.17757051e-01, 3.50839551e-01, 2.94641084e-01,
-        2.47444646e-01, 2.07808266e-01, 1.74520953e-01, 1.46565696e-01,
-        1.23088390e-01, 1.03371746e-01, 8.68133684e-02, 7.29073588e-02,
-        6.12288529e-02, 5.14210429e-02, 4.31842755e-02, 3.62668968e-02,
-        3.04575632e-02, 2.55787850e-02, 2.14815032e-02, 1.80405356e-02,
-        1.51507518e-02, 1.27238618e-02, 1.06857178e-02, 8.97404943e-03,
-        7.53656094e-03, 6.32933340e-03, 5.31548296e-03, 4.46403394e-03,
-        3.74897242e-03, 3.14845147e-03, 2.64412365e-03, 2.22058049e-03,
-        1.86488165e-03, 1.56615966e-03, 1.31528780e-03, 1.10460130e-03,
-        9.27663155e-04, 7.79067460e-04, 6.54274242e-04, 5.49470753e-04,
-        4.61454981e-04, 3.87537824e-04, 3.25460924e-04, 2.73327678e-04,
-        2.29545281e-04, 1.92776072e-04,
-    ])
-    times = np.linspace(0, 0.25, len(real_edc))
-    edc = make_edc_from_energy(case="real", sampling_rate=len(real_edc)*4)
+    edc = make_edc_from_energy(case="eyring analytical",  sampling_rate=250)
+
+    real_edc = edc.time
+    times = edc.times
 
     te = 0.08  # 80 ms
     idx = np.argmin(np.abs(times - te))
-    edc_val = real_edc[idx]
+    edc_val = real_edc[0, idx]
 
-    early_energy = real_edc[0] - edc_val
+    early_energy = real_edc[0, 0] - edc_val
     late_energy = edc_val
     expected_c80 = 10 * np.log10(early_energy / late_energy)
 
     result = clarity(edc, early_time_limit=80)
     np.testing.assert_allclose(result, expected_c80, atol=1e-6)
+
+
+
+@pytest.mark.parametrize(
+    'tx', ['T15', 'T20', 'T30', 'T40', 'T50', 'T60', 'LDT', 'EDT'])
+def test_rt_from_edc(tx):
+    times = np.linspace(0, 1.5, 2**9)
+    m = -60
+    edc = times * m
+    edc_exp = pf.TimeData(10**(edc/10), times)
+    RT_est = ra.parameters.reverberation_time_linear_regression(
+        edc_exp, T=tx)
+    npt.assert_allclose(RT_est, 1.)
+
+
+@pytest.mark.parametrize(
+    'tx', ['T15', 'T20', 'T30', 'T40', 'T50', 'T60', 'LDT', 'EDT'])
+def test_rt_from_edc_mulitchannel(tx):
+    times = np.linspace(0, 1.5, 2**9)
+    Ts = np.array([1, 2, 1.5])
+    m = -60
+    edc = np.atleast_2d(m/Ts).T @ np.atleast_2d(times)
+    edc_exp = pf.TimeData(10**(edc/10), times)
+    RT_est = ra.parameters.reverberation_time_linear_regression(
+        edc_exp, T=tx)
+    npt.assert_allclose(RT_est, Ts)
+
+
+@pytest.mark.parametrize(
+    'tx', ['T15', 'T20', 'T30', 'T40', 'T50', 'T60', 'LDT', 'EDT'])
+def test_rt_from_edc_mulitchannel_amplitude(tx):
+    times = np.linspace(0, 5/2, 2**9)
+    Ts = np.array([[1, 2, 1.5], [3, 4, 5]])
+    As = np.array([[0, 3, 6], [1, 1, 1]])
+    m = -60
+    edc = np.zeros((*Ts.shape, times.size))
+    for idx in np.ndindex(Ts.shape):
+        edc[idx] = As[idx] + m*times/Ts[idx]
+
+    edc_exp = pf.TimeData(10**(edc/10), times)
+    RT_est, A_est = ra.parameters.reverberation_time_linear_regression(
+        edc_exp, T=tx, return_intercept=True)
+    npt.assert_allclose(RT_est, Ts)
+    npt.assert_allclose(A_est, 10**(As/10))
+
+
+def test_rt_from_edc_error():
+    times = np.linspace(0, 1.5, 2**9)
+    m = -60
+    edc = times * m
+    edc_exp = pf.TimeData(10**(edc/10), times)
+    T = 'Bla'
+
+    with pytest.raises(ValueError, match='is not a valid interval.'):
+        ra.parameters.reverberation_time_linear_regression(edc_exp, T=T)
