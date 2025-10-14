@@ -7,6 +7,7 @@ import numpy as np
 import pyfar as pf
 import numbers
 import numbers
+import numbers
 
 
 def reverberation_time_linear_regression(
