@@ -118,7 +118,6 @@ def test_clarity_from_truth_edc(make_edc_from_energy):
     te = 0.08  # 80 ms
     idx = np.argmin(np.abs(times - te))
     edc_val = real_edc[0, idx]
-
     early_energy = real_edc[0, 0] - edc_val
     late_energy = edc_val
     expected_c80 = 10 * np.log10(early_energy / late_energy)
