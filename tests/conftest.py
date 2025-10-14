@@ -1,6 +1,8 @@
 import numpy as np
 import pytest
 import pyfar as pf
+from typing import Optional
+
 
 
 @pytest.fixture
@@ -46,13 +48,14 @@ def make_edc_from_energy():
     default_energy = np.linspace(1, 0, 1000)
     default_samplerate = 1000
 
+
     def _factory(
         *,
-        energy: np.ndarray | None = None,
-        case: str | None = None,
-        sampling_rate: float | None = None,
-        decay_factor: float | None = None,
-        total_samples: int | None = None,
+        energy: Optional[np.ndarray] = None,
+        case: Optional[str] = None,
+        sampling_rate: Optional[float] = None,
+        decay_factor: Optional[float] = None,
+        total_samples: Optional[int] = None,
         normalize: bool = True,
     ) -> pf.TimeData:
         """Factory to construct a pyfar.TimeData object representing an EDC."""
