@@ -49,6 +49,12 @@ def make_edc_from_energy():
         dynamic_range: float = 65.0,
     ) -> pf.TimeData:
         """Construct a pyfar.TimeData object representing an EDC."""
+        if energy is not None and not isinstance(energy, (np.ndarray,
+                                                          list,
+                                                          tuple)):
+            raise TypeError("energy must be array-like or None")
+        if rt is not None and (not np.isscalar(rt) or rt <= 0):
+            raise ValueError("rt must be a positive scalar")
 
         # Lower energy threshold based on dynamic range
         min_energy = 10 ** (-dynamic_range / 10)
