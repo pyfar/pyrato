@@ -7,6 +7,32 @@ import numpy.testing as npt
 import re
 
 
+# fixture tests
+def test_fixture_returns_timedata_object(make_edc_from_energy):
+    edc = make_edc_from_energy()
+    assert isinstance(edc, pf.TimeData)
+    assert np.all(edc.time.shape)  # Ensure shape not empty
+
+
+def test_fixture_preserves_input_shape(make_edc_from_energy):
+    custom_energy = np.ones((2, 3, 10))
+    edc = make_edc_from_energy(energy=custom_energy)
+    assert edc.time.shape == custom_energy.shape
+
+
+def test_fixture_rejects_invalid_energy_type(make_edc_from_energy):
+    with pytest.raises(TypeError):
+        make_edc_from_energy(energy="not_an_array")
+
+
+def test_fixture_handles_zero_energy(make_edc_from_energy):
+    edc = make_edc_from_energy(energy=np.zeros(10))
+    assert isinstance(edc, pf.TimeData)
+    # Since normalized zero is still zero, expect non-negative low values
+    assert np.all(edc.time >= 0)
+
+
+
 
 #fixture implementation clarity tests
 def test_clarity_accepts_timedata_returns_correct_type(make_edc_from_energy):
