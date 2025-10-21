@@ -82,7 +82,9 @@ def test_clarity_values_for_given_ratio(make_edc_from_energy):
     energy_early = 1
     energy_late = .5
     energy = np.zeros((3, 1000))
-    edc = make_edc_from_energy(energy=energy, sampling_rate=1000, dynamic_range = 120.0)
+    edc = make_edc_from_energy(energy=energy,
+                               sampling_rate=1000,
+                               dynamic_range = 120.0)
     edc.time[..., 10] = energy_early
     edc.time[..., 100] = energy_late
     edc = ra.edc.schroeder_integration(edc, is_energy=True)
@@ -98,7 +100,7 @@ def test_clarity_for_exponential_decay(make_edc_from_energy):
     early_cutoff = 80  # ms
 
     # Generate EDC
-    edc = make_edc_from_energy(rt=rt60, 
+    edc = make_edc_from_energy(rt=rt60,
                                sampling_rate=sampling_rate,
                                total_samples=total_samples)
     result = clarity(edc, early_time_limit=early_cutoff)
@@ -108,9 +110,4 @@ def test_clarity_for_exponential_decay(make_edc_from_energy):
     a = 13.8155 / rt60
     expected_ratio = np.exp(a * te) - 1
     expected_dB = 10 * np.log10(expected_ratio)
-
     np.testing.assert_allclose(result, expected_dB, atol=1e-6)
-
-
-
-
