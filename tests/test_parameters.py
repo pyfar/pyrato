@@ -7,6 +7,7 @@ import numpy.testing as npt
 import re
 
 
+
 #fixture implementation clarity tests
 def test_clarity_accepts_timedata_returns_correct_type(make_edc_from_energy):
     energy = np.concatenate(([1, 1, 1, 1], np.zeros(124)))
@@ -77,34 +78,11 @@ def test_clarity_calculates_known_reference_value(make_edc_from_energy):
     np.testing.assert_allclose(result, 0.0, atol=1e-6)
 
 
-def test_clarity_geometric_decay_solution(make_edc_from_energy):
-    sampling_rate = 1000
-    decay_factor = 0.9
-    total_samples = 200
-    early_cutoff = 80  # ms
-
-    edc = make_edc_from_energy(
-        case="geometric",
-        sampling_rate=sampling_rate,
-        decay_factor=decay_factor,
-        total_samples=total_samples,
-    )
-
-    squared_factor = decay_factor ** 2
-    early_energy = (1 - squared_factor ** early_cutoff) / (1 - squared_factor)
-    late_energy = (
-        squared_factor**early_cutoff - squared_factor**total_samples
-    ) / (1 - squared_factor)
-    expected_db = 10 * np.log10(early_energy / late_energy)
-
-    result = clarity(edc, early_time_limit=early_cutoff)
-    np.testing.assert_allclose(result, expected_db, atol=1e-6)
-
 def test_clarity_values_for_given_ratio(make_edc_from_energy):
     energy_early = 1
     energy_late = .5
     energy = np.zeros((3, 1000))
-    edc = make_edc_from_energy(energy=energy, sampling_rate=1000)
+    edc = make_edc_from_energy(energy=energy, sampling_rate=1000, dynamic_range = 120.0)
     edc.time[..., 10] = energy_early
     edc.time[..., 100] = energy_late
     edc = ra.edc.schroeder_integration(edc, is_energy=True)
@@ -113,19 +91,26 @@ def test_clarity_values_for_given_ratio(make_edc_from_energy):
     clarity_value_db = 10 * np.log10(energy_early/energy_late)
     npt.assert_allclose(result, clarity_value_db, atol=1e-6)
 
-def test_clarity_from_truth_edc(make_edc_from_energy):
-    # real-EDC from test_edc:test_edc_eyring
-    edc = make_edc_from_energy(case="eyring analytical",  sampling_rate=250)
+def test_clarity_for_exponential_decay(make_edc_from_energy):
+    rt60 = 2.0  # seconds
+    sampling_rate = 1000
+    total_samples = 2000
+    early_cutoff = 80  # ms
 
-    real_edc = edc.time
-    times = edc.times
+    # Generate EDC
+    edc = make_edc_from_energy(rt=rt60, 
+                               sampling_rate=sampling_rate,
+                               total_samples=total_samples)
+    result = clarity(edc, early_time_limit=early_cutoff)
 
-    te = 0.08  # 80 ms
-    idx = np.argmin(np.abs(times - te))
-    edc_val = real_edc[0, idx]
-    early_energy = real_edc[0, 0] - edc_val
-    late_energy = edc_val
-    expected_c80 = 10 * np.log10(early_energy / late_energy)
+    # Analytical expected value
+    te = early_cutoff / 1000  # convert ms to seconds
+    a = 13.8155 / rt60
+    expected_ratio = np.exp(a * te) - 1
+    expected_dB = 10 * np.log10(expected_ratio)
 
-    result = clarity(edc, early_time_limit=80)
-    np.testing.assert_allclose(result, expected_c80, atol=1e-6)
+    np.testing.assert_allclose(result, expected_dB, atol=1e-6)
+
+
+
+
