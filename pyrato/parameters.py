@@ -5,6 +5,7 @@ simulated or experimental data.
 import re
 import numpy as np
 import pyfar as pf
+import numbers
 
 
 def reverberation_time_linear_regression(
@@ -284,7 +285,7 @@ def clarity_from_energy_balance(energy_decay_curve, early_time_limit=80):
     early_time_limit_sec = early_time_limit / 1000
 
     # calculate lim1 - lim4 for each channel
-    lim1, lim2 = early_time_limit_sec, energy_decay_curve.time[..., -1]
+    lim1, lim2 = early_time_limit_sec, energy_decay_curve.n_samples - 1
     lim3, lim4 = 0.0, early_time_limit_sec
 
     return __energy_balance(energy_decay_curve, lim1, lim2, lim3, lim4)
@@ -338,24 +339,18 @@ def __energy_balance(energy_decay_curve, lim1, lim2, lim3, lim4):
         rooms with reference to other acoustical parameters.
     """
 
-    # Check input type
-    if not isinstance(energy_decay_curve, pf.TimeData):
-        raise TypeError("Input must be a pyfar.TimeData object.")
-    if energy_decay_curve.complex:
-        raise ValueError(
-            "Complex-valued input detected. Roomacoustic Parameters are"
-            "only defined for real TimeData.",
-        )
+    # input checks -> rest is done in surrounding functions
+    for name, val in zip(("lim1","lim2","lim3","lim4"), (lim1,
+                                                         lim2,
+                                                         lim3,
+                                                         lim4)):
+        if not isinstance(val, numbers.Real):
+            raise TypeError(f"{name} must be numeric.")
 
-    # for name, val in zip(("lim1","lim2","lim3","lim4"), (lim1, lim2, lim3, lim4)):
-    #     if not isinstance(val, numbers.Real):
-    #         raise TypeError(f"{name} must be numeric.")
-
-    # # Order validation
-    # if lim2 <= lim1:
-    #     raise ValueError("lim2 must be greater than lim1.")
-    # if lim4 <= lim3:
-    #     raise ValueError("lim4 must be greater than lim3.")
+    if not (lim2 > lim1 if np.isscalar(lim1) and np.isscalar(lim2) else True):
+        raise ValueError("If scalars, require lim1 < lim2.")
+    if not (lim4 > lim3 if np.isscalar(lim3) and np.isscalar(lim4) else True):
+        raise ValueError("If scalars, require lim3 < lim4.")
 
     lim1_idx = energy_decay_curve.find_nearest_time(lim1)
     lim2_idx = energy_decay_curve.find_nearest_time(lim2)
