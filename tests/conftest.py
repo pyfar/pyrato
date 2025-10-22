@@ -63,15 +63,15 @@ def make_edc_from_energy():
             energy = np.asarray(energy, dtype=float)
         elif rt is not None:
             times = np.arange(total_samples) / sampling_rate
-            # Exponential energy decay: -60 dB after RT60 seconds
             energy = np.exp(-13.8155 * times / rt)
         else:
             energy = np.zeros(total_samples)
 
-        # Optional normalization
+        # optional normalization
         if normalize and np.max(energy) > 0:
             energy = energy / np.max(energy)
 
+        # clipping to lower energy threshold
         energy[energy < min_energy] = min_energy
 
         times = np.arange(energy.shape[-1]) / sampling_rate
