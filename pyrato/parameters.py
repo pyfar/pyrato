@@ -266,9 +266,6 @@ def clarity_from_energy_balance(energy_decay_curve, early_time_limit=80):
     >>> edc = ra.edc.energy_decay_curve_lundeby(rir)
     >>> C80 = clarity(edc, early_time_limit=80)
     """
-    # Check input type
-    if not isinstance(energy_decay_curve, pf.TimeData):
-        raise TypeError("Input must be a pyfar.TimeData object.")
 
     if not isinstance(early_time_limit, (int, float)):
         raise TypeError('early_time_limit must be a number.')
@@ -288,12 +285,13 @@ def clarity_from_energy_balance(energy_decay_curve, early_time_limit=80):
     lim1, lim2 = early_time_limit_sec, energy_decay_curve.n_samples - 1
     lim3, lim4 = 0.0, early_time_limit_sec
 
-    return __energy_balance(energy_decay_curve, lim1, lim2, lim3, lim4)
+    # return in dB
+    return 10* np.log10(__energy_balance(lim1, lim2, lim3, lim4, energy_decay_curve, energy_decay_curve))
 
 
 def __energy_balance(lim1, lim2, lim3, lim4,
                      energy_decay_curve1,
-                     energy_decay_curve2 = None):
+                     energy_decay_curve2):
     r"""
     Calculate the energy balance for the time limits from the two energy
     decay curves (EDC). If second one is not provided, the first will be used for both.
@@ -335,7 +333,7 @@ def __energy_balance(lim1, lim2, lim3, lim4,
     Returns
     -------
     energy balance : numpy.ndarray[float]
-        energy-balance index (early-to-late energy ratio) in decibels,
+        energy-balance index (early-to-late energy ratio),
         shaped according to the channel shape of the input EDC.
 
     References
@@ -343,8 +341,12 @@ def __energy_balance(lim1, lim2, lim3, lim4,
     .. [#iso] ISO 3382, Acoustics — Measurement of the reverberation time of
         rooms with reference to other acoustical parameters.
     """
+    # Check input type
+    if not isinstance(energy_decay_curve1, pf.TimeData):
+        raise TypeError("energy_decay_curve1 must be a pyfar.TimeData object.")
+    if not isinstance(energy_decay_curve2, pf.TimeData):
+        raise TypeError("energy_decay_curve2 must be a pyfar.TimeData object.")
 
-    # input checks -> rest is done in surrounding functions
     for name, val in zip(("lim1","lim2","lim3","lim4"), (lim1,
                                                          lim2,
                                                          lim3,
@@ -356,10 +358,6 @@ def __energy_balance(lim1, lim2, lim3, lim4,
         raise ValueError("If scalars, require lim1 < lim2.")
     if not (lim4 > lim3 if np.isscalar(lim3) and np.isscalar(lim4) else True):
         raise ValueError("If scalars, require lim3 < lim4.")
-
-    # if no second edc is provided
-    if energy_decay_curve2 is None:
-        energy_decay_curve2 = energy_decay_curve1
 
     lim1_idx = energy_decay_curve1.find_nearest_time(lim1)
     lim2_idx = energy_decay_curve1.find_nearest_time(lim2)
@@ -375,4 +373,4 @@ def __energy_balance(lim1, lim2, lim3, lim4,
     denominator = lim1_vals - lim2_vals # edc 1
 
     energy_balance = numerator / denominator
-    return 10 * np.log10(energy_balance)
+    return energy_balance
