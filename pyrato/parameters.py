@@ -291,10 +291,12 @@ def clarity_from_energy_balance(energy_decay_curve, early_time_limit=80):
     return __energy_balance(energy_decay_curve, lim1, lim2, lim3, lim4)
 
 
-def __energy_balance(energy_decay_curve, lim1, lim2, lim3, lim4):
+def __energy_balance(lim1, lim2, lim3, lim4,
+                     energy_decay_curve1,
+                     energy_decay_curve2 = None):
     r"""
-    Calculate the energy balance for the time limits from the energy
-    decay curve (EDC).
+    Calculate the energy balance for the time limits from the two energy
+    decay curves (EDC). If second one is not provided, the first will be used for both.
 
     A collection of roomacoustic parameters are defined by their
     time-respective energy balance, where the differentiation is made by
@@ -305,9 +307,9 @@ def __energy_balance(energy_decay_curve, lim1, lim2, lim3, lim4):
     .. math::
 
         EB(p) = 10 \log_{10} \frac{
-            \displaystyle \int_{lim3}^{lim4} p^2(t) \, dt
+            \displaystyle \int_{lim3}^{lim4} p_2^2(t) \, dt
         }{
-            \displaystyle \int_{lim1}^{lim2} p^2(t) \, dt
+            \displaystyle \int_{lim1}^{lim2} p_1^2(t) \, dt
         }
 
     where :math:`lim1 - lim4` are the time limits and :math:`p(t)` is the
@@ -316,16 +318,19 @@ def __energy_balance(energy_decay_curve, lim1, lim2, lim3, lim4):
 
     .. math::
 
-        EB(e) = 10 \log_{10} \left( \frac{e(lim3) -
-        e(lim4)}{e(lim1) - e(lim2)} \right).
+        EB(e) = 10 \log_{10} \left( \frac{e_2(lim3) -
+        e_2(lim4)}{e_1(lim1) - e_1(lim2)} \right).
 
     Parameters
     ----------
-    energy_decay_curve : pyfar.TimeData
-        Energy decay curve (EDC) of the room impulse response
-        (time-domain signal). The EDC must start at time zero.
     lim1, lim2, lim3, lim4 : float
         Time limits (:math:`t_e`) in seconds.
+    energy_decay_curve1 : pyfar.TimeData
+        Energy decay curve 1 (EDC1) of the room impulse response
+        (time-domain signal). The EDC must start at time zero.
+    energy_decay_curve2 : pyfar.TimeData
+        Energy decay curve 2 (EDC2) of the room impulse response
+        (time-domain signal). The EDC must start at time zero.
 
     Returns
     -------
@@ -352,18 +357,22 @@ def __energy_balance(energy_decay_curve, lim1, lim2, lim3, lim4):
     if not (lim4 > lim3 if np.isscalar(lim3) and np.isscalar(lim4) else True):
         raise ValueError("If scalars, require lim3 < lim4.")
 
-    lim1_idx = energy_decay_curve.find_nearest_time(lim1)
-    lim2_idx = energy_decay_curve.find_nearest_time(lim2)
-    lim3_idx = energy_decay_curve.find_nearest_time(lim3)
-    lim4_idx = energy_decay_curve.find_nearest_time(lim4)
+    # if no second edc is provided
+    if energy_decay_curve2 is None:
+        energy_decay_curve2 = energy_decay_curve1
 
-    lim1_vals = energy_decay_curve.time[..., lim1_idx]
-    lim2_vals = energy_decay_curve.time[..., lim2_idx]
-    lim3_vals = energy_decay_curve.time[..., lim3_idx]
-    lim4_vals = energy_decay_curve.time[..., lim4_idx]
+    lim1_idx = energy_decay_curve1.find_nearest_time(lim1)
+    lim2_idx = energy_decay_curve1.find_nearest_time(lim2)
+    lim3_idx = energy_decay_curve2.find_nearest_time(lim3)
+    lim4_idx = energy_decay_curve2.find_nearest_time(lim4)
 
-    numerator = lim3_vals - lim4_vals
-    denominator = lim1_vals - lim2_vals
+    lim1_vals = energy_decay_curve1.time[..., lim1_idx]
+    lim2_vals = energy_decay_curve1.time[..., lim2_idx]
+    lim3_vals = energy_decay_curve2.time[..., lim3_idx]
+    lim4_vals = energy_decay_curve2.time[..., lim4_idx]
+
+    numerator = lim3_vals - lim4_vals # edc 2
+    denominator = lim1_vals - lim2_vals # edc 1
 
     energy_balance = numerator / denominator
     return 10 * np.log10(energy_balance)

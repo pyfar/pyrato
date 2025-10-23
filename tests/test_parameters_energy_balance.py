@@ -22,7 +22,7 @@ def make_edc_from_energy(energy, sampling_rate=1000):
 def test_energy_balance_accepts_timedata_and_returns_correct_shape():
     energy = np.linspace(1, 0, 10)
     edc = make_edc_from_energy(energy)
-    result = __energy_balance(edc, 0.0, 0.005, 0.0, 0.001)
+    result = __energy_balance(0.0, 0.005, 0.0, 0.001, edc)
     assert isinstance(result, np.ndarray)
     assert result.shape == edc.cshape
 
@@ -30,15 +30,15 @@ def test_energy_balance_accepts_timedata_and_returns_correct_shape():
 def test_energy_balance_rejects_non_numeric_limits():
     edc = make_edc_from_energy(np.linspace(1, 0, 10))
     with pytest.raises(TypeError, match="lim1 must be numeric."):
-        __energy_balance(edc, "not_a_number", 1, 0, 1)
+        __energy_balance("not_a_number", 1, 0, 1, edc)
 
 
 def test_energy_balance_rejects_invalid_limit_order():
     edc = make_edc_from_energy(np.linspace(1, 0, 10))
     with pytest.raises(ValueError, match="If scalars, require lim1 < lim2."):
-        __energy_balance(edc, 1.0, 0.5, 0.0, 1.0)
+        __energy_balance(1.0, 0.5, 0.0, 1.0, edc)
     with pytest.raises(ValueError, match="If scalars, require lim3 < lim4."):
-        __energy_balance(edc, 0.0, 1.0, 1.0, 0.5)
+        __energy_balance(0.0, 1.0, 1.0, 0.5, edc)
 
 
 # --- Functional correctness ---
@@ -49,7 +49,7 @@ def test_energy_balance_computes_known_ratio_correctly():
     # For linear EDC: e(lim3)-e(lim4) = (1.0 - 0.75) = 0.25
     #                 e(lim1)-e(lim2) = (0.75 - 0.5) = 0.25
     # ratio = 1 -> 0 dB
-    result = __energy_balance(edc, 0.001, 0.002, 0.0, 0.001)
+    result = __energy_balance(0.001, 0.002, 0.0, 0.001, edc)
     npt.assert_allclose(result, 0.0, atol=1e-12)
 
 
@@ -58,7 +58,7 @@ def test_energy_balance_handles_multichannel_data_correctly():
     energy = np.linspace(1, 0, 10)
     multi = np.stack([energy, energy * 0.5])
     edc = make_edc_from_energy(multi)
-    result = __energy_balance(edc, 0.0, 0.005, 0.0, 0.001)
+    result = __energy_balance(0.0, 0.005, 0.0, 0.001, edc)
     assert result.shape == edc.cshape
 
 
@@ -66,7 +66,7 @@ def test_energy_balance_returns_nan_for_zero_denominator():
     """If denominator e(lim1)-e(lim2)=0, expect NaN (log10 invalid)."""
     energy = np.ones(10)
     edc = make_edc_from_energy(energy)
-    result = __energy_balance(edc, 0.0, 0.001, 0.002, 0.003)
+    result = __energy_balance(0.0, 0.001, 0.002, 0.003, edc)
     assert np.isnan(result)
 
 
@@ -93,5 +93,5 @@ def test_energy_balance_matches_reference_case():
     )
     expected_db = 10 * np.log10(analytical_ratio)
 
-    result = __energy_balance(edc, lim1, lim2, lim3, lim4)
+    result = __energy_balance(lim1, lim2, lim3, lim4, edc)
     npt.assert_allclose(result, expected_db, atol=1e-8)
