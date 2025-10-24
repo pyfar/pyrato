@@ -5,7 +5,7 @@ from typing import Optional
 
 
 @pytest.fixture
-def make_edc_from_energy():
+def make_edc():
     """
     Fixture providing a factory for creating Energy Decay Curves (EDCs)
     as `pyfar.TimeData` objects.
@@ -19,8 +19,8 @@ def make_edc_from_energy():
     Parameters
     ----------
     energy : array_like, optional
-        Custom energy decay curve. If provided, this overrides
-        all other inputs.
+        Custom energy decay curve that starts at index 0. If provided, this
+        overrides all other inputs.
     rt : float, optional
         Reverberation time (RT60) in seconds. Generates an exponential energy
         decay curve E(t) = exp(-13.8155 * t / RT60), corresponding to -60 dB.
@@ -31,7 +31,7 @@ def make_edc_from_energy():
     normalize : bool, optional
         Normalize energy curve to its maximum value. Defaults to True.
     dynamic_range : float, optional
-        Dynamic range limit in decibels below the peak (default: 65 dB).
+        Dynamic range limit in decibels below the peak (default: -65 dB).
 
     Returns
     -------
