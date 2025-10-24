@@ -69,9 +69,3 @@ def test_fixture_accepts_raw_energy_data(make_edc):
     # Last sample may be clamped to dynamic range limit
     expected = np.clip(custom, 10 ** (-65 / 10), None)
     np.testing.assert_allclose(edc.time, expected[np.newaxis, :], rtol=1e-7)
-
-
-
-# TODO: wechseln zu npt.assert allclose
-
-
