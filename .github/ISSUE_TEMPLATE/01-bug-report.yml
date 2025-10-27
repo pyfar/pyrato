@@ -50,6 +50,7 @@ body:
       description: >
         Please paste the output of running `depinfo --markdown pyrato`
         in your environment between the `details` tags below.
+        If you have not installed `depinfo`, you can install it via `pip install depinfo`.
       value: |
         <details>
 
