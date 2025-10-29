@@ -508,7 +508,7 @@ def energy_decay_curve_chu(
 
     Returns
     -------
-    energy_decay_curve: ndarray, double
+    pyfar.TimeData
         Returns the noise handeled edc.
 
     References
