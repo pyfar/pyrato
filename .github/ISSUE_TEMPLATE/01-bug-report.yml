@@ -49,10 +49,15 @@ body:
       label: Environment
       description: >
         Please paste the output of running `pipdeptree --package pyrato`
-        in your environment between the `details` tags below.
+        in your environment between ``` in the `details` tags below.
         If you have not installed `pipdeptree`, you can install it via `pip install pipdeptree`.
       value: |
-        <details>
+        <details open>
+
+        ```text
+        Paste output of `pipdeptree --package pyrato` here
+
+        ```
 
         </details>
     validations:
