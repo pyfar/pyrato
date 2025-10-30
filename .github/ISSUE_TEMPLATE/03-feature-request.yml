@@ -1,6 +1,6 @@
 name: Feature request
 description: Suggest an idea for this project
-title: "[ENH] "
+title: "[ENH] <Please write a comprehensive title after the '[ENH] ' prefix>"
 labels: [enhancement]
 body:
   - type: checkboxes
