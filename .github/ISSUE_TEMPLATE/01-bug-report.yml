@@ -48,9 +48,9 @@ body:
     attributes:
       label: Environment
       description: >
-        Please paste the output of running `depinfo --markdown pyrato`
+        Please paste the output of running `pipdeptree --package pyrato`
         in your environment between the `details` tags below.
-        If you have not installed `depinfo`, you can install it via `pip install depinfo`.
+        If you have not installed `pipdeptree`, you can install it via `pip install pipdeptree`.
       value: |
         <details>
 
