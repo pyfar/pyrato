@@ -2,6 +2,7 @@ name: Question
 description: Ask a question
 title: "[Question] <Please write a comprehensive title after the '[Question] ' prefix>"
 labels: [question]
+projects: ["projects/3"]
 body:
   - type: checkboxes
     attributes:
