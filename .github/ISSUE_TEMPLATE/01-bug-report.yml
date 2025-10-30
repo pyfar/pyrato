@@ -52,7 +52,7 @@ body:
         in your environment between ``` in the `details` tags below.
         If you have not installed `pipdeptree`, you can install it via `pip install pipdeptree`.
       value: |
-        <details open>
+        <details>
 
         ```text
         Paste output of `pipdeptree --package pyrato` here
