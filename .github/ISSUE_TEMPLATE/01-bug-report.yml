@@ -2,6 +2,7 @@ name: 🐞 Bug report
 description: Report a problem to help improve this project
 title: "[BUG] <Please write a comprehensive title after the '[BUG] ' prefix>"
 labels: [bug]
+projects: ["pyfar/3"]
 body:
   - type: checkboxes
     attributes:
