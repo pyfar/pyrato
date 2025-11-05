@@ -172,6 +172,11 @@ def Eyrings_equation(volume,surface,mean_alpha):
     -------
     reverb_eyring: double
          Eyring reverberation time
+    
+    References
+    ----------
+    .. [#] Eyring, C.F., 1930. Reverberation time in “dead” rooms. The Journal of the Acoustical Society of America, 1(2A_Supplement), pp.168-168.
+
     """
 
     T60 = -0.161 * (volume / (surface * np.log(1 - mean_alpha)))
