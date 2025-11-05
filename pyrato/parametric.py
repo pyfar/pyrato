@@ -177,8 +177,19 @@ def calculate_sabine_reverberation_time(surfaces, alphas, volume):
     .. [#] H. Kuttruff, Room acoustics, 4th Ed. Taylor & Francis, 2009.
 
     """
-    alphas = np.asarray(alphas)
     surfaces = np.asarray(surfaces)
+    alphas = np.asarray(alphas)
+
+    if alphas.shape != surfaces.shape:
+       raise ValueError("Size of alphas and surfaces ndarray sizes must match.")
+
+    if np.any(alphas < 0) or np.any(alphas > 1):
+       raise ValueError(f"Absorption coefficient values must be in range [0, 1]. Got {alphas}.")
+    if np.any(surfaces < 0):
+       raise ValueError(f"Surface areas cannot be negative. Got {surfaces}.")
+    if volume < 0:
+       raise ValueError(f"Volume cannot be negative. Got {volume}.")
+    
     absorption_area = np.sum(surfaces*alphas)
 
     reverberation_time_sabine = 0.161*volume/(absorption_area)
