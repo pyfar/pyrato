@@ -8,6 +8,15 @@ import numpy as np
 def calculate_speed_of_sound(temperature):
     r"""Calculate the speed of sound in air depending on the temperature.
 
+    Speed of sound is calculated as:
+
+    .. math::
+        c = c_0 \sqrt{\frac{T - T_0}{20 - T_0}}
+    .. math::
+        T_0=-273.15
+    .. math::
+        c_0 = 343.2
+
     Parameters
     ----------
     temperature : double
@@ -21,15 +30,6 @@ def calculate_speed_of_sound(temperature):
     References
     ----------
     .. [#] ISO 9613-1 (Formula A.5)
-    
-    Speed of sound is calculated as:
-
-    .. math::
-        c = c_0 \sqrt{\frac{T - T_0}{20 - T_0}}
-    .. math::
-        T_0=-273.15
-    .. math::
-        c_0 = 343.2
     """
     T_0 = -273.15
     c_0 = 343.2
