@@ -6,7 +6,7 @@ such as Sabine's theory of sound in rooms.
 import numpy as np
 
 def calculate_speed_of_sound(temperature):
-    """Calculate the speed of sound in air depending on the temperature.
+    r"""Calculate the speed of sound in air depending on the temperature.
 
     Parameters
     ----------
@@ -25,8 +25,8 @@ def calculate_speed_of_sound(temperature):
     Equations
     ---------
     .. math::
-        c = 343.2sqrt(T - T_0)/(20 - T_0))
-        
+        c = 343.2\cdot \sqrt{\frac{T - T_0}{20 - T_0}}
+    .. math::
         t0=-273.15°C
     """
     speed_of_sound = 343.2 * np.sqrt((temperature + 273.15)/(20+ 273.15))
