@@ -151,3 +151,34 @@ def air_attenuation_coefficient(
             ) * 20.0 / np.log(10.0) / (np.log10(np.exp(1.0)) * 10.0))
 
     return air_abs_coeff
+
+def critical_distance(
+                     volume,
+                     reverberation_time
+                      ):
+    """Calculate the critical distance of a room with given volume and reverberation time.
+
+    Parameters
+    ----------
+    volume : double
+        volume of the room in cubic meters.
+    reverberation_time : double
+        reverberation time of the room in seconds.
+
+    Returns
+    -------
+    critical_dist : double
+        The resulting critical distance in meters.
+
+    References
+    ----------
+    .. [#] https://en.wikipedia.org/wiki/Critical_distance
+
+
+    """ 
+    if reverberation_time <= 0:
+        raise ValueError("Reverberation time must be greater than zero.")
+    if volume <= 0:
+        raise ValueError("Volume must be greater than zero.")
+    critical_dist = 0.057 * np.sqrt(volume / reverberation_time)
+    return critical_dist
