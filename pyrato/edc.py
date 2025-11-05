@@ -1142,45 +1142,7 @@ def truncate_energy_decay_curve(energy_decay_curve, threshold):
         energy_decay_curve.comment)
 
 
-def _edc_linregress(energy_decay_curve: pf.TimeData, t0: float, t1: float):
-    """
-    Takes an EDC as input and performs linear regression
-    within a time interval.
-
-    Parameters
-    ----------
-    energy_decay_curve : pyfar.TimeData
-        The energy decay curve
-    t0 : float
-        Start time of the interval
-    t1 : float
-        End time of the interval
-
-    Returns
-    -------
-    slope : float
-        The slope of the linear regression
-    intercept : float
-        The intercept of the linear regression
-    """
-
-    if t0 > t1:
-        raise ValueError("t0 must be smaller than t1")
-
-    t0_idx = energy_decay_curve.find_nearest_time(t0)
-    t1_idx = energy_decay_curve.find_nearest_time(t1)
-
-    if t0_idx == t1_idx:
-        raise ValueError("t0 and t1 must not be equal")
-
-    slope, intercept, _, _, _ = linregress(
-        energy_decay_curve.times[t0_idx:t1_idx],
-        energy_decay_curve.time[t0_idx:t1_idx])
-
-    return slope, intercept
-
-
-def early_mid_decay_time(energy_decay_curve: pf.TimeData):
+def earl_mid_decay_time(energy_decay_curve, time_0, time_1):
     """
     Takes an EDC as input and performs linear regression
     within a time interval.
@@ -1190,18 +1152,30 @@ def early_mid_decay_time(energy_decay_curve: pf.TimeData):
     ----------
     energy_decay_curve : pyfar.TimeData
         The energy decay curve
+    time_0 : float
+        Start time of the interval in seconds
+    time_1 : float
+        End time of the interval in seconds
 
     Returns
     -------
     emdt : float
-        The early-mid decay time
+        The early-mid decay time in seconds
     """
-    t0, t1 = 20e-3, 130e-3
-    times = energy_decay_curve.times
-    if (times.max() < t1) or (times.min() < t0):
-        raise ValueError("The EDC must be defined for at least 130 ms.")
 
-    slope, _ = _edc_linregress(energy_decay_curve, t0, t1)
+    if time_0 >= time_1:
+        raise ValueError("time_0 must be smaller than time_1")
+
+    t0_idx = energy_decay_curve.find_nearest_time(time_0)
+    t1_idx = energy_decay_curve.find_nearest_time(time_1)
+
+    if t0_idx == t1_idx:
+        raise ValueError("time_0 and time_1 must not have the same time index")
+
+    slope, _, _, _, _ = linregress(
+        energy_decay_curve.times[t0_idx:t1_idx],
+        energy_decay_curve.time[t0_idx:t1_idx])
+
     emdt = -60 / slope
 
     return emdt
