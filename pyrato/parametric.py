@@ -20,7 +20,7 @@ def calculate_speed_of_sound(temperature):
 
     References
     ----------
-    ISO 9613-1 (Formula A.5)
+    .. [#] ISO 9613-1 (Formula A.5)
     
     Equations
     ---------
