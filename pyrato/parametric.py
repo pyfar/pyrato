@@ -43,17 +43,20 @@ def schroeder_frequency(volume, reverberation_time):
     volume = np.asarray(volume, dtype=float)
     reverberation_time = np.asarray(reverberation_time, dtype=float)
     if not np.issubdtype(volume.dtype, np.floating):
-        raise TypeError("`volume` must be a float or a numeric array.")
+        raise TypeError("`volume` must be a float or a " \
+        "numeric array.")
     if not np.issubdtype(reverberation_time.dtype, np.floating):
-        raise TypeError("`reverberation_time` must be a float or a numeric array.")
+        raise TypeError("`reverberation_time` must be a float "
+        "or a numeric array.")
     if np.any(volume <= 0):
         raise ValueError("`volume` must be positive (in m³).")
     if np.any(reverberation_time <= 0):
-        raise ValueError("`reverberation_time` must be positive (in seconds).")
-    if volume.shape != reverberation_time.shape and volume.size != 1 and reverberation_time.size != 1:
-        raise ValueError("`volume` and `reverberation_time` must have compatible shapes "
-        "(either same shape or one is scalar).")
-    
+        raise ValueError("`reverberation_time` must be positive "\
+        "(in seconds).")
+    if volume.shape != reverberation_time.shape:
+        raise ValueError("`volume` and `reverberation_time` " \
+        "must have compatible shapes (either same shape or one "\
+        "is scalar).")
     schroeder_frequency = 2000*np.sqrt(reverberation_time / volume)
 
     return schroeder_frequency
