@@ -159,7 +159,7 @@ def reverberation_time_eyring(volume,surface,mean_alpha):
     function which calculates reverberation time in rooms as defined by Carl F. Eyring. 
 
     .. math::
-        T_{60}= -0.161* \frac {volume}{surface\ln(1-mean_alpha)}
+        T_{60} = -0.161 \frac{\text{volume}}{\text{surface} \cdot \ln(1 - \text{mean\_alpha})}
     Parameters
     ----------
     volume : float, np.ndarray
