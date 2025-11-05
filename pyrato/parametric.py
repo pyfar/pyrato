@@ -153,7 +153,6 @@ def air_attenuation_coefficient(
     return air_abs_coeff
 
 def calculate_sabine_reverberation_time(surfaces, alphas, volume):
-
     """Calculate the reverberation time using Sabine's equation.
 
     Calculation according to [#]_.
