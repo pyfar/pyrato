@@ -25,11 +25,14 @@ def calculate_speed_of_sound(temperature):
     Equations
     ---------
     .. math::
-        c = 343.2\cdot \sqrt{\frac{T - T_0}{20 - T_0}}
+        c = 343.2\cdot \sqrt{\frac{temperature - T_0}{20 - T_0}}
     .. math::
-        t0=-273.15°C
+        T_0=-273.15°C
+        c_0 = 343.2 m/s (speed of sound at 20°C)
     """
-    speed_of_sound = 343.2 * np.sqrt((temperature + 273.15)/(20+ 273.15))
+    T_0 = -273.15
+    c_0 = 343.2
+    speed_of_sound = c_0 * np.sqrt((temperature - T_0)/(20 - T_0))
     return speed_of_sound
 
 def energy_decay_curve_analytic(
