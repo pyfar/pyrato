@@ -161,11 +161,13 @@ def calculate_sabine_reverberation_time(surfaces, alphas, volume):
     Parameters
     ----------
     surfaces : ndarray, double
-        Surface areas of all surfaces in the room in square meters
+        Surface areas of all surfaces in the room in square meters.
     alphas : ndarray, double 
         Absorption coefficients corresponding to each surface
     volume : double
         Room volume in cubic meters
+
+    The lengths of surfaces and alphas ndaraay must match.
     
     Returns
     -------
