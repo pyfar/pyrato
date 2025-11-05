@@ -25,7 +25,8 @@ def calculate_speed_of_sound(temperature):
     Equations
     ---------
     .. math::
-        c=343.2*sqrt((temperature-t0)/(20-t0))\n
+        c=343.2\cdot\sqrt{\frac{temperature-t0}{20-t0}}
+    .. math::
         t0=-273.15°C
     """
     speed_of_sound = 343.2 * np.sqrt((temperature + 273.15)/(20+ 273.15))
