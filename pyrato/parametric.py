@@ -24,7 +24,7 @@ def schroeder_frequency(volume, reverberation_time):
 
     Returns
     -------
-    schroeder_freq : float, np.ndarray
+    schroeder_frequency : float, np.ndarray
         schroeder frequency in Hz
 
     References
@@ -33,9 +33,9 @@ def schroeder_frequency(volume, reverberation_time):
 
     """
 
-    schroeder_freq = 2000*np.sqrt(reverberation_time / volume)
+    schroeder_frequency = 2000*np.sqrt(reverberation_time / volume)
 
-    return schroeder_freq
+    return schroeder_frequency
 
 def energy_decay_curve_analytic(
         surfaces, alphas, volume, times, source=None,
