@@ -1193,12 +1193,12 @@ def early_mid_decay_time(energy_decay_curve: pf.TimeData):
     emdt : float
         The early-mid decay time
     """
-    if (
-        (energy_decay_curve.times.max() < 130e-3)
-        or (energy_decay_curve.times.min() < 20e-3)):
+    t0, t1 = 20e-3, 130e-3
+    times = energy_decay_curve.times
+    if (times.max() < t1) or (times.min() < t0):
         raise ValueError("The EDC must be defined for at least 130 ms.")
 
-    slope, _ = _edc_linregress(energy_decay_curve, t0=20e-3, t1=130e-3)
+    slope, _ = _edc_linregress(energy_decay_curve, t0, t1)
     emdt = -60 / slope
 
     return emdt
