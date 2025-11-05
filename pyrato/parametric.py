@@ -5,22 +5,21 @@ such as Sabine's theory of sound in rooms.
 """
 import numpy as np
 
-def schroeder_frequency(V, T):
+def schroeder_frequency(volume, reverberation_time):
     r"""
-    function which calculates the Schroeder frequency. The cut-off
-    frequency for modes.
+    Calculate the Schroeder cut-off frequency of a room.
 
-    Approved by Monty Python Flying Circus.
+    Calculation according to [#]_.
 
     .. math::
 
-        f_s = 2000 * \sqrt(\frac{T}{V})
+        f_s = 2000 \sqrt{\left(\frac{T}{V}\right)}
 
     Parameters
     ----------
-    V : float, np.ndarray
+    volume : double, np.ndarray
         room volume in m^3
-    T : float, np.ndarray
+    reverberation_time : double, np.ndarray
         reverberation time in s
 
     Returns
@@ -34,9 +33,9 @@ def schroeder_frequency(V, T):
 
     """
 
-    f_s = 2000*np.sqrt(T / V)
+    schroeder_freq = 2000*np.sqrt(reverberation_time / volume)
 
-    return f_s
+    return schroeder_freq
 
 def energy_decay_curve_analytic(
         surfaces, alphas, volume, times, source=None,
