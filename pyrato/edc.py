@@ -1181,7 +1181,10 @@ def _edc_linregress(energy_decay_curve: pf.TimeData, t0: float, t1: float):
 
 
 def early_mid_decay_time(energy_decay_curve: pf.TimeData):
-    """Calculate the early-mid decay time (EMDT) of an energy decay curve.
+    """
+    Takes an EDC as input and performs linear regression
+    within a time interval.
+    Calculate the early-mid decay time (EMDT) using the slope.
 
     Parameters
     ----------
