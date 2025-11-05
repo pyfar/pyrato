@@ -22,8 +22,8 @@ def calculate_speed_of_sound(temperature):
     ----------
     .. [#] ISO 9613-1 (Formula A.5)
     
-    Equations
-    ---------
+    Speed of sound is calculated as:
+
     .. math::
         c = c_0 \sqrt{\frac{T - T_0}{20 - T_0}}
     .. math::
