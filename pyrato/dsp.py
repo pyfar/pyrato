@@ -99,6 +99,8 @@ def find_impulse_response_start(
         "Use pyfar.dsp.find_impulse_response_start instead",
         DeprecationWarning, stacklevel=2)
 
+
+    print("This is a dumy comment again")
     return pf.dsp.find_impulse_response_start(impulse_response, threshold)
 
 
