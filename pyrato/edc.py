@@ -1142,7 +1142,7 @@ def truncate_energy_decay_curve(energy_decay_curve, threshold):
         energy_decay_curve.comment)
 
 
-def earl_mid_decay_time(energy_decay_curve, time_0, time_1):
+def early_mid_decay_time(energy_decay_curve, time_0, time_1):
     """
     Takes an EDC as input and performs linear regression
     within a time interval.
