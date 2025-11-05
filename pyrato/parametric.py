@@ -5,6 +5,32 @@ such as Sabine's theory of sound in rooms.
 """
 import numpy as np
 
+def calculate_speed_of_sound(temperature):
+    """Calculate the speed of sound in air depending on the temperature.
+
+    Parameters
+    ----------
+    temperature : double
+        Temperature in degrees Celsius.
+
+    Returns
+    -------
+    speed_of_sound : double
+        Speed of sound in m/s.
+
+    References
+    ----------
+    ISO 9613-1 (Formula A.5)
+    
+    Equations
+    ---------
+    .. math::
+        c=343.2*sqrt((temperature-t0)/(20-t0))
+    t0=-273.15°C
+    """
+    speed_of_sound = 343.2 * np.sqrt((temperature + 273.15)/(20+ 273.15))
+    return speed_of_sound
+
 def energy_decay_curve_analytic(
         surfaces, alphas, volume, times, source=None,
         receiver=None, method='eyring', c=343.4, frequency=None,
