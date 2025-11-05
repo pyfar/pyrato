@@ -154,7 +154,7 @@ def air_attenuation_coefficient(
 
 
 
-def Eyrings_equation(volume,surface,mean_alpha):
+def reverberation_time_eyring(volume,surface,mean_alpha):
     """
     function which calculates reverberation time in rooms as defined by Carl F. Eyring. 
 
@@ -163,15 +163,15 @@ def Eyrings_equation(volume,surface,mean_alpha):
     Parameters
     ----------
     volume : float, np.ndarray
-        Room volume
+        Room volume in m3
     sufaces : float, np.ndarray
-        Surface areas of all surfaces in the room
+        Surface areas of all surfaces in the room in m2
     mean_alpha : float, np.ndarray
         Average absorption coefficient of room surfaces
     Returns
     -------
-    reverb_eyring: double
-         Eyring reverberation time
+    reverberation_time_eyring: double
+         Eyring reverberation time in s
     
     References
     ----------
