@@ -9,6 +9,7 @@ curves (EDCs) from measured or simulated room impulse responses (RIRs).
 import numpy as np
 from matplotlib import pyplot as plt
 from pyrato import dsp
+from scipy.stats import linregress
 import warnings
 import pyfar as pf
 
@@ -1139,3 +1140,65 @@ def truncate_energy_decay_curve(energy_decay_curve, threshold):
         _truncate_energy_decay_curve(energy_decay_curve.time, threshold),
         energy_decay_curve.times,
         energy_decay_curve.comment)
+
+
+def _edc_linregress(energy_decay_curve: pf.TimeData, t0: float, t1: float):
+    """
+    Takes an EDC as input and performs linear regression
+    within a time interval.
+
+    Parameters
+    ----------
+    energy_decay_curve : pyfar.TimeData
+        The energy decay curve
+    t0 : float
+        Start time of the interval
+    t1 : float
+        End time of the interval
+
+    Returns
+    -------
+    slope : float
+        The slope of the linear regression
+    intercept : float
+        The intercept of the linear regression
+    """
+
+    if t0 > t1:
+        raise ValueError("t0 must be smaller than t1")
+
+    t0_idx = energy_decay_curve.find_nearest_time(t0)
+    t1_idx = energy_decay_curve.find_nearest_time(t1)
+
+    if t0_idx == t1_idx:
+        raise ValueError("t0 and t1 must not be equal")
+
+    slope, intercept, _, _, _ = linregress(
+        energy_decay_curve.times[t0_idx:t1_idx],
+        energy_decay_curve.time[t0_idx:t1_idx])
+
+    return slope, intercept
+
+
+def early_mid_decay_time(energy_decay_curve: pf.TimeData):
+    """Calculate the early-mid decay time (EMDT) of an energy decay curve.
+
+    Parameters
+    ----------
+    energy_decay_curve : pyfar.TimeData
+        The energy decay curve
+
+    Returns
+    -------
+    emdt : float
+        The early-mid decay time
+    """
+    if (
+        (energy_decay_curve.times.max() < 130e-3)
+        or (energy_decay_curve.times.min() < 20e-3)):
+        raise ValueError("The EDC must be defined for at least 130 ms.")
+
+    slope, _ = _edc_linregress(energy_decay_curve, t0=20e-3, t1=130e-3)
+    emdt = -60 / slope
+
+    return emdt
