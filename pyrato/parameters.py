@@ -5,7 +5,6 @@ simulated or experimental data.
 import re
 import numpy as np
 import pyfar as pf
-from scipy.stats import linregress
 
 
 def reverberation_time_linear_regression(
@@ -205,40 +204,56 @@ def clarity(energy_decay_curve, early_time_limit=80):
     return clarity_db
 
 
-def early_mid_decay_time(energy_decay_curve, time_0, time_1):
+def interval_specific_decay_time(energy_decay_curve: pf.TimeData,
+                                time_0, time_1):
     """
     Takes an EDC as input and performs linear regression
     within a time interval.
-    Calculate the early-mid decay time (EMDT) using the slope.
+    Calculate the interval-specific decay time (EMDT) using the slope.
 
     Parameters
     ----------
     energy_decay_curve : pyfar.TimeData
         The energy decay curve
     time_0 : float
-        Start time of the interval in seconds
+        Start time of the interval in milliseconds
     time_1 : float
-        End time of the interval in seconds
+        End time of the interval in milliseconds
 
     Returns
     -------
-    emdt : float
-        The early-mid decay time in seconds
+    decay_time : float
+        The interval-specific decay time in seconds
     """
 
+    # Check input type
+    if not isinstance(energy_decay_curve, pf.TimeData):
+        raise TypeError("Input must be a pyfar.TimeData object.")
+    if (not isinstance(time_0, (int, float)) or
+        not isinstance(time_1, (int, float))):
+        raise TypeError('time_0 and time_1 must be a number.')
+
+    # Validate time range
     if time_0 >= time_1:
-        raise ValueError("time_0 must be smaller than time_1")
+        raise ValueError("time_0 must be smaller than time_1.")
+    if (time_1 > energy_decay_curve.signal_length * 1000) or (
+            time_0 <= 0):
+        raise ValueError(
+            "time_0 and time_1 must be in the range of 0 "
+            f"and {energy_decay_curve.signal_length * 1000}.",
+            )
 
-    t0_idx = energy_decay_curve.find_nearest_time(time_0)
-    t1_idx = energy_decay_curve.find_nearest_time(time_1)
+    idx_t0 = int(energy_decay_curve.find_nearest_time(time_0 / 1000.0))
+    idx_t1 = int(energy_decay_curve.find_nearest_time(time_1 / 1000.0))
 
-    if t0_idx == t1_idx:
-        raise ValueError("time_0 and time_1 must not have the same time index")
+    edc_db = 10*np.log10(np.abs(energy_decay_curve.time))
 
-    slope, _, _, _, _ = linregress(
-        energy_decay_curve.times[t0_idx:t1_idx],
-        energy_decay_curve.time[t0_idx:t1_idx])
+    times = energy_decay_curve.times
+    A = np.vstack(
+                [times[idx_t0:idx_t1], np.ones(idx_t1 - idx_t0)]).T
+    gradient, _ = np.linalg.lstsq(
+                A, edc_db[..., idx_t0:idx_t1].T, rcond=None)[0]
 
-    emdt = -60 / slope
+    decay_time = -60 / gradient
 
-    return emdt
+    return decay_time
