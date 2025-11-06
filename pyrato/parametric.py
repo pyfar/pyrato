@@ -172,8 +172,8 @@ def mean_free_path(
 
 
     if volume < 0:
-        raise ValueError(f"Volume ({volume}) is smaller than 0!!")
+        raise ValueError(f"Volume ({volume}) is smaller than 0.")
     if surface_area < 0:
-        raise ValueError(f"Surface area ({surface_area}) is smaller than 0!!")
+        raise ValueError(f"Surface area ({surface_area}) is smaller than 0.")
 
     return 4 * volume / surface_area

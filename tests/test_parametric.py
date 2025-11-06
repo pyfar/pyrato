@@ -11,9 +11,9 @@ def test_mean_free_path(volume, surface_area):
     assert result > 0
 
 def test_mean_free_path_wrong_volume():
-    with pytest.raises(ValueError, match="is smaller than 0!!"):
+    with pytest.raises(ValueError, match="is smaller than 0."):
         mean_free_path(-1, 100)
 
 def test_mean_free_path_wrong_surface_area():
-    with pytest.raises(ValueError, match="is smaller than 0!!"):
+    with pytest.raises(ValueError, match="is smaller than 0."):
         mean_free_path(100, -1)
