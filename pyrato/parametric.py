@@ -5,12 +5,11 @@ such as Sabine's theory of sound in rooms.
 """
 import numpy as np
 
-def schroeder_frequency(volume: float | np.ndarray,
-                        reverberation_time: float | np.ndarray) -> float:
+def schroeder_frequency(volume, reverberation_time):
     r"""
     Calculate the Schroeder cut-off frequency of a room.
 
-    Calculation according to [#]_.
+    Calculation according to [#]_:
 
     .. math::
 
