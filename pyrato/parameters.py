@@ -5,6 +5,7 @@ simulated or experimental data.
 import re
 import numpy as np
 import pyfar as pf
+from scipy.stats import linregress
 
 
 def reverberation_time_linear_regression(
@@ -202,3 +203,42 @@ def clarity(energy_decay_curve, early_time_limit=80):
     clarity_db = 10 * np.log10(clarity)
 
     return clarity_db
+
+
+def early_mid_decay_time(energy_decay_curve, time_0, time_1):
+    """
+    Takes an EDC as input and performs linear regression
+    within a time interval.
+    Calculate the early-mid decay time (EMDT) using the slope.
+
+    Parameters
+    ----------
+    energy_decay_curve : pyfar.TimeData
+        The energy decay curve
+    time_0 : float
+        Start time of the interval in seconds
+    time_1 : float
+        End time of the interval in seconds
+
+    Returns
+    -------
+    emdt : float
+        The early-mid decay time in seconds
+    """
+
+    if time_0 >= time_1:
+        raise ValueError("time_0 must be smaller than time_1")
+
+    t0_idx = energy_decay_curve.find_nearest_time(time_0)
+    t1_idx = energy_decay_curve.find_nearest_time(time_1)
+
+    if t0_idx == t1_idx:
+        raise ValueError("time_0 and time_1 must not have the same time index")
+
+    slope, _, _, _, _ = linregress(
+        energy_decay_curve.times[t0_idx:t1_idx],
+        energy_decay_curve.time[t0_idx:t1_idx])
+
+    emdt = -60 / slope
+
+    return emdt
