@@ -185,16 +185,19 @@ def calculate_sabine_reverberation_time(surfaces, alphas, volume):
        raise ValueError("Size of alphas and surfaces " \
        "ndarray sizes must match.")
 
-    if sum(alphas) < 0 or np.any(alphas > 1):
+    if np.any(alphas) < 0 or np.any(alphas > 1):
        raise ValueError("Absorption coefficient values must "\
                         f"be in range [0, 1]. Got {alphas}.")
-    if np.any(surfaces <= 0):
+    if np.any(surfaces < 0):
        raise ValueError("Surface areas cannot "\
-                        f"be negative or 0. Got {surfaces}.")
+                        f"be negative. Got {surfaces}.")
     if volume < 0:
        raise ValueError(f"Volume cannot be negative. Got {volume}.")
 
     absorption_area = np.sum(surfaces*alphas)
+
+    if absorption_area == 0:
+       raise ZeroDivisionError(f"Absorption area should be positive.")
 
     reverberation_time_sabine = 0.161*volume/(absorption_area)
 
