@@ -156,11 +156,12 @@ def critical_distance(
                      volume,
                      reverberation_time):
     r"""Calculate the critical distance of a room with
-    given volume and reverberation time [#kra]_.
+    given volume and reverberation time.
     Assumes the source directivity is 1 (omnidirectional source).
+    See [#kra]_.
 
     .. math::
-        d_c = 0.057 \\sqrt{\\frac{V}{T_{60}}}
+        d_c = 0.057 \sqrt{\frac{V}{T_{60}}}
 
     Parameters
     ----------
