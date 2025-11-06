@@ -36,7 +36,7 @@ def test_isdt_from_edc_mulitchannel(intvl):
 
 
 
-def test_edmt_from_edc_error():
+def test_isdt_from_edc_error():
     times = np.linspace(0, 1.5, 2**9)
     m = -60
     edc = times * m
