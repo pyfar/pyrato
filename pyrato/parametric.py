@@ -166,7 +166,7 @@ def calculate_sabine_reverberation_time(surfaces, alphas, volume):
     volume : double
         Room volume in cubic meters
 
-    The lengths of surfaces and alphas ndaraay must match.
+    The shape of `surfaces` and `alphas` must match.
 
     Returns
     -------
