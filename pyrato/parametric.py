@@ -39,6 +39,7 @@ def calculate_speed_of_sound(temperature):
     speed_of_sound = c_0 * np.sqrt((temperature - T_0)/(20 - T_0))
     return speed_of_sound
 
+
 def energy_decay_curve_analytic(
         surfaces, alphas, volume, times, source=None,
         receiver=None, method='eyring', c=343.4, frequency=None,
