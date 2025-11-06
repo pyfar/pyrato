@@ -184,7 +184,13 @@ def reverberation_time_eyring(volume,surface,mean_alpha):
 
     """
 
+    if volume <= 0:
+        raise ValueError("Volume should be larger than 0")
+    if surface <= 0:
+        raise ValueError("Surface should be larger than 0")
+    if mean_alpha <0 or mean_alpha >1: 
+        raise ValueError("mean_alpha should be between 0 and 1")
+
     T60 = -0.161 * (volume / (surface * np.log(1 - mean_alpha)))
 
     return T60
-
