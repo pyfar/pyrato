@@ -6,7 +6,6 @@ import numpy as np
 import numpy.testing as npt
 
 import pyrato as ra
-import pyfar as pf
 import pytest
 
 @pytest.mark.parametrize('T',[0,20,1000])
