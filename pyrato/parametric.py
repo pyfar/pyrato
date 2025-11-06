@@ -5,7 +5,8 @@ such as Sabine's theory of sound in rooms.
 """
 import numpy as np
 
-def schroeder_frequency(volume, reverberation_time):
+def schroeder_frequency(volume: float | np.ndarray,
+                        reverberation_time: float | np.ndarray) -> float:
     r"""
     Calculate the Schroeder cut-off frequency of a room.
 
@@ -17,9 +18,9 @@ def schroeder_frequency(volume, reverberation_time):
 
     Parameters
     ----------
-    volume : double, np.ndarray
+    volume : float, np.ndarray
         room volume in m^3
-    reverberation_time : double, np.ndarray
+    reverberation_time : float, np.ndarray
         reverberation time in s
 
     Returns
@@ -38,25 +39,25 @@ def schroeder_frequency(volume, reverberation_time):
     ----------
     .. [#] H. Kuttruff, Room acoustics, 4th Ed. Taylor & Francis, 2009.
 
+    Note
+    ----
+    this function still needs some tests ...
+
     """
 
     volume = np.asarray(volume, dtype=float)
     reverberation_time = np.asarray(reverberation_time, dtype=float)
     if not np.issubdtype(volume.dtype, np.floating):
-        raise TypeError("`volume` must be a float or a " \
-        "numeric array.")
+        raise TypeError("`volume` must be a float or a numeric array.")
     if not np.issubdtype(reverberation_time.dtype, np.floating):
-        raise TypeError("`reverberation_time` must be a float "
-        "or a numeric array.")
+        raise TypeError("`reverberation_time` must be float or numeric array.")
     if np.any(volume <= 0):
-        raise ValueError("`volume` must be positive (in m³).")
+        raise ValueError("`volume` must be positive (in m^3).")
     if np.any(reverberation_time <= 0):
-        raise ValueError("`reverberation_time` must be positive "\
-        "(in seconds).")
+        raise ValueError("`reverberation_time` must be positive (in seconds).")
     if volume.shape != reverberation_time.shape:
-        raise ValueError("`volume` and `reverberation_time` " \
-        "must have compatible shapes (either same shape or one "\
-        "is scalar).")
+        raise ValueError("`volume` and `reverberation_time` must have" \
+        " compatible shapes (either same shape or one is scalar).")
     schroeder_frequency = 2000*np.sqrt(reverberation_time / volume)
 
     return schroeder_frequency
