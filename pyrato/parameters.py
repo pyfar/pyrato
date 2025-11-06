@@ -209,7 +209,7 @@ def interval_specific_decay_time(energy_decay_curve: pf.TimeData,
     """
     Takes an EDC as input and performs linear regression
     within a time interval.
-    Calculate the interval-specific decay time (EMDT) using the slope.
+    Calculate the interval-specific decay time using the slope.
 
     Parameters
     ----------
