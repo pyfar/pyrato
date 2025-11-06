@@ -43,6 +43,18 @@ def schroeder_frequency(volume, reverberation_time):
     this function still needs some tests ...
 
     """
+    if volume is None or reverberation_time is None:
+        raise TypeError("`volume` and `reverberation_time` cannot be None.")
+
+    if isinstance(volume, str) or isinstance(reverberation_time, str):
+        raise TypeError("`volume` and `reverberation_time` cannot be strings.")
+    if isinstance(volume, np.ndarray) and volume.dtype.kind in {"U", "S", "O"}:
+        raise TypeError("`volume` must contain only numeric values.")
+    if (
+        isinstance(reverberation_time, np.ndarray) and 
+        reverberation_time.dtype.kind in {"U", "S", "O"}
+        ):
+        raise TypeError("`reverberation_time` only numeric values.")
 
     volume = np.asarray(volume, dtype=float)
     reverberation_time = np.asarray(reverberation_time, dtype=float)
@@ -54,7 +66,7 @@ def schroeder_frequency(volume, reverberation_time):
         raise ValueError("`volume` must be positive (in m^3).")
     if np.any(reverberation_time <= 0):
         raise ValueError("`reverberation_time` must be positive (in seconds).")
-    if volume.shape != reverberation_time.shape:
+    if volume.size != reverberation_time.size:
         raise ValueError("`volume` and `reverberation_time` must have" \
         " compatible shapes (either same shape or one is scalar).")
     schroeder_frequency = 2000*np.sqrt(reverberation_time / volume)
