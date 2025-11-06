@@ -197,7 +197,7 @@ def calculate_sabine_reverberation_time(surfaces, alphas, volume):
     absorption_area = np.sum(surfaces*alphas)
 
     if absorption_area == 0:
-       raise ZeroDivisionError(f"Absorption area should be positive.")
+       raise ZeroDivisionError("Absorption area should be positive.")
 
     reverberation_time_sabine = 0.161*volume/(absorption_area)
 
