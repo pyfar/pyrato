@@ -31,6 +31,9 @@ def calculate_speed_of_sound(temperature):
     ----------
     .. [#] ISO 9613-1 (Formula A.5)
     """
+    if temperature < -273.15:
+        raise ValueError(
+            "Temperature must be greater than absolute zero (-273.15 °C).")
     T_0 = -273.15
     c_0 = 343.2
     speed_of_sound = c_0 * np.sqrt((temperature - T_0)/(20 - T_0))
