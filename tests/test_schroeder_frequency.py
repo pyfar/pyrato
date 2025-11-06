@@ -22,19 +22,19 @@ def test_schroeder_frequency_broadcasting():
     """Test with scalar and array combination (broadcasting)."""
     volume = 100.0
     reverb_times = np.array([0.5, 1.0, 2.0])
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="volume and reverberation_time " \
+    "must have compatible shapes, either same shape or one is scalar."):
         schroeder_frequency(volume, reverb_times)
 
 
-@pytest.mark.parametrize("volume, reverb_time", [
-    (0, 1.0),
-    (-10, 1.0),
-    (100, 0),
-    (100, -2),
-])
+@pytest.mark.parametrize(("volume", "reverb_time"), [(0, 1.0),
+                                                  (-10, 1.0),
+                                                  (100, 0),
+                                                  (100, -2)])
 def test_invalid_values(volume, reverb_time):
     """Test that non-positive values raise ValueError."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="volume and reverberation_time " \
+    "must be positiv"):
         schroeder_frequency(volume, reverb_time)
 
 
@@ -42,11 +42,12 @@ def test_shape_mismatch():
     """Test that mismatched shapes raise ValueError."""
     volumes = np.array([100, 200])
     reverb_times = np.array([1.0, 2.0, 3.0])
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="volume and reverberation_time " \
+    "must have compatible shapes, either same shape or one is scalar."):
         schroeder_frequency(volumes, reverb_times)
 
 
-@pytest.mark.parametrize("volume, reverb_time", [
+@pytest.mark.parametrize(("volume", "reverb_time"), [
     ("abc", 1.0),
     (100, "1.0"),
     (None, 1.0),
