@@ -153,7 +153,6 @@ def air_attenuation_coefficient(
     return air_abs_coeff
 
 def calculate_sabine_reverberation_time(surfaces, alphas, volume):
-
     """Calculate the reverberation time using Sabine's equation.
 
     Calculation according to [#]_.
@@ -162,13 +161,13 @@ def calculate_sabine_reverberation_time(surfaces, alphas, volume):
     ----------
     surfaces : ndarray, double
         Surface areas of all surfaces in the room in square meters.
-    alphas : ndarray, double 
+    alphas : ndarray, double
         Absorption coefficients corresponding to each surface
     volume : double
         Room volume in cubic meters
 
     The lengths of surfaces and alphas ndaraay must match.
-    
+
     Returns
     -------
     reverberation_time_sabine :  double
@@ -183,15 +182,18 @@ def calculate_sabine_reverberation_time(surfaces, alphas, volume):
     alphas = np.asarray(alphas)
 
     if alphas.shape != surfaces.shape:
-       raise ValueError("Size of alphas and surfaces ndarray sizes must match.")
+       raise ValueError("Size of alphas and surfaces " \
+       "ndarray sizes must match.")
 
-    if np.any(alphas < 0) or np.any(alphas > 1):
-       raise ValueError(f"Absorption coefficient values must be in range [0, 1]. Got {alphas}.")
-    if np.any(surfaces < 0):
-       raise ValueError(f"Surface areas cannot be negative. Got {surfaces}.")
+    if sum(alphas) < 0 or np.any(alphas > 1):
+       raise ValueError("Absorption coefficient values must "\
+                        f"be in range [0, 1]. Got {alphas}.")
+    if np.any(surfaces <= 0):
+       raise ValueError("Surface areas cannot "\
+                        f"be negative or 0. Got {surfaces}.")
     if volume < 0:
        raise ValueError(f"Volume cannot be negative. Got {volume}.")
-    
+
     absorption_area = np.sum(surfaces*alphas)
 
     reverberation_time_sabine = 0.161*volume/(absorption_area)
