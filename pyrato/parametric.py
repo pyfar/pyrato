@@ -170,7 +170,6 @@ def mean_free_path(
         The calculated mean free path
     """
 
-
     if volume < 0:
         raise ValueError(f"Volume ({volume}) is smaller than 0.")
     if surface_area < 0:
