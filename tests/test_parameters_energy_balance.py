@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 import pyfar as pf
 import numpy.testing as npt
-import re
 
 from pyrato.parameters import __energy_balance
 
@@ -55,13 +54,17 @@ def test_energy_balance_rejects_invalid_limit_order():
 
 # --- Functional correctness ---
 def test_energy_balance_computes_known_ratio_correctly():
-    """If EDC is linear, energy balance ratio should be 1."""
+    """
+    If EDC is linear, energy balance ratio should be 1.
+
+    numerator = e(lim3)-e(lim4) = (1.0 - 0.75) = 0.25
+    denominator = e(lim1)-e(lim2) = (0.75 - 0.5) = 0.25
+    ratio = 1
+    """
     edc_vals = np.array([1.0, 0.75, 0.5, 0.25])
     edc = make_edc_from_energy(edc_vals, sampling_rate=1000)
 
-    # For linear EDC: numerator = e(lim3)-e(lim4) = (1.0 - 0.75) = 0.25
-    #                 denominator = e(lim1)-e(lim2) = (0.75 - 0.5) = 0.25
-    # ratio = 1
+    # For linear EDC: 
     result = __energy_balance(0.001, 0.002, 0.0, 0.001, edc, edc)
     npt.assert_allclose(result, 1.0, atol=1e-12)
 
@@ -105,7 +108,10 @@ def test_energy_balance_matches_reference_case():
 
 
 def test_energy_balance_works_with_two_different_edcs():
-    """Energy balance between two different EDCs should compute distinct ratio."""
+    """
+    Energy balance between two different EDCs.
+    should compute distinct ratio.
+    """
     times = np.linspace(0, 0.009, 10)
     edc1 = pf.TimeData(np.linspace(1, 0, 10)[np.newaxis, :], times)
     edc2 = pf.TimeData((np.linspace(1, 0, 10) ** 2)[np.newaxis, :], times)
