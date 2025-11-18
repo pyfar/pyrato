@@ -250,8 +250,8 @@ def clarity_from_energy_balance(energy_decay_curve, early_time_limit=80):
 
     References
     ----------
-    .. [#isocfeb] ISO 3382, Acoustics — Measurement of the reverberation time of
-        rooms with reference to other acoustical parameters.
+    .. [#isocfeb] ISO 3382, Acoustics — Measurement of the reverberation
+        time of rooms with reference to other acoustical parameters.
 
     Examples
     --------

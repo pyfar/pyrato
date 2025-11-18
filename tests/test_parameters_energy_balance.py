@@ -64,7 +64,7 @@ def test_energy_balance_computes_known_ratio_correctly():
     edc_vals = np.array([1.0, 0.75, 0.5, 0.25])
     edc = make_edc_from_energy(edc_vals, sampling_rate=1000)
 
-    # For linear EDC: 
+    # For linear EDC:
     result = __energy_balance(0.001, 0.002, 0.0, 0.001, edc, edc)
     npt.assert_allclose(result, 1.0, atol=1e-12)
 
