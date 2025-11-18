@@ -297,7 +297,8 @@ def __energy_balance(lim1, lim2, lim3, lim4,
                      energy_decay_curve2):
     r"""
     Calculate the energy balance for the time limits from the two energy
-    decay curves (EDC). If second one is not provided, the first will be used for both.
+    decay curves (EDC). If second one is not provided, the first will be
+    used for both.
 
     A collection of roomacoustic parameters are defined by their
     time-respective energy balance, where the differentiation is made by
@@ -344,6 +345,7 @@ def __energy_balance(lim1, lim2, lim3, lim4,
     .. [#iso] ISO 3382, Acoustics — Measurement of the reverberation time of
         rooms with reference to other acoustical parameters.
     """
+
     # Check input type
     if not isinstance(energy_decay_curve1, pf.TimeData):
         raise TypeError("energy_decay_curve1 must be a pyfar.TimeData object.")
