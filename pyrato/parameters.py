@@ -205,20 +205,18 @@ def clarity(energy_decay_curve, early_time_limit=80):
 
 
 
-def __energy_balance(lim1, lim2, lim3, lim4,
-                     energy_decay_curve1,
-                     energy_decay_curve2):
+def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
     r"""
-    Calculate the energy balance for the time limits from the two energy
+    Calculate the energy ratio for the time limits from the two energy
     decay curves (EDC). If second one is not provided, the first will be
     used for both.
 
     A collection of roomacoustic parameters are defined by their
-    time-respective energy balance, where the differentiation is made by
+    time-respective energy ratio, where the differentiation is made by
     the four given time limits [#iso]_.
-    Energy-Balance is calculated as:
+    Energy-Ratio is calculated as:
     .. math::
-        EB(p) = 10 \log_{10} \frac{
+        ER(p) = 10 \log_{10} \frac{
             \displaystyle \int_{lim3}^{lim4} p_2^2(t) \, dt
         }{
             \displaystyle \int_{lim1}^{lim2} p_1^2(t) \, dt
@@ -227,13 +225,13 @@ def __energy_balance(lim1, lim2, lim3, lim4,
     pressure of a room impulse response. Here, the energy balance is
     efficiently computed from the EDC :math:`e(t)` directly by:
     .. math::
-        EB(e) = 10 \log_{10} \left( \frac{e_2(lim3) -
+        ER(e) = 10 \log_{10} \left( \frac{e_2(lim3) -
         e_2(lim4)}{e_1(lim1) - e_1(lim2)} \right).
 
     Parameters
     ----------
-    lim1, lim2, lim3, lim4 : float
-        Time limits (:math:`t_e`) in seconds.
+    limits : np.ndarray
+        Four time limits (:math:`t_e`) in seconds, shape (4,) in ascending order.
     energy_decay_curve1 : pyfar.TimeData
         Energy decay curve 1 (EDC1) of the room impulse response
         (time-domain signal). The EDC must start at time zero.
@@ -243,8 +241,8 @@ def __energy_balance(lim1, lim2, lim3, lim4,
 
     Returns
     -------
-    energy balance : numpy.ndarray[float]
-        energy-balance index (early-to-late energy ratio),
+    energy ratio : numpy.ndarray[float]
+        energy-ratio index (early-to-late energy ratio),
         shaped according to the channel shape of the input EDC.
 
     References
@@ -259,30 +257,19 @@ def __energy_balance(lim1, lim2, lim3, lim4,
     if not isinstance(energy_decay_curve2, pf.TimeData):
         raise TypeError("energy_decay_curve2 must be a pyfar.TimeData object.")
 
-    for name, val in zip(("lim1","lim2","lim3","lim4"), (lim1,
-                                                         lim2,
-                                                         lim3,
-                                                         lim4)):
-        if not isinstance(val, numbers.Real):
-            raise TypeError(f"{name} must be numeric.")
+    if not isinstance(limits, np.ndarray):
+        raise TypeError("limits must be numpy ndarray with length one and float values inside")
+    if limits.shape != (4,):
+        raise ValueError("limits must have shape (4,) containing [lim1, lim2, lim3, lim4].")
 
-    if not (lim2 > lim1 if np.isscalar(lim1) and np.isscalar(lim2) else True):
-        raise ValueError("If scalars, require lim1 < lim2.")
-    if not (lim4 > lim3 if np.isscalar(lim3) and np.isscalar(lim4) else True):
-        raise ValueError("If scalars, require lim3 < lim4.")
+    limits_idx = energy_decay_curve1.find_nearest_time(limits)
 
-    lim1_idx = energy_decay_curve1.find_nearest_time(lim1)
-    lim2_idx = energy_decay_curve1.find_nearest_time(lim2)
-    lim3_idx = energy_decay_curve2.find_nearest_time(lim3)
-    lim4_idx = energy_decay_curve2.find_nearest_time(lim4)
+    edc1_vals = energy_decay_curve1.time[..., limits_idx]
+    edc2_vals = energy_decay_curve2.time[..., limits_idx]
 
-    lim1_vals = energy_decay_curve1.time[..., lim1_idx]
-    lim2_vals = energy_decay_curve1.time[..., lim2_idx]
-    lim3_vals = energy_decay_curve2.time[..., lim3_idx]
-    lim4_vals = energy_decay_curve2.time[..., lim4_idx]
+    # Calculate energy balance
+    numerator = edc2_vals[..., 2] - edc2_vals[..., 3]  # lim3 - lim4
+    denominator = edc1_vals[..., 0] - edc1_vals[..., 1]  # lim1 - lim2
+    energy_ratio = numerator / denominator
 
-    numerator = lim3_vals - lim4_vals # edc 2
-    denominator = lim1_vals - lim2_vals # edc 1
-
-    energy_balance = numerator / denominator
-    return energy_balance
+    return energy_ratio
