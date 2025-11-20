@@ -266,11 +266,11 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
 
     limits_idx = energy_decay_curve1.find_nearest_time(limits)
 
-    edc1_vals = energy_decay_curve1.time[..., limits_idx]
-    edc2_vals = energy_decay_curve2.time[..., limits_idx]
+    edc1_vals = energy_decay_curve1.time[..., limits_idx[0:2]]
+    edc2_vals = energy_decay_curve2.time[..., limits_idx[2:4]]
 
-    # Calculate energy balance
-    numerator = edc2_vals[..., 2] - edc2_vals[..., 3]  # lim3 - lim4
+    # Calculate energy ratio
+    numerator = edc2_vals[..., 0] - edc2_vals[..., 1]  # lim3 - lim4
     denominator = edc1_vals[..., 0] - edc1_vals[..., 1]  # lim1 - lim2
     energy_ratio = numerator / denominator
 
