@@ -231,7 +231,8 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
     Parameters
     ----------
     limits : np.ndarray
-        Four time limits (:math:`t_e`) in seconds, shape (4,) in ascending order.
+        Four time limits (:math:`t_e`) in seconds, shape (4,)
+        in ascending order.
     energy_decay_curve1 : pyfar.TimeData
         Energy decay curve 1 (EDC1) of the room impulse response
         (time-domain signal). The EDC must start at time zero.
@@ -258,9 +259,11 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
         raise TypeError("energy_decay_curve2 must be a pyfar.TimeData object.")
 
     if not isinstance(limits, np.ndarray):
-        raise TypeError("limits must be numpy ndarray with length one and float values inside")
+        raise TypeError("limits must be a numpy ndarray.")
     if limits.shape != (4,):
-        raise ValueError("limits must have shape (4,) containing [lim1, lim2, lim3, lim4].")
+        raise ValueError(
+            "limits must have shape (4,) containing [lim1, lim2, lim3, lim4]."
+            )
 
     limits_idx = energy_decay_curve1.find_nearest_time(limits)
 

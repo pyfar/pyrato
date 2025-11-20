@@ -20,37 +20,38 @@ def make_edc_from_energy(energy, sampling_rate=1000):
 def test_energy_balance_accepts_timedata_and_returns_correct_shape():
     energy = np.linspace(1, 0, 10)
     edc = make_edc_from_energy(energy)
-    result = _energy_ratio(0.0, 0.005, 0.0, 0.001, edc, edc)
+    limits = np.array([0.0, 0.001, 0.0, 0.005])
+    result = _energy_ratio(limits, edc, edc)
     assert isinstance(result, np.ndarray)
     assert result.shape == edc.cshape
 
 
 def test_energy_balance_rejects_non_timedata_input():
     invalid_input = np.arange(10)
+    limits = np.array([0.0, 0.001, 0.0, 0.005])
     expected_message = "pyfar.TimeData"
     with pytest.raises(TypeError, match=expected_message):
-        _energy_ratio(0.0, 0.005, 0.0, 0.001, invalid_input, invalid_input)
+        _energy_ratio(limits, invalid_input, invalid_input)
 
 
 def test_energy_balance_rejects_if_second_edc_is_not_timedata():
     edc = make_edc_from_energy(np.linspace(1, 0, 10))
+    limits = np.array([0.0, 0.001, 0.0, 0.005])
     with pytest.raises(TypeError, match="pyfar.TimeData"):
-        _energy_ratio(0.0, 0.005, 0.0, 0.001, edc, "invalid_type")
+        _energy_ratio(limits, edc, "invalid_type")
 
 
-def test_energy_balance_rejects_non_numeric_limits():
+def test_energy_balance_rejects_non_numpy_array_limits():
     edc = make_edc_from_energy(np.linspace(1, 0, 10))
-    with pytest.raises(TypeError, match="lim1 must be numeric."):
-        _energy_ratio("not_a_number", 1, 0, 1, edc, edc)
+    with pytest.raises(TypeError, match="limits must be a numpy ndarray"):
+        _energy_ratio([0.0, 0.001, 0.0, 0.005], edc, edc)
 
 
-def test_energy_balance_rejects_invalid_limit_order():
+def test_energy_balance_rejects_wrong_shape_limits():
     edc = make_edc_from_energy(np.linspace(1, 0, 10))
-    with pytest.raises(ValueError, match="If scalars, require lim1 < lim2."):
-        _energy_ratio(1.0, 0.5, 0.0, 1.0, edc, edc)
-    with pytest.raises(ValueError, match="If scalars, require lim3 < lim4."):
-        _energy_ratio(0.0, 1.0, 1.0, 0.5, edc, edc)
-
+    wrong_shape_limits = np.array([0.0, 0.001, 0.005])  # Only 3 elements
+    with pytest.raises(ValueError, match="limits must have shape"):
+        _energy_ratio(wrong_shape_limits, edc, edc)
 
 # --- Functional correctness ---
 def test_energy_balance_computes_known_ratio_correctly():
@@ -65,7 +66,8 @@ def test_energy_balance_computes_known_ratio_correctly():
     edc = make_edc_from_energy(edc_vals, sampling_rate=1000)
 
     # For linear EDC:
-    result = _energy_ratio(0.001, 0.002, 0.0, 0.001, edc, edc)
+    limits = np.array([0.0, 0.001, 0.001, 0.002])
+    result = _energy_ratio(limits, edc, edc)
     npt.assert_allclose(result, 1.0, atol=1e-12)
 
 
@@ -73,7 +75,8 @@ def test_energy_balance_handles_multichannel_data_correctly():
     energy = np.linspace(1, 0, 10)
     multi = np.stack([energy, energy * 0.5])
     edc = make_edc_from_energy(multi)
-    result = _energy_ratio(0.0, 0.005, 0.0, 0.001, edc, edc)
+    limits = np.array([0.0, 0.001, 0.0, 0.005])
+    result = _energy_ratio(limits, edc, edc)
     assert result.shape == edc.cshape
 
 
@@ -81,7 +84,8 @@ def test_energy_balance_returns_nan_for_zero_denominator():
     """If denominator e(lim1)-e(lim2)=0, expect NaN (invalid ratio)."""
     energy = np.ones(10)
     edc = make_edc_from_energy(energy)
-    result = _energy_ratio(0.0, 0.001, 0.002, 0.003, edc, edc)
+    limits = np.array([0.0, 0.001, 0.002, 0.003])
+    result = _energy_ratio(limits, edc, edc)
     assert np.isnan(result)
 
 
@@ -96,14 +100,15 @@ def test_energy_balance_matches_reference_case():
     edc_vals = np.exp(-a * times)
     edc = pf.TimeData(edc_vals[np.newaxis, :], times)
 
-    lim1, lim2, lim3, lim4 = 0.0, 0.05, 0.0, 0.02
+    limits = np.array([0.0, 0.02, 0.0, 0.05])
+    lim1, lim2, lim3, lim4 = limits
 
     analytical_ratio = (
         (np.exp(-a*lim3) - np.exp(-a*lim4)) /
         (np.exp(-a*lim1) - np.exp(-a*lim2))
     )
 
-    result = _energy_ratio(lim1, lim2, lim3, lim4, edc, edc)
+    result = _energy_ratio(limits, edc, edc)
     npt.assert_allclose(result, analytical_ratio, atol=1e-8)
 
 
@@ -116,7 +121,8 @@ def test_energy_balance_works_with_two_different_edcs():
     edc1 = pf.TimeData(np.linspace(1, 0, 10)[np.newaxis, :], times)
     edc2 = pf.TimeData((np.linspace(1, 0, 10) ** 2)[np.newaxis, :], times)
 
+    limits = np.array([0.0, 0.002, 0.0, 0.004])
     # Expect a ratio != 1 because edc2 decays faster
-    ratio = _energy_ratio(0.0, 0.004, 0.0, 0.002, edc1, edc2)
+    ratio = _energy_ratio(limits, edc1, edc2)
     assert np.all(np.isfinite(ratio))
     assert not np.allclose(ratio, 1.0)
