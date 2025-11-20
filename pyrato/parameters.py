@@ -5,6 +5,7 @@ simulated or experimental data.
 import re
 import numpy as np
 import pyfar as pf
+import numbers
 
 
 def reverberation_time_linear_regression(
@@ -175,10 +176,9 @@ def clarity(energy_decay_curve, early_time_limit=80):
     # Validate time range
     if (early_time_limit > energy_decay_curve.signal_length * 1000) or (
             early_time_limit <= 0):
-        raise ValueError(
             "early_time_limit must be in the range of 0"
-            f"and {energy_decay_curve.signal_length * 1000}.",
-            )
+            f"and {energy_decay_curve.signal_length * 1000}."
+
 
     # Raise error if TimeData is complex
     if energy_decay_curve.complex:
@@ -205,7 +205,9 @@ def clarity(energy_decay_curve, early_time_limit=80):
 
 
 
-def __energy_balance(energy_decay_curve1, energy_decay_curve2, lim1, lim2, lim3, lim4):
+def __energy_balance(lim1, lim2, lim3, lim4,
+                     energy_decay_curve1,
+                     energy_decay_curve2):
     r"""
     Calculate the energy balance for the time limits from the two energy
     decay curves (EDC). If second one is not provided, the first will be
@@ -214,23 +216,17 @@ def __energy_balance(energy_decay_curve1, energy_decay_curve2, lim1, lim2, lim3,
     A collection of roomacoustic parameters are defined by their
     time-respective energy balance, where the differentiation is made by
     the four given time limits [#iso]_.
-
     Energy-Balance is calculated as:
-
     .. math::
-
         EB(p) = 10 \log_{10} \frac{
             \displaystyle \int_{lim3}^{lim4} p_2^2(t) \, dt
         }{
             \displaystyle \int_{lim1}^{lim2} p_1^2(t) \, dt
         }
-
     where :math:`lim1 - lim4` are the time limits and :math:`p(t)` is the
     pressure of a room impulse response. Here, the energy balance is
     efficiently computed from the EDC :math:`e(t)` directly by:
-
     .. math::
-
         EB(e) = 10 \log_{10} \left( \frac{e_2(lim3) -
         e_2(lim4)}{e_1(lim1) - e_1(lim2)} \right).
 
@@ -263,15 +259,17 @@ def __energy_balance(energy_decay_curve1, energy_decay_curve2, lim1, lim2, lim3,
     if not isinstance(energy_decay_curve2, pf.TimeData):
         raise TypeError("energy_decay_curve2 must be a pyfar.TimeData object.")
 
-    # for name, val in zip(("lim1","lim2","lim3","lim4"), (lim1, lim2, lim3, lim4)):
-    #     if not isinstance(val, numbers.Real):
-    #         raise TypeError(f"{name} must be numeric.")
+    for name, val in zip(("lim1","lim2","lim3","lim4"), (lim1,
+                                                         lim2,
+                                                         lim3,
+                                                         lim4)):
+        if not isinstance(val, numbers.Real):
+            raise TypeError(f"{name} must be numeric.")
 
-    # # Order validation
-    # if lim2 <= lim1:
-    #     raise ValueError("lim2 must be greater than lim1.")
-    # if lim4 <= lim3:
-    #     raise ValueError("lim4 must be greater than lim3.")
+    if not (lim2 > lim1 if np.isscalar(lim1) and np.isscalar(lim2) else True):
+        raise ValueError("If scalars, require lim1 < lim2.")
+    if not (lim4 > lim3 if np.isscalar(lim3) and np.isscalar(lim4) else True):
+        raise ValueError("If scalars, require lim3 < lim4.")
 
     lim1_idx = energy_decay_curve1.find_nearest_time(lim1)
     lim2_idx = energy_decay_curve1.find_nearest_time(lim2)
@@ -283,8 +281,8 @@ def __energy_balance(energy_decay_curve1, energy_decay_curve2, lim1, lim2, lim3,
     lim3_vals = energy_decay_curve2.time[..., lim3_idx]
     lim4_vals = energy_decay_curve2.time[..., lim4_idx]
 
-    numerator = lim3_vals - lim4_vals
-    denominator = lim1_vals - lim2_vals
+    numerator = lim3_vals - lim4_vals # edc 2
+    denominator = lim1_vals - lim2_vals # edc 1
 
     energy_balance = numerator / denominator
     return energy_balance
