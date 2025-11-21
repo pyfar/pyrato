@@ -6,8 +6,9 @@ import numpy.testing as npt
 import re
 
 from pyrato.parameters import clarity
+from pyrato.parameters import _energy_ratio
 
-
+# parameter clarity tests
 def test_clarity_accepts_timedata_returns_correct_type(make_edc):
     energy = np.concatenate(([1, 1, 1, 1], np.zeros(124)))
     edc = make_edc(energy=energy)
@@ -111,11 +112,7 @@ def test_clarity_for_exponential_decay(make_edc):
     expected_dB = 10 * np.log10(expected_ratio)
     np.testing.assert_allclose(result, expected_dB, atol=1e-6)
 
-
-
-from pyrato.parameters import _energy_ratio
-
-# --- Basic type and shape tests ---
+# _energy_ratio tests
 def test_energy_ratio_accepts_timedata_and_returns_correct_shape(make_edc):
     energy = np.linspace(1, 0, 10)
     edc = make_edc(energy=energy, sampling_rate=1000)
@@ -148,7 +145,6 @@ def test_energy_ratio_rejects_wrong_shape_limits(make_edc):
     with pytest.raises(ValueError, match="limits must have shape"):
         _energy_ratio(wrong_shape_limits, edc, edc)
 
-# --- Functional correctness ---
 def test_energy_ratio_computes_known_ratio_correctly(make_edc):
     """
     If EDC is linear, energy ratio should be 1.
