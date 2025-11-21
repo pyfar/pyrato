@@ -188,4 +188,4 @@ def clarity(energy_decay_curve, early_time_limit=80):
                          0.0,
                          early_time_limit_sec])
 
-    return _energy_ratio(limits, energy_decay_curve, energy_decay_curve)
+    return 10*np.log10(_energy_ratio(limits, energy_decay_curve, energy_decay_curve))
