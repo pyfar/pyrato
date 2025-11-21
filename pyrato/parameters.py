@@ -202,3 +202,74 @@ def clarity(energy_decay_curve, early_time_limit=80):
     clarity_db = 10 * np.log10(clarity)
 
     return clarity_db
+
+def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
+    r"""
+    Calculate the energy ratio for the time limits from the two energy
+    decay curves (EDC). If second one is not provided, the first will be
+    used for both.
+
+    A collection of roomacoustic parameters are defined by their
+    time-respective energy ratio, where the differentiation is made by
+    the four given time limits [#iso]_.
+    Energy-Ratio is calculated as:
+    .. math::
+        ER(p) = 10 \log_{10} \frac{
+            \displaystyle \int_{lim3}^{lim4} p_2^2(t) \, dt
+        }{
+            \displaystyle \int_{lim1}^{lim2} p_1^2(t) \, dt
+        }
+    where :math:`lim1 - lim4` are the time limits and :math:`p(t)` is the
+    pressure of a room impulse response. Here, the energy balance is
+    efficiently computed from the EDC :math:`e(t)` directly by:
+    .. math::
+        ER(e) = 10 \log_{10} \left( \frac{e_2(lim3) -
+        e_2(lim4)}{e_1(lim1) - e_1(lim2)} \right).
+
+    Parameters
+    ----------
+    limits : np.ndarray
+        Four time limits (:math:`t_e`) in seconds, shape (4,)
+        in ascending order.
+    energy_decay_curve1 : pyfar.TimeData
+        Energy decay curve 1 (EDC1) of the room impulse response
+        (time-domain signal). The EDC must start at time zero.
+    energy_decay_curve2 : pyfar.TimeData
+        Energy decay curve 2 (EDC2) of the room impulse response
+        (time-domain signal). The EDC must start at time zero.
+
+    Returns
+    -------
+    energy ratio : numpy.ndarray[float]
+        energy-ratio index (early-to-late energy ratio),
+        shaped according to the channel shape of the input EDC.
+
+    References
+    ----------
+    .. [#iso] ISO 3382, Acoustics — Measurement of the reverberation time of
+        rooms with reference to other acoustical parameters.
+    """
+
+    # Check input type
+    if not isinstance(energy_decay_curve1, pf.TimeData):
+        raise TypeError("energy_decay_curve1 must be a pyfar.TimeData object.")
+    if not isinstance(energy_decay_curve2, pf.TimeData):
+        raise TypeError("energy_decay_curve2 must be a pyfar.TimeData object.")
+
+    if not isinstance(limits, np.ndarray):
+        raise TypeError("limits must be a numpy ndarray.")
+    if limits.shape != (4,):
+        raise ValueError(
+            "limits must have shape (4,) containing [lim1, lim2, lim3, lim4].")
+
+    limits_idx = energy_decay_curve1.find_nearest_time(limits)
+
+    edc1_vals = energy_decay_curve1.time[..., limits_idx[0:2]]
+    edc2_vals = energy_decay_curve2.time[..., limits_idx[2:4]]
+
+    # Calculate energy ratio
+    numerator = edc2_vals[..., 0] - edc2_vals[..., 1]  # lim3 - lim4
+    denominator = edc1_vals[..., 0] - edc1_vals[..., 1]  # lim1 - lim2
+    energy_ratio = numerator / denominator
+
+    return energy_ratio
