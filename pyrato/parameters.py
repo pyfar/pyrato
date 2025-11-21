@@ -188,7 +188,9 @@ def clarity(energy_decay_curve, early_time_limit=80):
                          0.0,
                          early_time_limit_sec])
 
-    return _energy_ratio(limits, energy_decay_curve, energy_decay_curve)
+    return 10*np.log10(_energy_ratio(limits, energy_decay_curve, energy_decay_curve)
+
+
 def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
     r"""
     Calculate the energy ratio for the time limits from two energy
@@ -339,3 +341,4 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
     energy_ratio = numerator / denominator
 
     return energy_ratio
+)
