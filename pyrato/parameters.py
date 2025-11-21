@@ -112,7 +112,7 @@ def clarity(energy_decay_curve, early_time_limit=80):
     The clarity parameter (C50 or C80) is defined as the ratio of early-to-late
     arriving energy in an impulse response and is a measure for how clearly
     speech or music can be perceived in a room. The early-to-late boundary is
-    typically set at 50 ms (C50) or 80 ms (C80) [#iso]_.
+    typically set at 50 ms (C50) or 80 ms (C80) [#isocfeb]_.
 
     Clarity is calculated as:
 
@@ -149,8 +149,8 @@ def clarity(energy_decay_curve, early_time_limit=80):
 
     References
     ----------
-    .. [#iso] ISO 3382, Acoustics — Measurement of the reverberation time of
-        rooms with reference to other acoustical parameters.
+    .. [#isocfeb] ISO 3382, Acoustics — Measurement of the reverberation
+        time of rooms with reference to other acoustical parameters.
 
     Examples
     --------
@@ -165,10 +165,10 @@ def clarity(energy_decay_curve, early_time_limit=80):
     >>> edc = ra.edc.energy_decay_curve_lundeby(rir)
     >>> C80 = clarity(edc, early_time_limit=80)
     """
-
     # Check input type
     if not isinstance(energy_decay_curve, pf.TimeData):
         raise TypeError("Input must be a pyfar.TimeData object.")
+
     if not isinstance(early_time_limit, (int, float)):
         raise TypeError('early_time_limit must be a number.')
 
@@ -180,25 +180,12 @@ def clarity(energy_decay_curve, early_time_limit=80):
             f"and {energy_decay_curve.signal_length * 1000}.",
             )
 
-    # Raise error if TimeData is complex
-    if energy_decay_curve.complex:
-        raise ValueError(
-            "Complex-valued input detected. Clarity is"
-            "only defined for real TimeData.",
-        )
-
     # Convert milliseconds to seconds
-    early_time_limit_sec = early_time_limit / 1000.0
+    early_time_limit_sec = early_time_limit / 1000
 
-    start_vals_energy_decay_curve = energy_decay_curve.time[..., 0]
+    limits = np.ndarray([early_time_limit_sec,
+                         energy_decay_curve.time[..., -1],
+                         0.0,
+                         early_time_limit_sec])
 
-    idx_early_time_limit = int(
-        energy_decay_curve.find_nearest_time(early_time_limit_sec))
-    vals_energy_decay_curve = \
-        energy_decay_curve.time[..., idx_early_time_limit]
-    vals_energy_decay_curve[vals_energy_decay_curve == 0] = np.nan
-
-    clarity = start_vals_energy_decay_curve / vals_energy_decay_curve - 1
-    clarity_db = 10 * np.log10(clarity)
-
-    return clarity_db
+    return _energy_ratio(limits, energy_decay_curve, energy_decay_curve)
