@@ -104,7 +104,6 @@ def reverberation_time_linear_regression(
     else:
         return reverberation_times
 
-
 def clarity(energy_decay_curve, early_time_limit=80):
     r"""
     Calculate the clarity from the energy decay curve (EDC).
@@ -169,6 +168,13 @@ def clarity(energy_decay_curve, early_time_limit=80):
     if not isinstance(energy_decay_curve, pf.TimeData):
         raise TypeError("Input must be a pyfar.TimeData object.")
 
+    # Raise error if TimeData is complex
+    if energy_decay_curve.complex:
+        raise ValueError(
+            "Complex-valued input detected. Clarity is"
+            "only defined for real TimeData.",
+        )
+
     if not isinstance(early_time_limit, (int, float)):
         raise TypeError('early_time_limit must be a number.')
 
@@ -183,8 +189,8 @@ def clarity(energy_decay_curve, early_time_limit=80):
     # Convert milliseconds to seconds
     early_time_limit_sec = early_time_limit / 1000
 
-    limits = np.ndarray([early_time_limit_sec,
-                         energy_decay_curve.time[..., -1],
+    limits = np.array([early_time_limit_sec,
+                         energy_decay_curve.times[-1],
                          0.0,
                          early_time_limit_sec])
 
