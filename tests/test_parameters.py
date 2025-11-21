@@ -108,3 +108,129 @@ def test_clarity_for_exponential_decay(make_edc):
     expected_ratio = np.exp(a * te) - 1
     expected_dB = 10 * np.log10(expected_ratio)
     np.testing.assert_allclose(result, expected_dB, atol=1e-6)
+
+
+
+import os 
+import pytest
+import numpy as np
+from pyfar import Signal, signals
+from pyrato import speech_transmission_index
+
+def test_sti_data_input():
+    """
+    TypeError is raised when input data is not a pyfar.Signal.
+    """
+    sig = np.zeros(100)
+    match="Input data must be a pyfar.Signal."
+    with pytest.raises(TypeError, match=match):
+        speech_transmission_index(sig)
+       
+def test_sti_snr_value_error():
+    """
+    ValueError is raised when SNR consists 
+    of the wrong number of components.
+    """
+    sig = Signal(np.zeros(70560), 44100)
+    snr = np.zeros(6)  # Incorrect number of components
+    match = "SNR consists of wrong number of components."
+    with pytest.raises(ValueError, match=match):
+        speech_transmission_index(sig, snr=snr)
+
+def test_sti_snr_warning():
+    """
+    UserWarning is raised when SNR is less than 20 dB for every octave band.
+    """
+    sig = Signal(np.zeros(70560), 44100)
+    snr = np.ones(7) * 10  # SNR less than 20 dB
+    match = "SNR should be at least 20 dB for every octave band."
+    with pytest.warns(UserWarning, match=match):
+        speech_transmission_index(sig, snr=snr)
+                
+def test_sti_warn_length():
+    """
+    ValueError is raised when the input signal is less than 1.6 seconds long.
+    """
+    sig = Signal(np.ones((31072)), 44100)
+    match  = "Input signal must be at least 1.6 seconds long."
+    with pytest.raises(ValueError, match=match):
+        speech_transmission_index(sig)
+  
+  
+def test_sti_warn_data_type_not_given():
+    """
+    UserWarning is raised when data type is not given.
+    """
+    sig = Signal(np.zeros(70560), 44100)
+    with pytest.warns(UserWarning, match="Data type is considered as "
+                      "acoustical. Consideration of masking effects not valid "
+                      "for electrically obtained signals."):
+        speech_transmission_index(sig)
+        
+def test_sti_warn_data_type_unknown():
+    """
+    ValueError is raised when an unknown data type is given.
+    """
+    sig = Signal(np.zeros(70560), 44100)
+    with pytest.raises(ValueError, match="Data_type is 'generic' but must "
+                       "be 'electrical' or 'acoustical'."):
+        speech_transmission_index(sig, data_type="generic")
+  
+def test_sti_1D_shape():
+    """
+    Output shape is correct for a 1D input signal.
+    """
+    shape_expected = (2,)
+    sig = Signal(np.ones((2,70560)), 44100)
+    array = speech_transmission_index(sig, data_type="acoustical")
+    assert array.shape == shape_expected
+  
+def test_sti_2D_shape():
+    """
+    Output shape is correct for a 2D input signal.
+    """
+    shape_expected = (2,2)
+    sig = Signal(np.ones((2,2,70560)), 44100)
+    sti_test = speech_transmission_index(sig, data_type="acoustical")
+    assert sti_test.shape == shape_expected
+    
+    
+def test_sti_unit_impuls():
+    """
+    STI value for a unit impulse signal. 
+    Ideal case: STI = 1
+    
+    """
+    sti_expected = 1
+    sig = signals.impulse(70560)
+    sti_test = speech_transmission_index(sig, data_type="acoustical")
+    np.testing.assert_allclose(sti_test, sti_expected,atol=0.01)
+ 
+def test_sti_ir():
+    """
+    STI value for a simulated IR. 
+    Compare with WinMF - Measurement Software     
+    """
+    sti_expected =  0.86
+    time = np.loadtxt(os.path.join(
+        os.path.dirname(__file__), "test_data", "ir_simulated.csv"))
+    ir = Signal(time, 44100)
+    sti_test = speech_transmission_index(ir, data_type="acoustical")
+    np.testing.assert_allclose(sti_test, sti_expected,atol=0.01)
+    
+def test_sti_ir_level_snr():
+    """
+    STI value for a simulated IR. 
+    Considered level and snr values.
+    Compare with WinMF - Measurement Software   
+    """
+    
+    sti_expected =  0.62
+    level = np.array([54, 49 , 54, 48, 45,40 , 31])
+    noise_level = np.array([53, 48, 46, 42, 38, 34, 30])
+    snr = level - noise_level
+    time = np.loadtxt(os.path.join(
+        os.path.dirname(__file__), "test_data", "ir_simulated.csv"))
+    ir = Signal(time, 44100)
+    sti_test = speech_transmission_index(ir, data_type="acoustical", level=level,snr=snr)
+    np.testing.assert_allclose(sti_test, sti_expected,atol=0.01)
