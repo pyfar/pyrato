@@ -220,7 +220,7 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
             \displaystyle \int_{lim1}^{lim2} p_1^2(t) \, dt
         }
     where :math:`lim1 - lim4` are the time limits and :math:`p(t)` is the
-    pressure of a room impulse response. Here, the energy balance is
+    pressure of a room impulse response. Here, the energy ratio is
     efficiently computed from the EDC :math:`e(t)` directly by:
     .. math::
         ER(e) = 10 \log_{10} \left( \frac{e_2(lim3) -
