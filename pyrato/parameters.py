@@ -272,10 +272,11 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
 
     limits_idx = energy_decay_curve1.find_nearest_time(limits)
 
-    numerator = np.diff(energy_decay_curve1.time[..., limits_idx[0:2]],
-                        axis=-1)
-    denominator = np.diff(energy_decay_curve2.time[..., limits_idx[2:4]],
-                          axis=-1)
+    numerator = np.diff(energy_decay_curve2.time[..., limits_idx[2:4]],
+                        axis=-1)[..., 0]
+    denominator = np.diff(energy_decay_curve1.time[..., limits_idx[0:2]],
+                        axis=-1)[..., 0]
+
     energy_ratio = numerator / denominator
 
     return energy_ratio

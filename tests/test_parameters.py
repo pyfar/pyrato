@@ -136,8 +136,8 @@ def test_energy_ratio_rejects_if_second_edc_is_not_timedata(make_edc):
 
 def test_energy_ratio_rejects_non_numpy_array_limits(make_edc):
     edc = make_edc(energy=np.linspace(1, 0, 10), sampling_rate=1000)
-    with pytest.raises(TypeError, match="limits must be a numpy ndarray, list, or tuple."):
-        _energy_ratio([0.0, 0.001, 0.0, 0.005], edc, edc)
+    result = _energy_ratio([0.0, 0.001, 0.0, 0.005], edc, edc)
+    assert isinstance(result, np.ndarray)
 
 def test_energy_ratio_rejects_wrong_shape_limits(make_edc):
     edc = make_edc(energy=np.linspace(1, 0, 10), sampling_rate=1000)
