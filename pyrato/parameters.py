@@ -205,13 +205,15 @@ def clarity(energy_decay_curve, early_time_limit=80):
 
 def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
     r"""
-    Calculate the energy ratio for the time limits from the two energy
+    Calculate the energy ratio for the time limits from two energy
     decay curves (EDC). If second one is not provided, the first will be
     used for both.
 
-    A collection of roomacoustic parameters are defined by their
-    time-respective energy ratio, where the differentiation is made by
-    the four given time limits [#iso]_.
+    A variety of room-acoustic parameters are defined by energy ratios derived
+    from one or two time-domain Energy Decay Curves (EDCs). These parameters
+    distinguish between time regions using the four provided limits, and some
+    require EDCs obtained from different impulse-response measurements [#iso]_.
+
     Energy-Ratio is calculated as:
     .. math::
         ER(p) = 10 \log_{10} \frac{
@@ -256,11 +258,17 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
     if not isinstance(energy_decay_curve2, pf.TimeData):
         raise TypeError("energy_decay_curve2 must be a pyfar.TimeData object.")
 
+    if isinstance(limits, (list, tuple)):
+        limits = np.asarray(limits)
+
     if not isinstance(limits, np.ndarray):
-        raise TypeError("limits must be a numpy ndarray.")
+        raise TypeError("limits must be a numpy ndarray, list, or tuple.")
+
+    # Check shape
     if limits.shape != (4,):
         raise ValueError(
-            "limits must have shape (4,) containing [lim1, lim2, lim3, lim4].")
+            "limits must have shape (4,), containing [lim1, lim2, lim3, lim4]."
+        )
 
     limits_idx = energy_decay_curve1.find_nearest_time(limits)
 
