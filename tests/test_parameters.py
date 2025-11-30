@@ -145,6 +145,13 @@ def test_energy_ratio_rejects_wrong_shape_limits(make_edc):
     with pytest.raises(ValueError, match="limits must have shape"):
         _energy_ratio(wrong_shape_limits, edc, edc)
 
+def test_energy_ratio_rejects_wrong_type_limits(make_edc):
+    edc = make_edc(energy=np.linspace(1, 0, 10), sampling_rate=1000)
+    wrong_type_limits = "3, 2, 0.5, 1"  # string
+    with pytest.raises(TypeError,
+                       match="limits must be a numpy ndarray"):
+        _energy_ratio(wrong_type_limits, edc, edc)
+
 def test_energy_ratio_computes_known_ratio_correctly(make_edc):
     """
     If EDC is linear, energy ratio should be 1.

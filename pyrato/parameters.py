@@ -267,8 +267,9 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
     # Check shape
     if limits.shape != (4,):
         raise ValueError(
-            "limits must have shape (4,), containing [lim1, lim2, lim3, lim4]."
-        )
+            "limits must have shape (4,), " \
+            "containing [lim1, lim2, lim3, lim4].",
+            )
 
     limits_idx = energy_decay_curve1.find_nearest_time(limits)
 
