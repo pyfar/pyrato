@@ -230,7 +230,7 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
 
     Parameters
     ----------
-    limits : np.ndarray
+    limits : np.ndarray, list or tuple
         Four time limits (:math:`t_e`) in seconds, shape (4,)
         in ascending order.
     energy_decay_curve1 : pyfar.TimeData
