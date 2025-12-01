@@ -253,9 +253,11 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
 
     # Check input type
     if not isinstance(energy_decay_curve1, pf.TimeData):
-        raise TypeError("energy_decay_curve1 must be a pyfar.TimeData or derived object.")
+        raise TypeError("energy_decay_curve1 must be a pyfar.TimeData"
+        " or derived object.")
     if not isinstance(energy_decay_curve2, pf.TimeData):
-        raise TypeError("energy_decay_curve2 must be a pyfar.TimeData or derived object.")
+        raise TypeError("energy_decay_curve2 must be a pyfar.TimeData"
+        " or derived object.")
 
     if isinstance(limits, (list, tuple)):
         limits = np.asarray(limits)
