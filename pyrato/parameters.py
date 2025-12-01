@@ -206,8 +206,7 @@ def clarity(energy_decay_curve, early_time_limit=80):
 def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
     r"""
     Calculate the energy ratio for the time limits from two energy
-    decay curves (EDC). If second one is not provided, the first will be
-    used for both.
+    decay curves (EDC).
 
     A variety of room-acoustic parameters are defined by energy ratios derived
     from one or two time-domain Energy Decay Curves (EDCs). These parameters
