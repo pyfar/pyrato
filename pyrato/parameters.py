@@ -216,11 +216,11 @@ def speech_transmission_index(
     amb=True):
     """
     This function calculates the speech transmission index (STI)
-    according to DIN EN IEC 60268-16:2021-10 using the indirect method.
+    according to [#iec]_ using the indirect method.
 
     Returns a numpy array with the STI, a single number value
     on a metric scale between 0 (bad) and 1 (excellent) for quality assessment
-    of speech transmission channels.
+    of speech transmission, in shape of input channels.
 
     The indices are based on the modulation transfer function (MTF) that
     determines affections of the intensity envelope throughout the
@@ -229,7 +229,7 @@ def speech_transmission_index(
 
     STI considers 7 octaves between 125 Hz and 8 kHz
     and 14 modulation frequencies between 0.63 Hz and
-    12 Hz.
+    12 Hz [#iec]_.
 
     Parameters
     ----------
@@ -239,14 +239,15 @@ def speech_transmission_index(
     data_type : 'electrical', 'acoustical'
         Determines weather input signals are obtained acoustically or
         electrically. Auditory effects can only be considered when "acoustical"
-        [1], section A.3.1. Default is 'acoustical'.
+        [#iec]_, section A.3.1. Default is 'acoustical'.
 
-    level: np.array, None
+    level: np.ndarray, None
         Level of the test signal without any present noise sources.
         Given in 7 octave bands 125 Hz - 8000 Hz in dB_SPL. Np array with
-        7 elements per row and rows for all given IR. See [1], section A.3.2
+        7 elements per row and rows for all given IR.
+        See [#iec]_, section A.3.2.
 
-    snr: np.array, None
+    snr: np.ndarray, None
         Ratio between test signal level (see above) and noise level when
         the test source is turned of. Given in 7 octave bands 125 Hz - 8000 Hz
         in dB_SPL. Np array with 7 elements per row and rows for all given IR.
@@ -258,19 +259,17 @@ def speech_transmission_index(
 
     References
     ----------
-    ..  [1] IEC 60268-16: 2021-10
+    .. [#iec] IEC 60268-16: 2021-10
      Sound system equipment - Part 16: Objective rating of speech
      intelligibility by speech transmission index.
-
-
     """
     # check if input data a pyfar.Signal
     if not isinstance(data, pf.Signal):
-        raise TypeError(f"Input data must be a pyfar.Signal.")
+        raise TypeError("Input data must be a pyfar.Signal.")
 
     # Check if the signal is at least 1.6 seconds long ([1], sectionn 6.2)
     if not data.n_samples / data.sampling_rate >= 1.6:
-        raise ValueError(f"Input signal must be at least 1.6 seconds long.")
+        raise ValueError("Input signal must be at least 1.6 seconds long.")
 
 
     # flatten for easy loop
@@ -281,21 +280,21 @@ def speech_transmission_index(
         snr = np.asarray(snr).flatten()
          # Check if SNR has the correct number of components
         if np.squeeze(snr.flatten().shape)/7 != (np.squeeze(data.cshape)):
-            raise ValueError(f"SNR consists of wrong number of components.")
+            raise ValueError("SNR consists of wrong number of components.")
         if np.any(snr < 20):
-            warnings.warn(f"SNR should be at least 20 dB for every octave band.")
+            warnings.warn("SNR should be at least 20 dB for every octave band.")
         snr = np.reshape(snr, (-1,7))
     # set snr to infinity if not given
     else:
-        snr = np.ones((data.cshape[0],7))*np.inf 
+        snr = np.ones((data.cshape[0],7))*np.inf
 
     if level is not None:
         level = np.asarray(level).flatten()
         # Check if level has the correct number of components
         if np.squeeze(level.shape)/7 != (np.squeeze(data.cshape)):
-            raise ValueError(f"Level consists of wrong number of components.")
+            raise ValueError("Level consists of wrong number of components.")
         if np.any(level < 1):
-            warnings.warn(f"Level should be at least 1 dB for every octave band.")
+            warnings.warn("Level should be at least 1 dB for every octave band.")
         level = np.reshape(level, (-1,7))
     else:
         level = np.full((data.cshape[0]), None)
@@ -311,7 +310,8 @@ def speech_transmission_index(
                          "'electrical' or 'acoustical'.")
 
     sti_ = np.zeros(data.cshape)
-    # Loop through each channel 
+
+    # Loop through each channel
     for cc in range(data.cshape[0]):
 
         # calculate mtf for 14 modulation frequencies in 7 octave bands
@@ -382,7 +382,7 @@ def modulation_transfer_function(data, data_type, level, snr, amb):
     # Adjustment of mtf for ambient noise, auditory masking and threshold
     # effects ([1], A.2.3, A.2.4) mtf =   (term_a / term_b[:,None]) * (1 / (1 + 10 ** (-snr/10)))
     if level is not None:
-        # overall intensity level 
+        # overall intensity level
         Ik = 10 * np.log10(10**(level/10) + 10**((level-snr)/10))
         # apply ambient noise effects ([1], A.2.3)
         if amb is True:

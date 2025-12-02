@@ -8,7 +8,7 @@ import re
 
 import os
 from pyfar import Signal, signals
-from pyrato import speech_transmission_index
+from pyrato.parameters import speech_transmission_index
 
 
 def test_clarity_accepts_timedata_returns_correct_type(make_edc):
