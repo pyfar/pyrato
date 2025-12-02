@@ -5,6 +5,11 @@ import pyrato as ra
 import numpy.testing as npt
 import re
 
+import os
+from pyfar import Signal, signals
+from pyrato import speech_transmission_index
+
+
 from pyrato.parameters import clarity
 from pyrato.parameters import _energy_ratio
 
@@ -112,327 +117,6 @@ def test_clarity_for_exponential_decay(make_edc):
     expected_dB = 10 * np.log10(expected_ratio)
     np.testing.assert_allclose(result, expected_dB, atol=1e-6)
 
-# _energy_ratio tests
-@pytest.mark.parametrize(
-    "limits",
-    [[0.0, 0.001, 0.0, 0.005],
-    (0.0, 0.001, 0.0, 0.005),
-    np.array([0.0, 0.001, 0.0, 0.005])],
-)
-def test_energy_ratio_accepts_timedata_and_limits_returns_correct_shape(limits,
-                                                                        make_edc):
-    """Test return shape of pyfar.TimeData and accepted limits input types."""
-    energy = np.linspace((1,0.5),(0,0),1000).T
-    edc = make_edc(energy=energy, sampling_rate=1000)
-    result = _energy_ratio(limits, edc, edc)
-    assert isinstance(result, np.ndarray)
-    assert result.shape == edc.cshape
-
-def test_energy_ratio_rejects_non_timedata_input():
-    """Reject wrong input type of EDC."""
-    invalid_input = np.arange(10)
-    limits = np.array([0.0, 0.001, 0.0, 0.005])
-    expected_message = "energy_decay_curve1 must be a pyfar.TimeData " \
-    "or derived object."
-    with pytest.raises(TypeError, match=expected_message):
-        _energy_ratio(limits, invalid_input, invalid_input)
-
-def test_energy_ratio_rejects_if_second_edc_is_not_timedata(make_edc):
-    """Reject if second EDC is of wrong type."""
-    edc = make_edc(energy=np.linspace(1, 0, 10), sampling_rate=1000)
-    limits = np.array([0.0, 0.001, 0.0, 0.005])
-    with pytest.raises(
-        TypeError,
-        match="energy_decay_curve2 must be a pyfar.TimeData",
-    ):
-        _energy_ratio(limits, edc, "invalid_type")
-
-def test_energy_ratio_rejects_wrong_shape_limits(make_edc):
-    """Limits array wrong shape."""
-    edc = make_edc(energy=np.linspace(1, 0, 10), sampling_rate=1000)
-    wrong_shape_limits = np.array([0.0, 0.001, 0.005])  # Only 3 elements
-    with pytest.raises(ValueError, match="limits must have shape"):
-        _energy_ratio(wrong_shape_limits, edc, edc)
-
-def test_energy_ratio_rejects_wrong_type_limits(make_edc):
-    """Rejects wrong limits type correctly."""
-    edc = make_edc(energy=np.linspace(1, 0, 10), sampling_rate=1000)
-    wrong_type_limits = "3, 2, 0.5, 1"  # string
-    with pytest.raises(TypeError,
-                       match="limits must be a numpy ndarray"):
-        _energy_ratio(wrong_type_limits, edc, edc)
-
-def test_energy_ratio_computes_known_ratio_correctly(make_edc):
-    """
-    If EDC is linear, energy ratio should be 1.
-
-    numerator = e(lim3)-e(lim4) = (1.0 - 0.75) = 0.25
-    denominator = e(lim1)-e(lim2) = (0.75 - 0.5) = 0.25
-    ratio = 1
-    """
-    edc_vals = np.array([1.0, 0.75, 0.5, 0.25])
-    edc = make_edc(energy=edc_vals, sampling_rate=1000)
-
-    # For linear EDC:
-    limits = np.array([0.0, 0.001, 0.001, 0.002])
-    result = _energy_ratio(limits, edc, edc)
-    npt.assert_allclose(result, 1.0, atol=1e-12)
-
-def test_energy_ratio_np_inf_limits(make_edc):
-    """
-    Check if np.inf limits are handled correctly.
-    """
-    energy = [1,0,0,0] # four samples (Dirac)
-    edc = make_edc(energy=energy, sampling_rate = 1.0) #sampling rate = 1 sec
-
-    # For linear EDC:
-    # should yield 0 - 0 / 1 - 0 = 0
-    limits = np.array([0, np.inf, np.inf, np.inf])
-    result = _energy_ratio(limits, edc, edc)
-    npt.assert_allclose(result, 0.0, atol=1e-12)
-
-@pytest.mark.parametrize(
-    "multichannel_energy",
-    [
-        # 1D, single channel
-        np.linspace(1, 0, 10),
-        # 2D, two channels
-        np.stack([
-            np.linspace(1, 0, 10),
-            np.linspace(0.5, 0, 10),
-        ]),
-        # 3D – deterministic 2×3×4 "multichannel" structure
-        np.arange(2 * 3 * 4).reshape(2, 3, 4),
-    ],
-    ids=["1D_single_channel", "2D_two_channels", "3D_deterministic"],
-)
-def test_energy_ratio_preserves_multichannel_shape_correctly(
-    multichannel_energy,
-    make_edc,
-):
-    """Preserves any multichannel shape (1,), (2,), (2,3,)."""
-    edc = make_edc(energy=multichannel_energy, sampling_rate=1000)
-    limits = np.array([0.0, np.inf, 0.0, 0.003])
-
-    result = _energy_ratio(limits, edc, edc)
-
-    assert result.shape == edc.cshape
-
-@pytest.mark.parametrize(
-    "multichannel_energy",
-    [
-        np.linspace(1, 0, 10),
-        np.stack([
-            np.linspace(1, 0, 10),
-            np.linspace(0.5, 0, 10),
-        ]),
-        np.arange(2 * 3 * 4).reshape(2, 3, 4),
-    ],
-    ids=["1D", "2D", "3D"],
-)
-@pytest.mark.parametrize(
-    "limits_config",
-    [
-        (np.array([0.0, 0.003, 0.0, np.inf]), "infinite_numerator"),
-        (np.array([0.0, np.inf, 0.0, 0.003]), "infinite_denominator"),
-        (np.array([0.0, np.inf, 0.0, np.inf]), "infinite_both"),
-    ],
-    ids=["numerator_inf", "denominator_inf", "both_inf"],
-)
-def test_energy_ratio_infinite_limits_multichannel(
-    multichannel_energy,
-    make_edc,
-    limits_config,
-):
-    """
-    Handle infinite limits in various combinations with multichannel EDCs.
-
-    Tests three scenarios:
-    - Infinite numerator limit only (lim4 = ∞)
-    - Infinite denominator limit only (lim2 = ∞)
-    - Both infinite limits (lim2 = ∞ and lim4 = ∞)
-
-    """
-    limits, _description = limits_config
-    edc = make_edc(energy=multichannel_energy, sampling_rate=1000)
-
-    result = _energy_ratio(limits, edc, edc)
-
-    assert result.shape == edc.cshape
-
-def test_energy_ratio_returns_nan_for_zero_denominator(make_edc):
-    """If denominator e(lim1)-e(lim2)=0, expect NaN (invalid ratio)."""
-    energy = np.ones(10)
-    edc = make_edc(energy=energy, sampling_rate=1000)
-    limits = np.array([0.0, 0.001, 0.002, 0.003])
-    with pytest.warns(
-        RuntimeWarning, match="invalid value encountered in divide",
-    ):
-        result = _energy_ratio(limits, edc, edc)
-    assert np.isnan(result)
-
-def test_energy_ratio_matches_reference_case(make_edc):
-    r"""
-    Analytical reference:
-    EDC = exp(-a*t). For exponential decay, ratio known analytically from
-    .. math::
-        ER = \frac{
-            \displaystyle e(lim3) - e(lim4)
-        }{
-            \displaystyle e(lim1) - e(lim2)
-        }.
-    where :math:`[lim1, ..., lim4]` are the time limits and here
-    the energy ratio is efficiently computed from the EDC :math:`e(t)'.
-    """
-    sampling_rate = 1000
-    a = 13.8155  # decay constant
-    times = np.arange(1000) / sampling_rate
-    edc_vals = np.exp(-a * times)
-    edc = make_edc(energy=edc_vals, sampling_rate=sampling_rate)
-
-    limits = np.array([0.0, 0.02, 0.0, 0.05])
-    lim1, lim2, lim3, lim4 = limits
-
-    analytical_ratio = (
-        (np.exp(-a*lim3) - np.exp(-a*lim4)) /
-        (np.exp(-a*lim1) - np.exp(-a*lim2))
-    )
-
-    result = _energy_ratio(limits, edc, edc)
-    npt.assert_allclose(result, analytical_ratio, atol=1e-8)
-
-def test_energy_ratio_works_with_two_different_edcs(make_edc):
-    """
-    Energy ratio between two different EDCs should compute distinct ratio.
-    """
-    edc1 = make_edc(energy=np.linspace(1, 0, 10), sampling_rate=1000)
-    edc2 = make_edc(energy=np.linspace(1, 0, 10) ** 2, sampling_rate=1000)
-
-    limits = np.array([0.0, 0.002, 0.0, 0.004])
-    # Expect a ratio != 1 because edc2 decays faster
-    ratio = _energy_ratio(limits, edc1, edc2)
-    assert not np.allclose(ratio, 1.0)
-
-def test_energy_ratio_rejects_limits_outside_time_range(make_edc):
-    """Limits outside valid time range are rejected."""
-    edc1 = make_edc(energy=np.linspace(1, 0, 100), sampling_rate=1000)
-    edc2 = make_edc(energy=np.linspace(1, 0, 100), sampling_rate=1000)
-    max_time = edc1.times[-1]
-
-    # Test negative limit
-    limits_negative = np.array([-0.01, 0.02, 0.02, 0.05])
-    with pytest.raises(
-        ValueError,
-        match=r"limits\[0:2\] must be between 0 and",
-    ):
-        _energy_ratio(limits_negative, edc1, edc2)
-
-    # Test limit beyond signal length
-    limits_too_large = np.array([0.0, 0.02, 0.02, max_time + 0.01])
-    with pytest.raises(
-        ValueError,
-        match=r"limits\[2:4\] must be between 0 and",
-    ):
-        _energy_ratio(limits_too_large, edc1, edc2)
-
-def test_energy_ratio_handles_different_edc_lengths(make_edc):
-    """Validation uses the shorter EDC's time range."""
-    edc1 = make_edc(energy=np.linspace(1, 0, 100), sampling_rate=1000)
-    edc2 = make_edc(energy=np.linspace(1, 0, 50), sampling_rate=1000)
-
-    # Limit valid for edc1 but not edc2
-    limits = np.array([0.0, 0.02, 0.02, 0.06])  # 0.06s > edc2.times[-1]
-
-    with pytest.raises(
-        ValueError,
-        match=r"limits\[2:4\] must be between 0 and",
-    ):
-        _energy_ratio(limits, edc1, edc2)
-
-def test_energy_ratio_with_clarity(make_edc):
-    """
-    Test for _energy_ratio in-use of a RAP-function to check if an edc
-    ending with NaN is handled correctly.
-    """
-    energy = np.ones(1000)
-    energy[900:] = np.nan #last ~100ms elements np.nan
-    edc = make_edc(energy=energy, sampling_rate=1000)
-    early_time_limit_sec = 0.08
-
-    limits = np.array([early_time_limit_sec,
-                        np.inf,
-                        0.0,
-                        early_time_limit_sec])
-
-    result = _energy_ratio(
-        limits=limits,
-        energy_decay_curve1=edc,
-        energy_decay_curve2=edc,
-    )
-    assert not np.isnan(result)
-
-def test_energy_ratio_with_clarity_nan_limit(make_edc):
-    """
-    Test for _energy_ratio in-use of a RAP-function to check if np.inf
-    are hanled correctly. Should return 1.
-    """
-    energy = np.ones(1000)
-    energy[900:] = np.nan #last ~100ms elements np.nan
-    edc = make_edc(energy=energy, sampling_rate=1000)
-
-    limits = np.array([0.0,
-                        np.inf,
-                        0.0,
-                        np.inf])
-
-    result = _energy_ratio(
-        limits=limits,
-        energy_decay_curve1=edc,
-        energy_decay_curve2=edc,
-    )
-    assert np.allclose(result, 1.0)
-
-def test_energy_ratio_handles_different_channel_shapes(make_edc):
-    """
-    Test that _energy_ratio raises an error for EDCs with different channel
-    shapes.
-    """
-    # Create EDC with cshape (2,)
-    energy1 = np.stack([
-        np.linspace(1, 0, 100),
-        np.linspace(0.8, 0, 100),
-    ])
-    edc1 = make_edc(energy=energy1, sampling_rate=1000)
-    assert edc1.cshape == (2,)
-
-    # Create EDC with cshape (3,)
-    energy2 = np.stack([
-        np.linspace(1, 0, 100),
-        np.linspace(0.8, 0, 100),
-        np.linspace(0.6, 0, 100),
-    ])
-    edc2 = make_edc(energy=energy2, sampling_rate=1000)
-    assert edc2.cshape == (3,)
-
-    # Limits for both numerator and denominator
-    limits = np.array([0.0, 0.02, 0.0, 0.05])
-
-    # Should raise ValueError due to shape mismatch with clear message
-    with pytest.raises(
-        ValueError,
-        match="energy_decay_curve1 and energy_decay_curve2 must have the same "
-              "channel shape",
-    ):
-        _energy_ratio(limits, edc1, edc2)
-
-
-
-import os 
-import pytest
-import numpy as np
-from pyfar import Signal, signals
-from pyrato import speech_transmission_index
-
 def test_sti_data_input():
     """
     TypeError is raised when input data is not a pyfar.Signal.
@@ -441,10 +125,10 @@ def test_sti_data_input():
     match="Input data must be a pyfar.Signal."
     with pytest.raises(TypeError, match=match):
         speech_transmission_index(sig)
-       
+
 def test_sti_snr_value_error():
     """
-    ValueError is raised when SNR consists 
+    ValueError is raised when SNR consists
     of the wrong number of components.
     """
     sig = Signal(np.zeros(70560), 44100)
@@ -462,7 +146,7 @@ def test_sti_snr_warning():
     match = "SNR should be at least 20 dB for every octave band."
     with pytest.warns(UserWarning, match=match):
         speech_transmission_index(sig, snr=snr)
-                
+
 def test_sti_warn_length():
     """
     ValueError is raised when the input signal is less than 1.6 seconds long.
@@ -471,8 +155,7 @@ def test_sti_warn_length():
     match  = "Input signal must be at least 1.6 seconds long."
     with pytest.raises(ValueError, match=match):
         speech_transmission_index(sig)
-  
-  
+
 def test_sti_warn_data_type_not_given():
     """
     UserWarning is raised when data type is not given.
@@ -482,7 +165,7 @@ def test_sti_warn_data_type_not_given():
                       "acoustical. Consideration of masking effects not valid "
                       "for electrically obtained signals."):
         speech_transmission_index(sig)
-        
+
 def test_sti_warn_data_type_unknown():
     """
     ValueError is raised when an unknown data type is given.
@@ -491,7 +174,7 @@ def test_sti_warn_data_type_unknown():
     with pytest.raises(ValueError, match="Data_type is 'generic' but must "
                        "be 'electrical' or 'acoustical'."):
         speech_transmission_index(sig, data_type="generic")
-  
+
 def test_sti_1D_shape():
     """
     Output shape is correct for a 1D input signal.
@@ -500,7 +183,7 @@ def test_sti_1D_shape():
     sig = Signal(np.ones((2,70560)), 44100)
     array = speech_transmission_index(sig, data_type="acoustical")
     assert array.shape == shape_expected
-  
+
 def test_sti_2D_shape():
     """
     Output shape is correct for a 2D input signal.
@@ -509,23 +192,21 @@ def test_sti_2D_shape():
     sig = Signal(np.ones((2,2,70560)), 44100)
     sti_test = speech_transmission_index(sig, data_type="acoustical")
     assert sti_test.shape == shape_expected
-    
-    
+
 def test_sti_unit_impuls():
     """
-    STI value for a unit impulse signal. 
-    Ideal case: STI = 1
-    
+    STI value for a unit impulse signal.
+    Ideal case: STI = 1.
     """
     sti_expected = 1
     sig = signals.impulse(70560)
     sti_test = speech_transmission_index(sig, data_type="acoustical")
     np.testing.assert_allclose(sti_test, sti_expected,atol=0.01)
- 
+
 def test_sti_ir():
     """
-    STI value for a simulated IR. 
-    Compare with WinMF - Measurement Software     
+    STI value for a simulated IR.
+    Compare with WinMF - Measurement Software.
     """
     sti_expected =  0.86
     time = np.loadtxt(os.path.join(
@@ -533,14 +214,14 @@ def test_sti_ir():
     ir = Signal(time, 44100)
     sti_test = speech_transmission_index(ir, data_type="acoustical")
     np.testing.assert_allclose(sti_test, sti_expected,atol=0.01)
-    
+
 def test_sti_ir_level_snr():
     """
-    STI value for a simulated IR. 
+    STI value for a simulated IR.
     Considered level and snr values.
-    Compare with WinMF - Measurement Software   
+    Compare with WinMF - Measurement Software.
     """
-    
+
     sti_expected =  0.62
     level = np.array([54, 49 , 54, 48, 45,40 , 31])
     noise_level = np.array([53, 48, 46, 42, 38, 34, 30])
@@ -548,5 +229,7 @@ def test_sti_ir_level_snr():
     time = np.loadtxt(os.path.join(
         os.path.dirname(__file__), "test_data", "ir_simulated.csv"))
     ir = Signal(time, 44100)
-    sti_test = speech_transmission_index(ir, data_type="acoustical", level=level,snr=snr)
+    sti_test = speech_transmission_index(ir,
+                                         data_type="acoustical",
+                                         level=level,snr=snr)
     np.testing.assert_allclose(sti_test, sti_expected,atol=0.01)

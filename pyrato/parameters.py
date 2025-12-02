@@ -210,13 +210,13 @@ def clarity(energy_decay_curve, early_time_limit=80):
 
 def speech_transmission_index(
     data,
-    data_type=None, 
-    level=None, 
-    snr=None, 
+    data_type=None,
+    level=None,
+    snr=None,
     amb=True):
-    
-    """ This function calculates the speech transmission index (STI) 
-    according to DIN EN IEC 60268-16:2021-10 using the indirect method. 
+    """
+    This function calculates the speech transmission index (STI)
+    according to DIN EN IEC 60268-16:2021-10 using the indirect method.
 
     Returns a numpy array with the STI, a single number value
     on a metric scale between 0 (bad) and 1 (excellent) for quality assessment
@@ -227,14 +227,15 @@ def speech_transmission_index(
     transmission. The MTF values are assessed from the IR and are further
     modified based on auditory, ambient noise and masking aspects.
 
-    STI considers 7 octaves between 125 Hz and 8 kHz 
+    STI considers 7 octaves between 125 Hz and 8 kHz
     and 14 modulation frequencies between 0.63 Hz and
     12 Hz.
+
     Parameters
     ----------
     data : pyfar.Signal
         The room impulse response with dimension [channel, n_samples].
-    
+
     data_type : 'electrical', 'acoustical'
         Determines weather input signals are obtained acoustically or
         electrically. Auditory effects can only be considered when "acoustical"
@@ -254,29 +255,28 @@ def speech_transmission_index(
     amb: bool, True
         Consideration of ambient noise effects as proposed in [2],
         section A.2.3. Default is True.
-        
+
     References
     ----------
     ..  [1] IEC 60268-16: 2021-10
-     Sound system equipment - Part 16: Objective rating of speech intelligibility 
-     by speech transmission index
+     Sound system equipment - Part 16: Objective rating of speech
+     intelligibility by speech transmission index.
 
 
     """
     # check if input data a pyfar.Signal
-    if not isinstance(data, pf.Signal):   
-        raise TypeError(f"Input data must be a pyfar.Signal.")   
-    
+    if not isinstance(data, pf.Signal):
+        raise TypeError(f"Input data must be a pyfar.Signal.")
+
     # Check if the signal is at least 1.6 seconds long ([1], sectionn 6.2)
     if not data.n_samples / data.sampling_rate >= 1.6:
         raise ValueError(f"Input signal must be at least 1.6 seconds long.")
-    
 
-    # flatten for easy loop 
+
+    # flatten for easy loop
     cshape = data.cshape
     data = data.flatten()
-    
-    
+
     if snr is not None:
         snr = np.asarray(snr).flatten()
          # Check if SNR has the correct number of components
@@ -288,7 +288,7 @@ def speech_transmission_index(
     # set snr to infinity if not given
     else:
         snr = np.ones((data.cshape[0],7))*np.inf 
-    
+
     if level is not None:
         level = np.asarray(level).flatten()
         # Check if level has the correct number of components
@@ -299,7 +299,7 @@ def speech_transmission_index(
         level = np.reshape(level, (-1,7))
     else:
         level = np.full((data.cshape[0]), None)
-        
+
      # check data_type
     if data_type is None:
         warnings.warn("Data type is considered as acoustical. Consideration "
@@ -308,58 +308,58 @@ def speech_transmission_index(
         data_type = "acoustical"
     if data_type not in ["electrical", "acoustical"]:
         raise ValueError(f"Data_type is '{data_type}' but must be "
-                         "'electrical' or 'acoustical'.")    
-        
-        
-    sti_ = np.zeros(data.cshape)    
+                         "'electrical' or 'acoustical'.")
+
+    sti_ = np.zeros(data.cshape)
     # Loop through each channel 
     for cc in range(data.cshape[0]):
-        
+
         # calculate mtf for 14 modulation frequencies in 7 octave bands
         mtf = modulation_transfer_function(data[cc], data_type, level[cc], snr[cc], amb)
-    
+
         # calculate sti from mtf
         sti_[cc] = sti_calc(mtf, data[cc])
-        
+
     sti_ = np.reshape(sti_, cshape)
     return sti_
-    
+
 
 def modulation_transfer_function(data, data_type, level, snr, amb):
     """
-    Calculate the modulation transfer function (MTF) for given 
+    Calculate the modulation transfer function (MTF) for given
+    impulse response.
 
     Parameters
     ----------
     data : pyfar.Signal
         The room impulse response with dimension [n_samples].
-    
+
     data_type : str
         Type of input signals, either 'electrical' or 'acoustical'.
-    
+
     level : np.array
         Level of the test signal without any present noise sources.
         Given in 7 octave bands 125 Hz - 8000 Hz in dB_SPL. Np array with
         7 elements per row.
-    
+
     snr : np.array
         Ratio between test signal level and noise level when the test source
         is turned off. Given in 7 octave bands 125 Hz - 8000 Hz in dB_SPL.
         Np array with 7 elements per row.
-    
+
     amb : bool
         Consideration of ambient noise effects. Default is True.
 
     Returns
     -------
     mtf : np.array
-        Modulation transfer function 
+        Modulation transfer function
     """
-    
-    # fractional octave band filtering 
+
+    # fractional octave band filtering
     data_oct = pf.dsp.filter.fractional_octave_bands(data, num_fractions=1,
                                             freq_range=(125, 8e3))
- 
+
     # modulation frequencies for each octave band([1], section 6.1)
     f_m = np.array([[0.63, 0.80, 1, 1.25, 1.60, 2, 2.5, 3.15, 4, 5, 6.3, 8,
                      10, 12.5],]*data_oct.cshape[0])
@@ -367,18 +367,18 @@ def modulation_transfer_function(data, data_type, level, snr, amb):
 
     #data_oct_en = np.sum(data_oct.time, axis=-1)
     #data_oct_energy = data_oct.time[:,:,np.newaxis]**2
-    
+
     # energy
     data_oct_energy = data_oct.time**2
     #data_oct_energy = np.transpose(data_oct_energy,(0,2,1))
     #term_exp = np.exp(-2j * np.pi * f_m  * np.transpose(data_oct.times[:,None,None],(1,2,0)))
-    
+
      # modulation transfer function (MTF) ([1], section A.2.2)
     term_exp = np.exp(-2j * np.pi * f_m[:,:,None]  * data_oct.times)
     term_a = np.abs(np.sum(data_oct_energy * term_exp,axis=-1))
     term_b  = np.sum(data_oct_energy, axis=-1) 
     mtf =   (term_a / term_b) * (1 / (1 + 10 ** (-snr[:,None]/10))) 
-    
+
     # Adjustment of mtf for ambient noise, auditory masking and threshold
     # effects ([1], A.2.3, A.2.4) mtf =   (term_a / term_b[:,None]) * (1 / (1 + 10 ** (-snr/10)))
     if level is not None:
@@ -405,7 +405,7 @@ def modulation_transfer_function(data, data_type, level, snr, amb):
             # masking intensity
             L_k1 = np.roll(Ik,1)
             I_k1 = 10**(L_k1/10)
-            
+
             I_amk = 10*np.log10(I_k1*a)
             I_amk[0] = 0
             # absolute speech reception threshold ([1], section A.4.3)
@@ -416,13 +416,11 @@ def modulation_transfer_function(data, data_type, level, snr, amb):
                                                    +10**(I_amk[:,None] /10) + I_rt))) 
     # limit mtf to 1
     mtf[mtf > 1] = 1
-    
+
     return mtf
 
 
 def sti_calc(mtf, data):
-   
-    
     # effective SNR per octave and modulation frequency ([1], section A.2.1)
     with np.errstate(divide='ignore'):
         snr_eff = 10*np.log10(mtf / (1-mtf))
@@ -436,7 +434,7 @@ def sti_calc(mtf, data):
 
     # modulation transmission indices (MTI) per octave 
     mti = 1/14*np.sum(TI, axis=-1)  
-     
+
     # STI Octave evaluation factors according tabelle A.1 
     alpha = np.array([0.085, 0.127, 0.230, 0.233, 0.309, 0.224, 0.173])
     beta = np.array([0.085, 0.078, 0.065, 0.011, 0.047, 0.095])
