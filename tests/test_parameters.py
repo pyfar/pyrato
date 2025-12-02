@@ -7,7 +7,7 @@ import re
 
 import os
 from pyfar import Signal, signals
-from pyrato import speech_transmission_index
+from pyrato.parameters import speech_transmission_index
 
 
 from pyrato.parameters import clarity
