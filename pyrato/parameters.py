@@ -203,11 +203,6 @@ def clarity(energy_decay_curve, early_time_limit=80):
 
     return clarity_db
 
-
-
-
-
-
 def speech_transmission_index(
     data,
     data_type=None,
@@ -263,6 +258,7 @@ def speech_transmission_index(
      Sound system equipment - Part 16: Objective rating of speech
      intelligibility by speech transmission index.
     """
+
     # check if input data a pyfar.Signal
     if not isinstance(data, pf.Signal):
         raise TypeError("Input data must be a pyfar.Signal.")
@@ -271,31 +267,31 @@ def speech_transmission_index(
     if not data.n_samples / data.sampling_rate >= 1.6:
         raise ValueError("Input signal must be at least 1.6 seconds long.")
 
-
     # flatten for easy loop
     cshape = data.cshape
-    data = data.flatten()
+    # data = data.flatten()
 
     if snr is not None:
-        snr = np.asarray(snr).flatten()
-         # Check if SNR has the correct number of components
-        if np.squeeze(snr.flatten().shape)/7 != (np.squeeze(data.cshape)):
+        snr = np.asarray(snr)
+        # Check if SNR has the correct number of components and SNR-threshold
+        if snr.shape != data.cshape:
             raise ValueError("SNR consists of wrong number of components.")
         if np.any(snr < 20):
-            warnings.warn("SNR should be at least 20 dB for every octave band.")
-        snr = np.reshape(snr, (-1,7))
-    # set snr to infinity if not given
+            warnings.warn(
+                "SNR should be at least 20 dB for every octave band.",
+                stacklevel=2)
     else:
         snr = np.ones((data.cshape[0],7))*np.inf
 
     if level is not None:
-        level = np.asarray(level).flatten()
+        level = np.asarray(level)
         # Check if level has the correct number of components
-        if np.squeeze(level.shape)/7 != (np.squeeze(data.cshape)):
+        if level.shape != data.cshape:
             raise ValueError("Level consists of wrong number of components.")
         if np.any(level < 1):
-            warnings.warn("Level should be at least 1 dB for every octave band.")
-        level = np.reshape(level, (-1,7))
+            warnings.warn(
+                "Level should be at least 1 dB for every octave band.",
+                stacklevel=2)
     else:
         level = np.full((data.cshape[0]), None)
 
@@ -303,7 +299,7 @@ def speech_transmission_index(
     if data_type is None:
         warnings.warn("Data type is considered as acoustical. Consideration "
                       "of masking effects not valid for electrically obtained "
-                      "signals.")
+                      "signals.", stacklevel=2)
         data_type = "acoustical"
     if data_type not in ["electrical", "acoustical"]:
         raise ValueError(f"Data_type is '{data_type}' but must be "
@@ -432,13 +428,13 @@ def sti_calc(mtf, data):
     # section A.2.1)
     TI = ((snr_eff + 15) / 30)
 
-    # modulation transmission indices (MTI) per octave 
-    mti = 1/14*np.sum(TI, axis=-1)  
+    # modulation transmission indices (MTI) per octave
+    mti = 1/14*np.sum(TI, axis=-1)
 
-    # STI Octave evaluation factors according tabelle A.1 
+    # STI Octave evaluation factors according tabelle A.1
     alpha = np.array([0.085, 0.127, 0.230, 0.233, 0.309, 0.224, 0.173])
     beta = np.array([0.085, 0.078, 0.065, 0.011, 0.047, 0.095])
-    # speech transmission index (STI) 
+    # speech transmission index (STI)
     sti = np.sum(alpha * mti) - np.sum(beta * np.sqrt(mti[:6] * mti[1:]))
 
     # reshape output to initial signal shape
