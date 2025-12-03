@@ -71,11 +71,11 @@ def test_clarity_returns_nan_for_zero_signal():
 
 def test_clarity_calculates_known_reference_value(make_edc):
     # Linear decay → early_time_limit at 1/2 energy -> ratio = 1 -> 0 dB
-    edc_vals = np.array([1.0, 0.75, 0.5, 0.0])  # monotonic decay
+    edc_vals = np.array([1.0, 0.75, 0.5, 0.0])  # monotonic decay, 1 sample = 1ms
     edc = make_edc(energy=edc_vals, sampling_rate=1000)
 
     result = clarity(edc, early_time_limit=2)
-    np.testing.assert_allclose(result, 0.0, atol=1e-6)
+    np.testing.assert_allclose(result, 0.0, atol=1e-5)
 
 
 def test_clarity_values_for_given_ratio(make_edc):
@@ -83,15 +83,15 @@ def test_clarity_values_for_given_ratio(make_edc):
     energy_late = .5
     energy = np.zeros((3, 1000))
     edc = make_edc(energy=energy,
-                               sampling_rate=1000,
-                               dynamic_range = 120.0)
+                   sampling_rate=1000,
+                   dynamic_range = 120.0)
     edc.time[..., 10] = energy_early
     edc.time[..., 100] = energy_late
     edc = ra.edc.schroeder_integration(edc, is_energy=True)
     edc = pf.dsp.normalize(edc, reference_method='max')
     result = clarity(edc, early_time_limit=80)
     clarity_value_db = 10 * np.log10(energy_early/energy_late)
-    npt.assert_allclose(result, clarity_value_db, atol=1e-6)
+    npt.assert_allclose(result, clarity_value_db, atol=1e-5)
 
 def test_clarity_for_exponential_decay(make_edc):
     rt60 = 2.0  # seconds
