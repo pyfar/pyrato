@@ -111,7 +111,7 @@ def clarity(energy_decay_curve, early_time_limit=80):
     The clarity parameter (C50 or C80) is defined as the ratio of early-to-late
     arriving energy in an impulse response and is a measure for how clearly
     speech or music can be perceived in a room. The early-to-late boundary is
-    typically set at 50 ms (C50) or 80 ms (C80) [#isocfeb]_.
+    typically set at 50 ms (C50) or 80 ms (C80) [#iso]_.
 
     Clarity is calculated as:
 
@@ -148,7 +148,7 @@ def clarity(energy_decay_curve, early_time_limit=80):
 
     References
     ----------
-    .. [#isocfeb] ISO 3382, Acoustics — Measurement of the reverberation
+    .. [#iso] ISO 3382, Acoustics — Measurement of the reverberation
         time of rooms with reference to other acoustical parameters.
 
     Examples
@@ -194,4 +194,6 @@ def clarity(energy_decay_curve, early_time_limit=80):
                          0.0,
                          early_time_limit_sec])
 
-    return 10*np.log10(_energy_ratio(limits, energy_decay_curve, energy_decay_curve))
+    return 10*np.log10(_energy_ratio(limits,
+                                     energy_decay_curve,
+                                     energy_decay_curve))
