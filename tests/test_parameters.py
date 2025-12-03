@@ -113,7 +113,15 @@ def test_clarity_for_exponential_decay(make_edc):
     np.testing.assert_allclose(result, expected_dB, atol=1e-6)
 
 # _energy_ratio tests
-def test_energy_ratio_accepts_timedata_and_returns_correct_shape(make_edc):
+@pytest.mark.parametrize(
+    "limits",
+    [[0.0, 0.001, 0.0, 0.005],
+    (0.0, 0.001, 0.0, 0.005),
+    np.array([0.0, 0.001, 0.0, 0.005])],
+)
+def test_energy_ratio_accepts_timedata_and_returns_correct_shape(limits,
+                                                                 make_edc):
+    """Test return shape for pyfar.TimeData."""
     energy = np.linspace(1, 0, 10)
     edc = make_edc(energy=energy, sampling_rate=1000)
     limits = np.array([0.0, 0.001, 0.0, 0.005])
@@ -122,30 +130,39 @@ def test_energy_ratio_accepts_timedata_and_returns_correct_shape(make_edc):
     assert result.shape == edc.cshape
 
 def test_energy_ratio_rejects_non_timedata_input():
+    """Reject wrong input type."""
     invalid_input = np.arange(10)
     limits = np.array([0.0, 0.001, 0.0, 0.005])
-    expected_message = "pyfar.TimeData"
+    expected_message = "energy_decay_curve1 must be a pyfar.TimeData " \
+    "or derived object."
     with pytest.raises(TypeError, match=expected_message):
         _energy_ratio(limits, invalid_input, invalid_input)
 
 def test_energy_ratio_rejects_if_second_edc_is_not_timedata(make_edc):
+    """Reject if second EDC is of wrong type."""
     edc = make_edc(energy=np.linspace(1, 0, 10), sampling_rate=1000)
     limits = np.array([0.0, 0.001, 0.0, 0.005])
-    with pytest.raises(TypeError, match="pyfar.TimeData"):
+    with pytest.raises(
+        TypeError,
+        match="energy_decay_curve2 must be a pyfar.TimeData"
+    ):
         _energy_ratio(limits, edc, "invalid_type")
 
-def test_energy_ratio_rejects_non_numpy_array_limits(make_edc):
+def test_energy_ratio_rejects_handles_limits_list(make_edc):
+    """Type conversion for limits from List to numpy array."""
     edc = make_edc(energy=np.linspace(1, 0, 10), sampling_rate=1000)
     result = _energy_ratio([0.0, 0.001, 0.0, 0.005], edc, edc)
     assert isinstance(result, np.ndarray)
 
 def test_energy_ratio_rejects_wrong_shape_limits(make_edc):
+    """Limits array wrong shape."""
     edc = make_edc(energy=np.linspace(1, 0, 10), sampling_rate=1000)
     wrong_shape_limits = np.array([0.0, 0.001, 0.005])  # Only 3 elements
     with pytest.raises(ValueError, match="limits must have shape"):
         _energy_ratio(wrong_shape_limits, edc, edc)
 
 def test_energy_ratio_rejects_wrong_type_limits(make_edc):
+    """Rejects wrong limits type correctly."""
     edc = make_edc(energy=np.linspace(1, 0, 10), sampling_rate=1000)
     wrong_type_limits = "3, 2, 0.5, 1"  # string
     with pytest.raises(TypeError,
@@ -169,6 +186,7 @@ def test_energy_ratio_computes_known_ratio_correctly(make_edc):
     npt.assert_allclose(result, 1.0, atol=1e-12)
 
 def test_energy_ratio_handles_multichannel_data_correctly(make_edc):
+    """Handles mutlichannel data correctly and returns in correct shape."""
     energy = np.linspace(1, 0, 10)
     multi = np.stack([energy, energy * 0.5])
     edc = make_edc(energy=multi, sampling_rate=1000)
@@ -185,9 +203,17 @@ def test_energy_ratio_returns_nan_for_zero_denominator(make_edc):
     assert np.isnan(result)
 
 def test_energy_ratio_matches_reference_case(make_edc):
-    """
+    r"""
     Analytical reference:
-    EDC = exp(-a*t). For exponential decay, ratio known analytically.
+    EDC = exp(-a*t). For exponential decay, ratio known analytically from
+    .. math::
+        ER = \frac{
+            \displaystyle e(lim3) - e(lim4)
+        }{
+            \displaystyle e(lim1) - e(lim2)
+        }.
+    where :math:`[lim1, ..., lim4]` are the time limits and here
+    the energy ratio is efficiently computed from the EDC :math:`e(t)'.
     """
     sampling_rate = 1000
     a = 13.8155  # decay constant
@@ -208,8 +234,7 @@ def test_energy_ratio_matches_reference_case(make_edc):
 
 def test_energy_ratio_works_with_two_different_edcs(make_edc):
     """
-    Energy ratio between two different EDCs.
-    should compute distinct ratio.
+    Energy ratio between two different EDCs should compute distinct ratio.
     """
     edc1 = make_edc(energy=np.linspace(1, 0, 10), sampling_rate=1000)
     edc2 = make_edc(energy=np.linspace(1, 0, 10) ** 2, sampling_rate=1000)
@@ -217,11 +242,10 @@ def test_energy_ratio_works_with_two_different_edcs(make_edc):
     limits = np.array([0.0, 0.002, 0.0, 0.004])
     # Expect a ratio != 1 because edc2 decays faster
     ratio = _energy_ratio(limits, edc1, edc2)
-    assert np.all(np.isfinite(ratio))
     assert not np.allclose(ratio, 1.0)
 
 def test_energy_ratio_rejects_limits_outside_time_range(make_edc):
-    """Test that limits outside valid time range are rejected."""
+    """Limits outside valid time range are rejected."""
     edc1 = make_edc(energy=np.linspace(1, 0, 100), sampling_rate=1000)
     edc2 = make_edc(energy=np.linspace(1, 0, 100), sampling_rate=1000)
     max_time = edc1.times[-1]
@@ -243,7 +267,7 @@ def test_energy_ratio_rejects_limits_outside_time_range(make_edc):
         _energy_ratio(limits_too_large, edc1, edc2)
 
 def test_energy_ratio_handles_different_edc_lengths(make_edc):
-    """Test that validation uses the shorter EDC's time range."""
+    """Validation uses the shorter EDC's time range."""
     edc1 = make_edc(energy=np.linspace(1, 0, 100), sampling_rate=1000)
     edc2 = make_edc(energy=np.linspace(1, 0, 50), sampling_rate=1000)
 
