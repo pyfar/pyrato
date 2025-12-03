@@ -219,3 +219,30 @@ def test_energy_ratio_works_with_two_different_edcs(make_edc):
     ratio = _energy_ratio(limits, edc1, edc2)
     assert np.all(np.isfinite(ratio))
     assert not np.allclose(ratio, 1.0)
+
+def test_energy_ratio_rejects_limits_outside_time_range(make_edc):
+    """Test that limits outside valid time range are rejected."""
+    edc1 = make_edc(energy=np.linspace(1, 0, 100), sampling_rate=1000)
+    edc2 = make_edc(energy=np.linspace(1, 0, 100), sampling_rate=1000)
+    max_time = edc1.times[-1]
+
+    # Test negative limit
+    limits_negative = np.array([-0.01, 0.02, 0.02, 0.05])
+    with pytest.raises(ValueError, match="All limits must be between 0"):
+        _energy_ratio(limits_negative, edc1, edc2)
+
+    # Test limit beyond signal length
+    limits_too_large = np.array([0.0, 0.02, 0.02, max_time + 0.01])
+    with pytest.raises(ValueError, match="All limits must be between 0"):
+        _energy_ratio(limits_too_large, edc1, edc2)
+
+def test_energy_ratio_handles_different_edc_lengths(make_edc):
+    """Test that validation uses the shorter EDC's time range."""
+    edc1 = make_edc(energy=np.linspace(1, 0, 100), sampling_rate=1000)
+    edc2 = make_edc(energy=np.linspace(1, 0, 50), sampling_rate=1000)
+
+    # Limit valid for edc1 but not edc2
+    limits = np.array([0.0, 0.02, 0.02, 0.06])  # 0.06s > edc2.times[-1]\
+
+    with pytest.raises(ValueError, match="All limits must be between 0"):
+        _energy_ratio(limits, edc1, edc2)

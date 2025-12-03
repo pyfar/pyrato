@@ -277,6 +277,14 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
             "containing [lim1, lim2, lim3, lim4].",
             )
 
+    # Check if limits are within valid time range
+    max_time = min(energy_decay_curve1.signal_length,
+                   energy_decay_curve2.signal_length)
+    if np.any(limits < 0) or np.any(limits > max_time):
+        raise ValueError(
+            f"All limits must be between 0 and {max_time} seconds.",
+        )
+
     limits_energy_decay_curve1_idx = energy_decay_curve1.find_nearest_time(
         limits[0:2])
     limits_energy_decay_curve2_idx = energy_decay_curve2.find_nearest_time(
