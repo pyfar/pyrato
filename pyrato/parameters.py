@@ -210,8 +210,10 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
 
     A variety of room-acoustic parameters are defined by energy ratios derived
     from one or two time-domain Energy Decay Curves (EDCs). These parameters
-    distinguish between time regions using the four provided limits, and some
-    require EDCs obtained from different impulse-response measurements [#iso]_.
+    distinguish between time regions using the four provided limits, and some,
+    such as Strength (:math:`G`), Early lateral sound (:math:`J_\mathrm{LF}`),
+    and Late lateral sound (:math:`L_J`), require EDCs obtained from different
+    impulse-response measurements [#iso]_.
 
     Energy-Ratio is calculated as:
     .. math::
@@ -275,12 +277,17 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
             "containing [lim1, lim2, lim3, lim4].",
             )
 
-    limits_idx = energy_decay_curve1.find_nearest_time(limits)
+    limits_energy_decay_curve1_idx = energy_decay_curve1.find_nearest_time(
+        limits[0:2])
+    limits_energy_decay_curve2_idx = energy_decay_curve2.find_nearest_time(
+        limits[2:4])
 
-    numerator = np.diff(energy_decay_curve2.time[..., limits_idx[2:4]],
-                        axis=-1)[..., 0]
-    denominator = np.diff(energy_decay_curve1.time[..., limits_idx[0:2]],
-                        axis=-1)[..., 0]
+    numerator = np.diff(
+        energy_decay_curve2.time[..., limits_energy_decay_curve2_idx],
+        axis=-1)[..., 0]
+    denominator = np.diff(
+        energy_decay_curve1.time[..., limits_energy_decay_curve1_idx],
+        axis=-1)[..., 0]
 
     energy_ratio = numerator / denominator
 
