@@ -278,12 +278,18 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
             )
 
     # Check if limits are within valid time range
-    if np.any(limits[0:2] < 0) or np.any(limits[0:2] > energy_decay_curve1.signal_length):
+    if (
+        np.any(limits[0:2] < 0)
+        or np.any(limits[0:2] > energy_decay_curve1.signal_length)
+    ):
         raise ValueError(
             f"limits[0:2] must be between 0 and "
             f"{energy_decay_curve1.signal_length} seconds.",
         )
-    if np.any(limits[2:4] < 0) or np.any(limits[2:4] > energy_decay_curve2.signal_length):
+    if (
+        np.any(limits[2:4] < 0)
+        or np.any(limits[2:4] > energy_decay_curve2.signal_length)
+    ):
         raise ValueError(
             f"limits[2:4] must be between 0 and "
             f"{energy_decay_curve2.signal_length} seconds.",
