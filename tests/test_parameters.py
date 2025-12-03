@@ -228,13 +228,18 @@ def test_energy_ratio_rejects_limits_outside_time_range(make_edc):
 
     # Test negative limit
     limits_negative = np.array([-0.01, 0.02, 0.02, 0.05])
-    with pytest.raises(ValueError, match=r"limits\[0:2\] must be between 0 and"):
+    with pytest.raises(
+        ValueError,
+        match=r"limits\[0:2\] must be between 0 and",
+    ):
         _energy_ratio(limits_negative, edc1, edc2)
 
     # Test limit beyond signal length
     limits_too_large = np.array([0.0, 0.02, 0.02, max_time + 0.01])
     with pytest.raises(
-        ValueError, match=r"limits\[2:4\] must be between 0 and"):
+        ValueError,
+        match=r"limits\[2:4\] must be between 0 and",
+    ):
         _energy_ratio(limits_too_large, edc1, edc2)
 
 def test_energy_ratio_handles_different_edc_lengths(make_edc):
@@ -246,5 +251,7 @@ def test_energy_ratio_handles_different_edc_lengths(make_edc):
     limits = np.array([0.0, 0.02, 0.02, 0.06])  # 0.06s > edc2.times[-1]
 
     with pytest.raises(
-        ValueError, match=r"limits\[2:4\] must be between 0 and"):
+        ValueError,
+        match=r"limits\[2:4\] must be between 0 and",
+    ):
         _energy_ratio(limits, edc1, edc2)
