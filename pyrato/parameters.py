@@ -215,7 +215,7 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
 
     Energy-Ratio is calculated as:
     .. math::
-        ER(p) = 10 \log_{10} \frac{
+        ER = \frac{
             \displaystyle \int_{lim3}^{lim4} p_2^2(t) \, dt
         }{
             \displaystyle \int_{lim1}^{lim2} p_1^2(t) \, dt
@@ -224,8 +224,11 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
     pressure of a room impulse response. Here, the energy ratio is
     efficiently computed from the EDC :math:`e(t)` directly by:
     .. math::
-        ER(e) = 10 \log_{10} \left( \frac{e_2(lim3) -
-        e_2(lim4)}{e_1(lim1) - e_1(lim2)} \right).
+        ER = \frac{
+            \displaystyle e_2(lim3) - e_2(lim4)
+        }{
+            \displaystyle e_1(lim1) - e_1(lim2)
+        }.
 
     Parameters
     ----------
@@ -253,11 +256,11 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
 
     # Check input type
     if not isinstance(energy_decay_curve1, pf.TimeData):
-        raise TypeError("energy_decay_curve1 must be a pyfar.TimeData"
-        " or derived object.")
+        raise TypeError(
+            "energy_decay_curve1 must be a pyfar.TimeData or derived object.")
     if not isinstance(energy_decay_curve2, pf.TimeData):
-        raise TypeError("energy_decay_curve2 must be a pyfar.TimeData"
-        " or derived object.")
+        raise TypeError(
+            "energy_decay_curve2 must be a pyfar.TimeData or derived object.")
 
     if isinstance(limits, (list, tuple)):
         limits = np.asarray(limits)
