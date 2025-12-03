@@ -144,7 +144,7 @@ def test_energy_ratio_rejects_if_second_edc_is_not_timedata(make_edc):
     limits = np.array([0.0, 0.001, 0.0, 0.005])
     with pytest.raises(
         TypeError,
-        match="energy_decay_curve2 must be a pyfar.TimeData"
+        match="energy_decay_curve2 must be a pyfar.TimeData",
     ):
         _energy_ratio(limits, edc, "invalid_type")
 
