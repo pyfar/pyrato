@@ -164,27 +164,8 @@ def clarity(energy_decay_curve, early_time_limit=80):
     >>> edc = ra.edc.energy_decay_curve_lundeby(rir)
     >>> C80 = clarity(edc, early_time_limit=80)
     """
-    # Check input type
-    if not isinstance(energy_decay_curve, pf.TimeData):
-        raise TypeError("Input must be a pyfar.TimeData object.")
-
-    # Raise error if TimeData is complex
-    if energy_decay_curve.complex:
-        raise ValueError(
-            "Complex-valued input detected. Clarity is"
-            "only defined for real TimeData.",
-        )
-
     if not isinstance(early_time_limit, (int, float)):
         raise TypeError('early_time_limit must be a number.')
-
-    # Validate time range
-    if (early_time_limit > energy_decay_curve.signal_length * 1000) or (
-            early_time_limit <= 0):
-        raise ValueError(
-            "early_time_limit must be in the range of 0"
-            f"and {energy_decay_curve.signal_length * 1000}.",
-            )
 
     # Convert milliseconds to seconds
     early_time_limit_sec = early_time_limit / 1000
