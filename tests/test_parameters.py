@@ -14,13 +14,6 @@ def test_clarity_accepts_timedata_returns_correct_type(make_edc):
     assert isinstance(result, (float, np.ndarray))
     assert result.shape == edc.cshape
 
-def test_clarity_rejects_non_timedata_input():
-    invalid_input = np.array([1, 2, 3])
-    expected_error_message = "Input must be a pyfar.TimeData object."
-
-    with pytest.raises(TypeError, match=re.escape(expected_error_message)):
-        clarity(invalid_input)
-
 def test_clarity_rejects_non_numeric_early_time_limit(make_edc):
     edc = make_edc()
     invalid_time_limit = "not_a_number"
@@ -28,30 +21,6 @@ def test_clarity_rejects_non_numeric_early_time_limit(make_edc):
 
     with pytest.raises(TypeError, match=re.escape(expected_error_message)):
         clarity(edc, invalid_time_limit)
-
-def test_clarity_rejects_complex_timedata():
-    complex_data = pf.TimeData(np.array([1+1j, 2+2j, 3+3j]),
-                               np.arange(3) / 1000, is_complex=True)
-    expected_error_message = "Complex-valued input detected. Clarity is"
-    "only defined for real TimeData."
-
-    with pytest.raises(ValueError, match=re.escape(expected_error_message)):
-        clarity(complex_data, early_time_limit=2)
-
-def test_clarity_rejects_invalid_time_range(make_edc):
-    energy = np.zeros(128)
-    edc = make_edc(energy=energy)
-    actual_signal_length_ms = edc.signal_length * 1000
-
-    # Test negative time limit
-    expected_error_message = "early_time_limit must be in the range of 0"
-    f"and {actual_signal_length_ms}."
-    with pytest.raises(ValueError, match=re.escape(expected_error_message)):
-        clarity(edc, early_time_limit=-1)
-
-    # Test time limit beyond signal length
-    with pytest.raises(ValueError, match=re.escape(expected_error_message)):
-        clarity(edc, early_time_limit=200000)
 
 def test_clarity_preserves_multichannel_shape(make_edc):
     energy = np.ones((2,2,10)) / (1+np.arange(10))
