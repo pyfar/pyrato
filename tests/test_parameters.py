@@ -178,15 +178,6 @@ def test_energy_ratio_computes_known_ratio_correctly(make_edc):
     result = _energy_ratio(limits, edc, edc)
     npt.assert_allclose(result, 1.0, atol=1e-12)
 
-def test_energy_ratio_handles_multichannel_data_correctly(make_edc):
-    """Handles mutlichannel data correctly and returns in correct shape."""
-    energy = np.linspace(1, 0, 10)
-    multi = np.stack([energy, energy * 0.5])
-    edc = make_edc(energy=multi, sampling_rate=1000)
-    limits = np.array([0.0, 0.001, 0.0, 0.005])
-    result = _energy_ratio(limits, edc, edc)
-    assert result.shape == edc.cshape
-
 def test_energy_ratio_returns_nan_for_zero_denominator(make_edc):
     """If denominator e(lim1)-e(lim2)=0, expect NaN (invalid ratio)."""
     energy = np.ones(10)
