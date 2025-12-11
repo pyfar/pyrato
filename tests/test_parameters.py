@@ -121,7 +121,7 @@ def test_clarity_for_exponential_decay(make_edc):
 )
 def test_energy_ratio_accepts_timedata_and_limits_returns_correct_shape(limits,
                                                                         make_edc):
-    """Test return shape of pyfar.TimeData and accepted limits input type."""
+    """Test return shape of pyfar.TimeData and accepted limits input types."""
     energy = np.linspace((1,0.5),(0,0),1000).T
     edc = make_edc(energy=energy, sampling_rate=1000)
     result = _energy_ratio(limits, edc, edc)
