@@ -178,6 +178,30 @@ def test_energy_ratio_computes_known_ratio_correctly(make_edc):
     result = _energy_ratio(limits, edc, edc)
     npt.assert_allclose(result, 1.0, atol=1e-12)
 
+@pytest.mark.parametrize(
+    "energy",
+    [
+        # 1D, einzelner Kanal
+        np.linspace(1, 0, 10),
+        # 2D, zwei Kanäle
+        np.stack([
+            np.linspace(1, 0, 10),
+            np.linspace(0.5, 0, 10),
+        ]),
+        # 3D – deterministic 2×3×4 “multichannel” structure
+        np.arange(2 * 3 * 4).reshape(2, 3, 4),
+    ],
+)
+def test_energy_ratio_preserves_multichannel_shape_correctly(energy, make_edc):
+    """Preserves any multichannel shape (1,), (2,), (2,3,)."""
+    edc = make_edc(energy=energy, sampling_rate=1000)
+    limits = np.array([0.0, 0.001, 0.0, 0.003])
+
+    result = _energy_ratio(limits, edc, edc)
+
+    # Ergebnis muss exakt dieselbe Kanalform haben wie das EDC
+    assert result.shape == edc.cshape
+
 def test_energy_ratio_returns_nan_for_zero_denominator(make_edc):
     """If denominator e(lim1)-e(lim2)=0, expect NaN (invalid ratio)."""
     energy = np.ones(10)
