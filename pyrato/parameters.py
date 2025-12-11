@@ -302,7 +302,7 @@ def speech_transmission_index(
                       "signals.", stacklevel=2)
         data_type = "acoustical"
     if data_type not in ["electrical", "acoustical"]:
-        raise ValueError(f"Data_type is '{data_type}' but must be "
+        raise ValueError(f"data_type is '{data_type}' but must be "
                          "'electrical' or 'acoustical'.")
 
     sti_ = np.zeros(data.cshape)
