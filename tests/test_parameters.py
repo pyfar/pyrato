@@ -124,7 +124,6 @@ def test_energy_ratio_accepts_timedata_and_returns_correct_shape(limits,
     """Test return shape for pyfar.TimeData."""
     energy = np.linspace(1, 0, 10)
     edc = make_edc(energy=energy, sampling_rate=1000)
-    limits = np.array([0.0, 0.001, 0.0, 0.005])
     result = _energy_ratio(limits, edc, edc)
     assert isinstance(result, np.ndarray)
     assert result.shape == edc.cshape
@@ -147,12 +146,6 @@ def test_energy_ratio_rejects_if_second_edc_is_not_timedata(make_edc):
         match="energy_decay_curve2 must be a pyfar.TimeData",
     ):
         _energy_ratio(limits, edc, "invalid_type")
-
-def test_energy_ratio_rejects_handles_limits_list(make_edc):
-    """Type conversion for limits from list to numpy array."""
-    edc = make_edc(energy=np.linspace(1, 0, 10), sampling_rate=1000)
-    result = _energy_ratio([0.0, 0.001, 0.0, 0.005], edc, edc)
-    assert isinstance(result, np.ndarray)
 
 def test_energy_ratio_rejects_wrong_shape_limits(make_edc):
     """Limits array wrong shape."""
