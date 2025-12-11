@@ -119,8 +119,7 @@ def test_clarity_for_exponential_decay(make_edc):
     (0.0, 0.001, 0.0, 0.005),
     np.array([0.0, 0.001, 0.0, 0.005])],
 )
-def test_energy_ratio_accepts_timedata_and_limits_and_returns_correct_shape(limits,
-                                                                 make_edc):
+def test_energy_ratio_accepts_timedata_and_limits(limits, make_edc):
     """Test return shape for pyfar.TimeData."""
     energy = np.linspace(1, 0, 10)
     edc = make_edc(energy=energy, sampling_rate=1000)
