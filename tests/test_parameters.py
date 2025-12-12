@@ -9,13 +9,13 @@ from pyrato.parameters import clarity
 from pyrato.parameters import _energy_ratio
 
 # parameter clarity tests
-def test_clarity_accepts_timedata_returns_correct_type(make_edc):
-    """Input and Outpuut of correct type."""
-    energy = np.concatenate(([1, 1, 1, 1], np.zeros(124)))
-    edc = make_edc(energy=energy)
-
-    result = clarity(edc, early_time_limit=4)  # 4 ms
-    assert isinstance(result, (float, np.ndarray))
+def test_clarity_accepts_timedata_and_returns_correct_shape(
+        make_edc):
+    """Test return shape and type of pyfar.TimeData inout."""
+    energy = np.linspace((1,0.5),(0,0),1000).T
+    edc = make_edc(energy=energy, sampling_rate=1000)
+    result = clarity(edc)
+    assert isinstance(result, np.ndarray)
     assert result.shape == edc.cshape
 
 def test_clarity_rejects_non_numeric_early_time_limit(make_edc):
@@ -27,20 +27,11 @@ def test_clarity_rejects_non_numeric_early_time_limit(make_edc):
     with pytest.raises(TypeError, match=re.escape(expected_error_message)):
         clarity(edc, invalid_time_limit)
 
-def test_clarity_preserves_multichannel_shape(make_edc):
-    """Preserves correct multichannel shape."""
-    energy = np.ones((2,2,10)) / (1+np.arange(10))
-    edc = make_edc(energy=energy, sampling_rate=10)
-    output = clarity(edc, early_time_limit=80)
-    assert edc.cshape == output.shape
-
-
 def test_clarity_returns_nan_for_zero_signal():
     """Correct return of NaN for zero signal."""
     edc = pf.TimeData(np.zeros((1, 128)), np.arange(128) / 1000)
     result = clarity(edc)
     assert np.isnan(result)
-
 
 def test_clarity_calculates_known_reference_value(make_edc):
     """
@@ -52,7 +43,6 @@ def test_clarity_calculates_known_reference_value(make_edc):
 
     result = clarity(edc, early_time_limit=2)
     np.testing.assert_allclose(result, 0.0, atol=1e-5)
-
 
 def test_clarity_values_for_given_ratio(make_edc):
     """Clarity validation for a given ratio from analytical baseline."""
