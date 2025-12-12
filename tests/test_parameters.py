@@ -9,13 +9,25 @@ from pyrato.parameters import clarity
 from pyrato.parameters import _energy_ratio
 
 # parameter clarity tests
+@pytest.mark.parametrize(
+    ("energy", "expected_shape"),
+    [
+        # 1D single channel
+        (np.linspace(1, 0, 1000), (1,)),
+        # 2D two channels
+        (np.linspace((1, 0.5), (0, 0), 1000).T, (2,)),
+        # 3D multichannel (2x3 channels)
+        (np.arange(2 * 3 * 1000).reshape(2, 3, 1000), (2, 3)),
+    ],
+)
 def test_clarity_accepts_timedata_and_returns_correct_shape(
-        make_edc):
-    """Test return shape and type of pyfar.TimeData inout."""
-    energy = np.linspace((1,0.5),(0,0),1000).T
+    energy, expected_shape, make_edc,
+):
+    """Test return shape and type of pyfar.TimeData input."""
     edc = make_edc(energy=energy, sampling_rate=1000)
     result = clarity(edc)
-    assert isinstance(result, np.ndarray)
+    assert isinstance(result, (float, np.ndarray))
+    assert result.shape == expected_shape
     assert result.shape == edc.cshape
 
 def test_clarity_rejects_non_numeric_early_time_limit(make_edc):
