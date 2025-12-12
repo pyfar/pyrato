@@ -167,6 +167,10 @@ def clarity(energy_decay_curve, early_time_limit=80):
     if not isinstance(early_time_limit, (int, float)):
         raise TypeError('early_time_limit must be a number.')
 
+    if not isinstance(energy_decay_curve, pf.TimeData):
+        raise TypeError(
+            "energy_decay_curve must be a pyfar.TimeData or derived object.")
+
     # Convert milliseconds to seconds
     early_time_limit_sec = early_time_limit / 1000
 
