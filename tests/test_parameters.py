@@ -10,6 +10,7 @@ from pyrato.parameters import _energy_ratio
 
 # parameter clarity tests
 def test_clarity_accepts_timedata_returns_correct_type(make_edc):
+    """Input and Outpuut of correct type."""
     energy = np.concatenate(([1, 1, 1, 1], np.zeros(124)))
     edc = make_edc(energy=energy)
 
@@ -18,6 +19,7 @@ def test_clarity_accepts_timedata_returns_correct_type(make_edc):
     assert result.shape == edc.cshape
 
 def test_clarity_rejects_non_numeric_early_time_limit(make_edc):
+    """Rejects non-number type early_time_limit."""
     edc = make_edc()
     invalid_time_limit = "not_a_number"
     expected_error_message = "early_time_limit must be a number."
@@ -26,6 +28,7 @@ def test_clarity_rejects_non_numeric_early_time_limit(make_edc):
         clarity(edc, invalid_time_limit)
 
 def test_clarity_preserves_multichannel_shape(make_edc):
+    """Preserves correct multichannel shape."""
     energy = np.ones((2,2,10)) / (1+np.arange(10))
     edc = make_edc(energy=energy, sampling_rate=10)
     output = clarity(edc, early_time_limit=80)
@@ -33,14 +36,18 @@ def test_clarity_preserves_multichannel_shape(make_edc):
 
 
 def test_clarity_returns_nan_for_zero_signal():
+    """Correct return of NaN for zero signal."""
     edc = pf.TimeData(np.zeros((1, 128)), np.arange(128) / 1000)
     result = clarity(edc)
     assert np.isnan(result)
 
 
 def test_clarity_calculates_known_reference_value(make_edc):
-    # Linear decay → early_time_limit at 1/2 energy -> ratio = 1 -> 0 dB
-    edc_vals = np.array([1.0, 0.75, 0.5, 0.0])  # monotonic decay, 1 sample = 1ms
+    """
+    Linear decay → early_time_limit at 1/2 energy -> ratio = 1 -> 0 dB.
+    Monotonic decay, 1 sample = 1ms.
+    """
+    edc_vals = np.array([1.0, 0.75, 0.5, 0.0])
     edc = make_edc(energy=edc_vals, sampling_rate=1000)
 
     result = clarity(edc, early_time_limit=2)
@@ -48,6 +55,7 @@ def test_clarity_calculates_known_reference_value(make_edc):
 
 
 def test_clarity_values_for_given_ratio(make_edc):
+    """Clarity validation for a given ratio from analytical baseline."""
     energy_early = 1
     energy_late = .5
     energy = np.zeros((3, 1000))
@@ -63,6 +71,7 @@ def test_clarity_values_for_given_ratio(make_edc):
     npt.assert_allclose(result, clarity_value_db, atol=1e-5)
 
 def test_clarity_for_exponential_decay(make_edc):
+    """Clarity validation for analytical solution from exponentail decay."""
     rt60 = 2.0  # seconds
     sampling_rate = 1000
     total_samples = 2000
