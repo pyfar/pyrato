@@ -178,3 +178,111 @@ def clarity(energy_decay_curve, early_time_limit=80):
     return 10*np.log10(_energy_ratio(limits,
                                      energy_decay_curve,
                                      energy_decay_curve))
+
+def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
+    r"""
+    Calculate the energy ratio for the time limits from two energy
+    decay curves (EDC).
+
+    A variety of room-acoustic parameters are defined by energy ratios derived
+    from one or two time-domain Energy Decay Curves (EDCs). These parameters
+    distinguish between time regions using the four provided limits, and some,
+    such as Strength (:math:`G`), Early lateral sound (:math:`J_\mathrm{LF}`),
+    and Late lateral sound (:math:`L_J`), require EDCs obtained from different
+    impulse-response measurements [#iso]_.
+
+    Energy-Ratio is calculated as:
+    .. math::
+        ER = \frac{
+            \displaystyle \int_{lim3}^{lim4} p_2^2(t) \, dt
+        }{
+            \displaystyle \int_{lim1}^{lim2} p_1^2(t) \, dt
+        }
+    where :math:`[lim1, ..., lim4]` are the time limits and :math:`p(t)` is the
+    pressure of a room impulse response. Here, the energy ratio is
+    efficiently computed from the EDC :math:`e(t)` directly by:
+    .. math::
+        ER = \frac{
+            \displaystyle e_2(lim3) - e_2(lim4)
+        }{
+            \displaystyle e_1(lim1) - e_1(lim2)
+        }.
+
+    Parameters
+    ----------
+    limits : np.ndarray, list or tuple
+        Four time limits (:math:`t_e`) in seconds, shape (4,)
+        in ascending order.
+    energy_decay_curve1 : pyfar.TimeData
+        Energy decay curve 1 (EDC1) of the room impulse response
+        (time-domain signal). The EDC must start at time zero.
+    energy_decay_curve2 : pyfar.TimeData
+        Energy decay curve 2 (EDC2) of the room impulse response
+        (time-domain signal). The EDC must start at time zero.
+
+    Returns
+    -------
+    energy ratio : numpy.ndarray[float]
+        energy-ratio index (early-to-late energy ratio),
+        shaped according to the channel shape of the input EDC.
+
+    References
+    ----------
+    .. [#iso] ISO 3382, Acoustics — Measurement of the reverberation time of
+        rooms with reference to other acoustical parameters.
+    """
+
+    # Check input type
+    if not isinstance(energy_decay_curve1, pf.TimeData):
+        raise TypeError(
+            "energy_decay_curve1 must be a pyfar.TimeData or derived object.")
+    if not isinstance(energy_decay_curve2, pf.TimeData):
+        raise TypeError(
+            "energy_decay_curve2 must be a pyfar.TimeData or derived object.")
+
+    if isinstance(limits, (list, tuple)):
+        limits = np.asarray(limits)
+
+    if not isinstance(limits, np.ndarray):
+        raise TypeError("limits must be a numpy ndarray, list, or tuple.")
+
+    # Check shape
+    if limits.shape != (4,):
+        raise ValueError(
+            "limits must have shape (4,), " \
+            "containing [lim1, lim2, lim3, lim4].",
+            )
+
+    # Check if limits are within valid time range
+    if (
+        np.any(limits[0:2] < 0)
+        or np.any(limits[0:2] > energy_decay_curve1.signal_length)
+    ):
+        raise ValueError(
+            f"limits[0:2] must be between 0 and "
+            f"{energy_decay_curve1.signal_length} seconds.",
+        )
+    if (
+        np.any(limits[2:4] < 0)
+        or np.any(limits[2:4] > energy_decay_curve2.signal_length)
+    ):
+        raise ValueError(
+            f"limits[2:4] must be between 0 and "
+            f"{energy_decay_curve2.signal_length} seconds.",
+        )
+
+    limits_energy_decay_curve1_idx = energy_decay_curve1.find_nearest_time(
+        limits[0:2])
+    limits_energy_decay_curve2_idx = energy_decay_curve2.find_nearest_time(
+        limits[2:4])
+
+    numerator = np.diff(
+        energy_decay_curve2.time[..., limits_energy_decay_curve2_idx],
+        axis=-1)[..., 0]
+    denominator = np.diff(
+        energy_decay_curve1.time[..., limits_energy_decay_curve1_idx],
+        axis=-1)[..., 0]
+
+    energy_ratio = numerator / denominator
+
+    return energy_ratio
