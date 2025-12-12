@@ -4,6 +4,9 @@ Parametric room acoustics calculations using simple geometric considerations
 such as Sabine's theory of sound in rooms.
 """
 import numpy as np
+from numpy.typing import NDArray
+import pyfar as pf
+
 
 def energy_decay_curve_analytic(
         surfaces, alphas, volume, times, source=None,
@@ -79,6 +82,64 @@ def energy_decay_curve_analytic(
         raise ValueError("The method has to be either 'eyring' or 'sabine'.")
 
     return energy_decay_curve
+
+
+def energy_decay_curve(
+        times : np.ndarray[float],
+        reverberation_time : float | np.ndarray[float],
+        energy : float | np.ndarray[float] = 1,
+    ) -> pf.TimeData:
+    r"""Calculate the energy decay curve from the reverberation time and energy.
+
+    The energy decay curve is calculated as
+
+    .. math::
+        E(t) = E_0 e^{-\frac{6 \ln(10)}{T_{60}} t}
+
+    where :math:`E_0` is the initial energy, :math:`T_{60}` the reverberation
+    time, and :math:`t` the time [#]_.
+
+    Parameters
+    ----------
+    times : numpy.ndarray[float]
+        The times at which the energy decay curve is evaluated.
+    reverberation_time : float | numpy.ndarray[float]
+        The reverberation time in seconds.
+    energy : float | numpy.ndarray[float], optional
+        The initial energy of the sound field, by default 1
+
+    Returns
+    -------
+    pyfar.TimeData
+        The energy decay curve.
+
+    Example
+    -------
+    Calculate and plot an energy decay curve with a reverberation time of
+    2 seconds.
+
+    .. plot::
+
+        >>> import numpy as np
+        >>> import pyrato
+        >>> import pyfar as pf
+        >>>
+        >>> times = np.linspace(0, 3, 50)
+        >>> T_60 = 2
+        >>> edc = pyrato.parametric.energy_decay_curve(times, T_60)
+        >>> pf.plot.time(edc, log_prefix=10, dB=True)
+
+
+    References
+    ----------
+    .. [#] H. Kuttruff, Room acoustics, 4th Ed. Taylor & Francis, 2009.
+
+    """
+
+    damping_term = 3*np.log(10) / reverberation_time
+    edc = energy * np.exp(-2*damping_term*times)
+
+    return pf.TimeData(edc, times)
 
 
 def air_attenuation_coefficient(
