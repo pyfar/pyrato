@@ -156,7 +156,6 @@ def clarity(energy_decay_curve, early_time_limit=80):
     Estimate the clarity from a real room impulse response filtered in
     octave bands:
 
-    >>> import numpy as np
     >>> import pyfar as pf
     >>> import pyrato as ra
     >>> rir = pf.signals.files.room_impulse_response(sampling_rate=44100)
