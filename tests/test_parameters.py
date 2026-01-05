@@ -73,7 +73,7 @@ def test_clarity_values_for_given_ratio(make_edc):
     npt.assert_allclose(result, clarity_value_db, atol=1e-5)
 
 def test_clarity_for_exponential_decay(make_edc):
-    """Clarity validation for analytical solution from exponentail decay."""
+    """Clarity validation for analytical solution from exponential decay."""
     rt60 = 2.0  # seconds
     sampling_rate = 1000
     total_samples = 2000
