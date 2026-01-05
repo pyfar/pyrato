@@ -443,4 +443,3 @@ def sti_calc(mtf, data):
     # limit STI to 1 ([1], section A.5.6)
     sti[sti > 1] = 1
     return sti
-
