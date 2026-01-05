@@ -287,3 +287,21 @@ def test_energy_ratio_handles_different_edc_lengths(make_edc):
         match=r"limits\[2:4\] must be between 0 and",
     ):
         _energy_ratio(limits, edc1, edc2)
+
+def test_energy_ratio_clips_limits_pointing_to_nan_edc_tail(make_edc):
+    """
+    Limits pointing to NaN values at the end of a noise-floor-truncated EDC
+    should be clipped to the last finite EDC sample instead of returning NaN.
+    """
+    sampling_rate = 1000
+
+    # Construct EDC with NaNs at the tail (noise-floor truncation)
+    energy = np.linspace(1, 0, 10)
+    energy[-3:] = np.nan
+    edc = make_edc(energy=energy, sampling_rate=sampling_rate)
+
+    # lim2 / lim4 would map into NaN region without clipping
+    limits = np.array([0.0, 0.009, 0.0, 0.009])
+    result = _energy_ratio(limits, edc, edc)
+
+    assert np.isfinite(result)
