@@ -300,7 +300,7 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
     limits_energy_decay_curve2_idx = energy_decay_curve2.find_nearest_time(
         limits[2:4])
 
-    # find last valid index
+    # find last valid index that is not NaN
     last_valid_1 = np.max(np.where(np.isfinite(energy_decay_curve1.time))[ -1 ])
     last_valid_2 = np.max(np.where(np.isfinite(energy_decay_curve2.time))[ -1 ])
 
