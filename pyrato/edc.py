@@ -263,6 +263,10 @@ def energy_decay_curve_truncation(
         >>> ax.legend()
 
     """
+    # flatten to allow signals with cdim > 1
+    shape = data.time.shape
+    data = data.flatten()
+
     energy_data = dsp.preprocess_rir(
         data,
         is_energy=is_energy,
@@ -311,7 +315,7 @@ def energy_decay_curve_truncation(
                     / np.nanmax(energy_decay_curve, axis=-1, keepdims=True)
 
     edc = pf.TimeData(
-        energy_decay_curve, data.times, comment=data.comment)
+        energy_decay_curve.reshape(shape), data.times, comment=data.comment)
 
     if plot:
         ax = pf.plot.time(data, dB=True, label='RIR')
@@ -403,6 +407,9 @@ def energy_decay_curve_lundeby(
         >>> ax.legend()
 
     """
+    # flatten to allow signals with cdim > 1
+    shape = data.time.shape
+    data = data.flatten()
 
     energy_data = dsp.preprocess_rir(
         data,
@@ -458,7 +465,7 @@ def energy_decay_curve_lundeby(
                     / np.nanmax(energy_decay_curve, axis=-1, keepdims=True)
 
     edc = pf.TimeData(
-        energy_decay_curve, data.times, comment=data.comment)
+        energy_decay_curve.reshape(shape), data.times, comment=data.comment)
 
     if plot:
         ax = pf.plot.time(data, dB=True, label='RIR')
@@ -551,6 +558,10 @@ def energy_decay_curve_chu(
         >>> ax.legend()
 
     """
+    # flatten to allow signals with cdim > 1
+    shape = data.cshape
+    data = data.flatten()
+
     energy_data = dsp.preprocess_rir(
         data,
         is_energy=is_energy,
@@ -587,6 +598,8 @@ def energy_decay_curve_chu(
             data, noise_level, is_energy=is_energy)
         trunc_levels = 10*np.log10((psnr)) - threshold
         edc = truncate_energy_decay_curve(edc, trunc_levels)
+
+    edc = edc.reshape(shape)
 
     if plot:
         plt.figure(figsize=(15, 3))
@@ -693,6 +706,9 @@ def energy_decay_curve_chu_lundeby(
         >>> ax.legend()
 
     """
+    # flatten to allow signals with cdim > 1
+    shape = data.time.shape
+    data = data.flatten()
 
     energy_data = dsp.preprocess_rir(
         data,
@@ -754,7 +770,7 @@ def energy_decay_curve_chu_lundeby(
                     / np.nanmax(energy_decay_curve, axis=-1, keepdims=True)
 
     edc = pf.TimeData(
-        energy_decay_curve, data.times, comment=data.comment)
+        energy_decay_curve.reshape(shape), data.times, comment=data.comment)
 
     if plot:
         ax = pf.plot.time(data, dB=True, label='RIR')

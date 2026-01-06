@@ -96,3 +96,24 @@ def test_edc_sabine():
         6.37107964e-04, 5.46555336e-04,
         ])
     npt.assert_almost_equal(edc, truth)
+
+
+@pytest.mark.parametrize(
+        "edc_function",
+        [ra.edc.energy_decay_curve_chu,
+         ra.edc.energy_decay_curve_lundeby,
+         ra.edc.energy_decay_curve_chu_lundeby,
+         ra.energy_decay_curve_lundeby],
+)
+def test_multidim_edc(edc_function):
+    """
+    Test if edcs from multidimenstional signals can be calculated.
+    Check if first 0.4 s contain NaNs.
+    """
+    rir = pf.signals.files.room_impulse_response()
+    rir_oct = pf.dsp.filter.fractional_octave_bands(rir, 1)
+    edc = edc_function(rir_oct)
+
+    npt.assert_array_equal(
+        np.isfinite(edc.time[..., :int(rir.sampling_rate*0.4)]), True)
+
