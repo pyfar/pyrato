@@ -112,8 +112,11 @@ def test_multidim_edc(edc_function):
     """
     rir = pf.signals.files.room_impulse_response()
     rir_oct = pf.dsp.filter.fractional_octave_bands(rir, 1)
+    shape = rir_oct.time.shape
     edc = edc_function(rir_oct)
 
     npt.assert_array_equal(
         np.isfinite(edc.time[..., :int(rir.sampling_rate*0.4)]), True)
+
+    assert shape == edc.time.shape
 
