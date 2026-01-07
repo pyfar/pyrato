@@ -174,13 +174,13 @@ def clarity(energy_decay_curve, early_time_limit=80):
     early_time_limit_sec = early_time_limit / 1000
 
     limits = np.array([early_time_limit_sec,
-                         energy_decay_curve.times[-1],
-                         0.0,
-                         early_time_limit_sec])
+                        energy_decay_curve.times[-1],
+                        0.0,
+                        early_time_limit_sec])
 
     return 10*np.log10(_energy_ratio(limits,
-                                     energy_decay_curve,
-                                     energy_decay_curve))
+                                    energy_decay_curve,
+                                    energy_decay_curve))
 
 def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
     r"""
