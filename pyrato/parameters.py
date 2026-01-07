@@ -159,7 +159,7 @@ def clarity(energy_decay_curve, early_time_limit=80):
     >>> import pyfar as pf
     >>> import pyrato as ra
     >>> rir = pf.signals.files.room_impulse_response(sampling_rate=44100)
-    >>> rir = pf.dsp.filter.fractional_octave_bands(rir)
+    >>> rir = pf.dsp.filter.fractional_octave_bands(rir, num_fractions=1)
     >>> edc = ra.edc.energy_decay_curve_lundeby(rir)
     >>> C80 = clarity(edc, early_time_limit=80)
     """
