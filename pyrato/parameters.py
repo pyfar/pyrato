@@ -232,6 +232,10 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
             \displaystyle e_1(lim1) - e_1(lim2)
         }.
 
+    If either of :math:`[lim1, ..., lim4]` exceeds the duration of the EDC or
+    coincides with a NaN-value, it is clipped to the last valid sample of the
+    EDC.
+
     Parameters
     ----------
     limits : np.ndarray, list or tuple
@@ -301,13 +305,13 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
         limits[2:4])
 
     # find last valid index that is not NaN
-    last_valid_1 = np.max(np.where(np.isfinite(energy_decay_curve1.time))[ -1 ])
-    last_valid_2 = np.max(np.where(np.isfinite(energy_decay_curve2.time))[ -1 ])
+    last_valid_1 = np.max(np.where(np.isfinite(energy_decay_curve1.time))[-1])
+    last_valid_2 = np.max(np.where(np.isfinite(energy_decay_curve2.time))[-1])
 
     limits_energy_decay_curve1_idx = np.minimum(limits_energy_decay_curve1_idx,
-                                                 last_valid_1)
+                                                last_valid_1)
     limits_energy_decay_curve2_idx = np.minimum(limits_energy_decay_curve2_idx,
-                                                 last_valid_2)
+                                                last_valid_2)
 
     numerator = np.diff(
         energy_decay_curve2.time[..., limits_energy_decay_curve2_idx],
