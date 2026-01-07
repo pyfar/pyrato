@@ -208,22 +208,30 @@ def clarity(energy_decay_curve, early_time_limit=80):
 def definition(energy_decay_curve, early_time_limit=50):
     r"""
     Calculate the definition from the energy decay curve (EDC).
-    The clarity parameter (D50) is defined as the ratio of early-to-total
-    arriving energy in an impulse response and is a measure for how clearly
-    audio can be perceived in a room. The early-to-all boundary is
+
+    The definition parameter (D50) is defined as the ratio of early-to-total
+    arriving energy in an impulse response and is a measure for how defined
+    speech or music can be perceived in a room. The early-to-total boundary is
     typically set at 50 ms (D50) [#iso]_.
+
     Definition is calculated as:
+
     .. math::
+
         D_{t_e} = 10 \log_{10} \frac{
             \displaystyle \int_0^{t_e} p^2(t) \, dt
         }{
             \displaystyle \int_{0}^{\infty} p^2(t) \, dt
         }
+
     where :math:`t_e` is the early time limit and :math:`p(t)` is the pressure
     of a room impulse response. Here, the definition is efficiently computed
     from the EDC :math:`e(t)` directly by:
+
     .. math::
-        D_{t_e} = 10 \log_{10} \left( 1 - \frac{e(t_e)}{e(0)}\right).
+
+        D_{t_e} = 10 \log_{10} \left(1 - \frac{e(t_e)}{e(0)} \right).
+
     Parameters
     ----------
     energy_decay_curve : pyfar.TimeData
@@ -232,61 +240,49 @@ def definition(energy_decay_curve, early_time_limit=50):
     early_time_limit : float, optional
         Early time limit (:math:`t_e`) in milliseconds. Defaults to typical
         value 50 (D50) [#iso]_.
+
     Returns
     -------
     definition : numpy.ndarray[float]
-        Definition index (early-to-total energy ratio) in decibels,
+        DEfinition index (early-to-total energy ratio) in decibels,
         shaped according to the channel shape of the input EDC.
+
     References
     ----------
-    .. [#iso] ISO 3382, Acoustics — Measurement of the reverberation time of
-        rooms with reference to other acoustical parameters.
+    .. [#iso] ISO 3382, Acoustics — Measurement of the reverberation
+        time of rooms with reference to other acoustical parameters.
+
     Examples
     --------
     Estimate the definition from a real room impulse response filtered in
     octave bands:
+
     >>> import pyfar as pf
     >>> import pyrato as ra
     >>> rir = pf.signals.files.room_impulse_response(sampling_rate=44100)
-    >>> rir = pf.dsp.filter.fractional_octave_bands(rir)
+    >>> rir = pf.dsp.filter.fractional_octave_bands(rir, num_fractions=1)
     >>> edc = ra.edc.energy_decay_curve_lundeby(rir)
     >>> D50 = definition(edc, early_time_limit=50)
     """
 
-    # Check input type
-    if not isinstance(energy_decay_curve, pf.TimeData):
-        raise TypeError("Input must be a pyfar.TimeData object.")
     if not isinstance(early_time_limit, (int, float)):
         raise TypeError('early_time_limit must be a number.')
 
-    # Validate time range
-    if (early_time_limit > energy_decay_curve.signal_length * 1000) or (
-            early_time_limit <= 0):
-        raise ValueError(
-            "early_time_limit must be in the range of 0"
-            f"and {energy_decay_curve.signal_length * 1000}.",
-            )
-
-    # Raise error if TimeData is complex
-    if energy_decay_curve.complex:
-        raise ValueError(
-            "Complex-valued input detected. Definition is"
-            "only defined for real TimeData.",
-        )
+    if not isinstance(energy_decay_curve, pf.TimeData):
+        raise TypeError(
+            "energy_decay_curve must be a pyfar.TimeData or derived object.")
 
     # Convert milliseconds to seconds
-    early_time_limit_sec = early_time_limit / 1000.0
+    early_time_limit_sec = early_time_limit / 1000
 
-    start_vals_energy_decay_curve = energy_decay_curve.time[..., 0]
-    start_vals_energy_decay_curve[start_vals_energy_decay_curve == 0] = np.nan
+    limits = np.array([0.0,
+                        energy_decay_curve.times[-1],
+                        0.0,
+                        early_time_limit_sec])
 
-    idx_early_time_limit = int(
-        energy_decay_curve.find_nearest_time(early_time_limit_sec))
-    vals_energy_decay_curve = \
-        energy_decay_curve.time[..., idx_early_time_limit]
-
-    definition = 1 - vals_energy_decay_curve / start_vals_energy_decay_curve
-    definition_db = 10 * np.log10(definition)
+    return 10*np.log10(_energy_ratio(limits,
+                                    energy_decay_curve,
+                                    energy_decay_curve))
 
 def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
     r"""
