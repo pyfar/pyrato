@@ -269,7 +269,6 @@ def speech_transmission_index(
 
     # flatten for easy loop
     cshape = data.cshape
-    # data = data.flatten()
 
     if snr is not None:
         snr = np.asarray(snr)
@@ -281,7 +280,7 @@ def speech_transmission_index(
                 "SNR should be at least 20 dB for every octave band.",
                 stacklevel=2)
     else:
-        snr = np.ones((data.cshape[0],7))*np.inf
+        snr = np.ones((*data.cshape,7))*np.inf # additional 7 bands after filtering
 
     if level is not None:
         level = np.asarray(level)
@@ -293,7 +292,7 @@ def speech_transmission_index(
                 "Level should be at least 1 dB for every octave band.",
                 stacklevel=2)
     else:
-        level = np.full((data.cshape[0]), None)
+        level = np.full((data.cshape), None)
 
      # check data_type
     if data_type is None:
@@ -307,20 +306,15 @@ def speech_transmission_index(
 
     sti_ = np.zeros(data.cshape)
 
-    # Loop through each channel
-    for cc in range(data.cshape[0]):
+    # calculate mtf for 14 modulation frequencies in 7 octave bands
+    mtf = modulation_transfer_function(data, data_type, level, snr, amb)
+    # calculate sti from mtf
+    sti_ = sti_calc(mtf, data)
 
-        # calculate mtf for 14 modulation frequencies in 7 octave bands
-        mtf = modulation_transfer_function(data[cc], data_type, level[cc], snr[cc], amb)
-
-        # calculate sti from mtf
-        sti_[cc] = sti_calc(mtf, data[cc])
-
-    sti_ = np.reshape(sti_, cshape)
     return sti_
 
 
-def modulation_transfer_function(data, data_type, level, snr, amb):
+def modulation_transfer_function(datas, data_type, level, snr, amb):
     """
     Calculate the modulation transfer function (MTF) for given
     impulse response.
@@ -353,7 +347,7 @@ def modulation_transfer_function(data, data_type, level, snr, amb):
     """
 
     # fractional octave band filtering
-    data_oct = pf.dsp.filter.fractional_octave_bands(data, num_fractions=1,
+    data_oct = pf.dsp.filter.fractional_octave_bands(datas, num_fractions=1,
                                             freq_range=(125, 8e3))
 
     # modulation frequencies for each octave band([1], section 6.1)
