@@ -268,7 +268,7 @@ def speech_transmission_index(
         raise ValueError("Input signal must be at least 1.6 seconds long.")
 
     # flatten for easy loop
-    cshape = data.cshape
+    cshape = data.cshape # debug
 
     if snr is not None:
         snr = np.asarray(snr)
@@ -280,7 +280,7 @@ def speech_transmission_index(
                 "SNR should be at least 20 dB for every octave band.",
                 stacklevel=2)
     else:
-        snr = np.ones((*data.cshape,7))*np.inf # additional 7 bands after filtering
+        snr = np.ones((7,*data.cshape))*np.inf # additional 7 bands after filtering
 
     if level is not None:
         level = np.asarray(level)
@@ -351,8 +351,12 @@ def modulation_transfer_function(datas, data_type, level, snr, amb):
                                             freq_range=(125, 8e3))
 
     # modulation frequencies for each octave band([1], section 6.1)
-    f_m = np.array([[0.63, 0.80, 1, 1.25, 1.60, 2, 2.5, 3.15, 4, 5, 6.3, 8,
-                     10, 12.5],]*data_oct.cshape[0])
+    # f_m = np.array([[0.63, 0.80, 1, 1.25, 1.60, 2, 2.5, 3.15, 4, 5, 6.3, 8,
+    #                  10, 12.5],]*data_oct.cshape[0])
+    
+    mod_freq = np.array([0.63, 0.80, 1, 1.25, 1.60, 2, 2.5, 3.15, 4, 5, 6.3, 8, 10, 12.5])
+    f_m = np.tile(mod_freq, (*data_oct.cshape, 1))
+
     #f_m = np.tile(f_m[:,:,None], data.times.shape) 
 
     #data_oct_en = np.sum(data_oct.time, axis=-1)
