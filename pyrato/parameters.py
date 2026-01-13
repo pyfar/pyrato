@@ -350,37 +350,30 @@ def modulation_transfer_function(datas, data_type, level, snr, amb):
     data_oct = pf.dsp.filter.fractional_octave_bands(datas, num_fractions=1,
                                             freq_range=(125, 8e3))
 
-    # modulation frequencies for each octave band([1], section 6.1)
-    # f_m = np.array([[0.63, 0.80, 1, 1.25, 1.60, 2, 2.5, 3.15, 4, 5, 6.3, 8,
-    #                  10, 12.5],]*data_oct.cshape[0])
-    
     mod_freq = np.array([0.63, 0.80, 1, 1.25, 1.60, 2, 2.5, 3.15, 4, 5, 6.3, 8, 10, 12.5])
     f_m = np.tile(mod_freq, (*data_oct.cshape, 1))
 
-    #f_m = np.tile(f_m[:,:,None], data.times.shape) 
-
-    #data_oct_en = np.sum(data_oct.time, axis=-1)
-    #data_oct_energy = data_oct.time[:,:,np.newaxis]**2
-
-    # energy
     data_oct_energy = data_oct.time**2
-    #data_oct_energy = np.transpose(data_oct_energy,(0,2,1))
-    #term_exp = np.exp(-2j * np.pi * f_m  * np.transpose(data_oct.times[:,None,None],(1,2,0)))
 
      # modulation transfer function (MTF) ([1], section A.2.2)
-    term_exp = np.exp(-2j * np.pi * f_m[:,:,None]  * data_oct.times)
-    term_a = np.abs(np.sum(data_oct_energy * term_exp,axis=-1))
-    term_b  = np.sum(data_oct_energy, axis=-1) 
-    mtf =   (term_a / term_b) * (1 / (1 + 10 ** (-snr[:,None]/10))) 
+    term_exp = np.exp(-2j * np.pi * f_m[:,:,:,:,None]  * data_oct.times)
+    term_a = np.abs(np.sum(data_oct_energy[:,:,:,None,:] * term_exp, axis=-1))
+    term_b = np.sum(data_oct_energy[:,:,:,None,:], axis=-1)
+    mtf =   (term_a / term_b) * (1 / (1 + 10 ** (-snr[:,:,:,None]/10)))
 
     # Adjustment of mtf for ambient noise, auditory masking and threshold
     # effects ([1], A.2.3, A.2.4) mtf =   (term_a / term_b[:,None]) * (1 / (1 + 10 ** (-snr/10)))
-    if level is not None:
+    has_valid_level = (
+        level is not None and
+        isinstance(level, np.ndarray) and
+        not np.all(np.isnan(level) | (level == None))
+    )
+    if has_valid_level:
         # overall intensity level
-        Ik = 10 * np.log10(10**(level/10) + 10**((level-snr)/10))
+        Ik = 10 * np.log10(10**(level[None,:,:]/10) + 10**((level[None,:,:]-snr)/10))
         # apply ambient noise effects ([1], A.2.3)
         if amb is True:
-            mtf = mtf*(level[:,None] / Ik[:,None])
+            mtf = mtf * (level[None,:,:,None] / Ik[:,:,:,None])
         # consideration of auditory effects, only for acoustical signals
         # ([1], section A.2.4)
         if data_type == "electrical":
