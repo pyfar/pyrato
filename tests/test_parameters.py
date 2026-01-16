@@ -154,15 +154,15 @@ def test_sti_warn_length():
     with pytest.raises(ValueError, match=match):
         speech_transmission_index(sig)
 
-def test_sti_warn_data_type_not_given():
-    """
-    UserWarning is raised when data type is not given.
-    """
-    sig = Signal(np.zeros(70560), 44100)
-    with pytest.warns(UserWarning, match="Data type is considered as "
-                      "acoustical. Consideration of masking effects not valid "
-                      "for electrically obtained signals."):
-        speech_transmission_index(sig)
+# def test_sti_warn_data_type_not_given():
+#     """
+#     UserWarning is raised when data type is not given.
+#     """
+#     sig = Signal(np.zeros(70560), 44100)
+#     with pytest.warns(UserWarning, match="Data type is considered as "
+#                       "acoustical. Consideration of masking effects not valid "
+#                       "for electrically obtained signals."):
+#         speech_transmission_index(sig)
 
 def test_sti_warn_data_type_unknown():
     """
