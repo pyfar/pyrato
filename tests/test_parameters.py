@@ -9,6 +9,7 @@ import re
 import os
 from pyfar import Signal, signals
 from pyrato.parameters import speech_transmission_index
+from pyrato.parameters import modulation_transfer_function
 
 
 def test_clarity_accepts_timedata_returns_correct_type(make_edc):
@@ -154,16 +155,6 @@ def test_sti_warn_length():
     with pytest.raises(ValueError, match=match):
         speech_transmission_index(sig)
 
-# def test_sti_warn_data_type_not_given():
-#     """
-#     UserWarning is raised when data type is not given.
-#     """
-#     sig = Signal(np.zeros(70560), 44100)
-#     with pytest.warns(UserWarning, match="Data type is considered as "
-#                       "acoustical. Consideration of masking effects not valid "
-#                       "for electrically obtained signals."):
-#         speech_transmission_index(sig)
-
 def test_sti_warn_data_type_unknown():
     """
     ValueError is raised when an unknown data type is given.
@@ -231,3 +222,90 @@ def test_sti_ir_level_snr():
                                          data_type="acoustical",
                                          level=level,snr=snr)
     np.testing.assert_allclose(sti_test, sti_expected,atol=0.01)
+
+def test_mtf_shape():
+    """
+    MTF output shape is (7, 14) for a valid impulse response.
+    """
+    sig = signals.impulse(70560)
+    snr = np.ones(7) * 30
+
+    mtf = modulation_transfer_function(
+        sig, data_type="acoustical", level=None, snr=snr, amb=True
+    )
+
+    assert mtf.shape == (7, 14)
+
+def test_mtf_snr_reduction():
+    """
+    MTF is reduced when SNR decreases.
+    """
+    sig = signals.impulse(70560)
+
+    mtf_high = modulation_transfer_function(
+        sig,
+        data_type="acoustical",
+        level=None,
+        snr=np.ones(7) * 100,
+        amb=False,
+    )
+
+    mtf_low = modulation_transfer_function(
+        sig,
+        data_type="acoustical",
+        level=None,
+        snr=np.ones(7) * 10,
+        amb=False,
+    )
+
+    assert np.all(mtf_low < mtf_high)
+
+def test_mtf_ambient_noise_effect():
+    """
+    Ambient noise correction reduces MTF values.
+    """
+    sig = signals.impulse(70560)
+    level = np.ones(7) * 60
+    snr = np.ones(7) * 20
+
+    mtf_no_amb = modulation_transfer_function(
+        sig, "acoustical", level=level, snr=snr, amb=False
+    )
+
+    mtf_amb = modulation_transfer_function(
+        sig, "acoustical", level=level, snr=snr, amb=True
+    )
+
+    assert np.all(mtf_amb <= mtf_no_amb)
+
+def test_mtf_electrical_vs_acoustical():
+    """
+    Auditory masking is applied only for acoustical signals.
+    """
+    sig = signals.impulse(70560)
+    level = np.ones(7) * 65
+    snr = np.ones(7) * 20
+
+    mtf_ac = modulation_transfer_function(
+        sig, "acoustical", level=level, snr=snr, amb=True
+    )
+
+    mtf_el = modulation_transfer_function(
+        sig, "electrical", level=level, snr=snr, amb=True
+    )
+
+    assert np.any(mtf_ac != mtf_el)
+
+def test_mtf_bounds():
+    """
+    MTF values are bounded between 0 and 1.
+    """
+    sig = signals.impulse(70560)
+    snr = np.ones(7) * 5
+
+    mtf = modulation_transfer_function(
+        sig, "acoustical", level=None, snr=snr, amb=True
+    )
+
+    assert np.all(mtf >= 0.0)
+    assert np.all(mtf <= 1.0)
