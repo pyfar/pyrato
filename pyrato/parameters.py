@@ -331,7 +331,7 @@ def speech_transmission_index(
 def modulation_transfer_function(data, data_type, level, snr, amb):
     """
     Compute the modulation transfer function (MTF) of an impulse response
-    according to IEC 60268-16.
+    according to IEC 60268-16:2020.
 
     The MTF describes the reduction of modulation depth caused by the
     transmission path. It is evaluated for 7 octave bands (125 Hz–8 kHz)
