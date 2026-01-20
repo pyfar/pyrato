@@ -263,7 +263,7 @@ def speech_transmission_index(
 
     References
     ----------
-    .. [#iec] IEC 60268-16: 2021-10
+    .. [#iec] IEC 60268-16:2020
      Sound system equipment - Part 16: Objective rating of speech
      intelligibility by speech transmission index.
     """
