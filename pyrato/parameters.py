@@ -271,7 +271,7 @@ def speech_transmission_index(
     if not isinstance(data, pf.Signal):
         raise TypeError("Input data must be a pyfar.Signal.")
 
-    # Check if the signal is at least 1.6 seconds long ([1], sectionn 6.2)
+    # Check if the signal is at least 1.6 seconds long ([1], section 6.2)
     if not data.n_samples / data.sampling_rate >= 1.6:
         raise ValueError("Input signal must be at least 1.6 seconds long.")
 
