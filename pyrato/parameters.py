@@ -273,7 +273,7 @@ def speech_transmission_index(
 
     # Check if the signal is at least 1.6 seconds long ([1], section 6.2)
     if not data.n_samples / data.sampling_rate >= 1.6:
-        raise ValueError("Input signal must be at least 1.6 seconds long.")
+        raise ValueError("Input signal must be at least 1.6 seconds long (see IEC 60268-16:2020, Section 6.2).")
 
     cshape = data.cshape
     data = data.flatten()
