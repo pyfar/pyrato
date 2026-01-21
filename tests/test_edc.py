@@ -107,16 +107,19 @@ def test_edc_sabine():
 )
 def test_multidim_edc(edc_function):
     """
-    Test if edcs from multidimenstional signals can be calculated.
-    Check if first 0.4 s contain NaNs.
+    Test if edcs from multichannel signal are equal to corresponding single
+    channel edcs.
     """
     rir = pf.signals.files.room_impulse_response()
     rir_oct = pf.dsp.filter.fractional_octave_bands(rir, 1)
     shape = rir_oct.time.shape
-    edc = edc_function(rir_oct)
-
-    npt.assert_array_equal(
-        np.isfinite(edc.time[..., :int(rir.sampling_rate*0.4)]), True)
+    edc = edc_function(rir_oct, channel_independent=True)
 
     assert shape == edc.time.shape
 
+    edc = edc.flatten()
+    rir_oct = rir_oct.flatten()
+
+    for i in range(edc.cshape[0]):
+        baseline = edc_function(rir_oct[i])
+        npt.assert_array_equal(edc[i].time, baseline.time)
