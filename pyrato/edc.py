@@ -300,13 +300,15 @@ def energy_decay_curve_truncation(
     if normalize:
         # Normalize the EDC...
         if not channel_independent:
-            # ...by the first element of each channel.
-            energy_decay_curve = (energy_decay_curve.T /
-                                  energy_decay_curve[..., 0]).T
+            # by the max across all channels
+            energy_decay_curve = \
+                np.divide(energy_decay_curve[..., :],
+                          np.nanmax(energy_decay_curve))
         else:
-            # ...by the maximum first element of each channel.
-            max_start_value = np.amax(energy_decay_curve[..., 0])
-            energy_decay_curve /= max_start_value
+            # by the max of each individual channel
+            energy_decay_curve = \
+                energy_decay_curve[..., :] \
+                    / np.nanmax(energy_decay_curve, axis=-1, keepdims=True)
 
     edc = pf.TimeData(
         energy_decay_curve, data.times, comment=data.comment)
@@ -445,14 +447,15 @@ def energy_decay_curve_lundeby(
     if normalize:
         # Normalize the EDC...
         if not channel_independent:
-            # ...by the first element of each channel.
-            energy_decay_curve = (
-                energy_decay_curve.T /
-                energy_decay_curve[..., 0]).T
+            # by the max across all channels
+            energy_decay_curve = \
+                np.divide(energy_decay_curve[..., :],
+                          np.nanmax(energy_decay_curve))
         else:
-            # ...by the maximum first element of each channel.
-            max_start_value = np.amax(energy_decay_curve[..., 0])
-            energy_decay_curve /= max_start_value
+            # by the max of each individual channel
+            energy_decay_curve = \
+                energy_decay_curve[..., :] \
+                    / np.nanmax(energy_decay_curve, axis=-1, keepdims=True)
 
     edc = pf.TimeData(
         energy_decay_curve, data.times, comment=data.comment)
@@ -563,12 +566,15 @@ def energy_decay_curve_chu(
     if normalize:
         # Normalize the EDC...
         if not channel_independent:
-            # ...by the first element of each channel.
-            edc.time = (edc.time.T / edc.time[..., 0]).T
+            # by the max across all channels
+            edc.time = \
+                np.divide(edc.time[..., :],
+                          np.nanmax(edc.time))
         else:
-            # ...by the maximum first element of all channels.
-            max_start_value = np.amax(edc.time[..., 0])
-            edc.time /= max_start_value
+            # by the max of each individual channel
+            edc.time = \
+                edc.time[..., :] \
+                    / np.nanmax(edc.time, axis=-1, keepdims=True)
 
     mask = edc.time <= 2*np.finfo(float).eps
     if np.any(mask):
@@ -737,13 +743,15 @@ def energy_decay_curve_chu_lundeby(
     if normalize:
         # Normalize the EDC...
         if not channel_independent:
-            # ...by the first element of each channel.
-            energy_decay_curve = (energy_decay_curve.T /
-                                  energy_decay_curve[..., 0]).T
+            # by the max across all channels
+            energy_decay_curve = \
+                np.divide(energy_decay_curve[..., :],
+                          np.nanmax(energy_decay_curve))
         else:
-            # ...by the maximum first element of each channel.
-            max_start_value = np.amax(energy_decay_curve[..., 0])
-            energy_decay_curve /= max_start_value
+            # by the max of each individual channel
+            energy_decay_curve = \
+                energy_decay_curve[..., :] \
+                    / np.nanmax(energy_decay_curve, axis=-1, keepdims=True)
 
     edc = pf.TimeData(
         energy_decay_curve, data.times, comment=data.comment)
