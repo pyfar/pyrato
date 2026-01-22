@@ -88,7 +88,7 @@ def test_edc_truncation_2D():
         freq='broadband',
         is_energy=False,
         time_shift=True,
-        channel_independent=False,
+        channel_independent=True,
         normalize=True,
         threshold=-np.inf)
     npt.assert_allclose(actual.time, expected)
@@ -126,7 +126,7 @@ def test_edc_lundeby_2D():
         freq='broadband',
         is_energy=False,
         time_shift=True,
-        channel_independent=False,
+        channel_independent=True,
         normalize=True,
         plot=False)
     npt.assert_allclose(actual.time, expected)
@@ -164,7 +164,7 @@ def test_edc_lundeby_chu_2D():
         freq='broadband',
         is_energy=False,
         time_shift=True,
-        channel_independent=False,
+        channel_independent=True,
         normalize=True,
         plot=False)
     npt.assert_allclose(actual.time, expected)
@@ -220,7 +220,7 @@ def test_edc_chu_2D():
         rir,
         is_energy=False,
         time_shift=True,
-        channel_independent=False,
+        channel_independent=True,
         normalize=True,
         threshold=None,
         plot=False)
