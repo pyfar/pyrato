@@ -103,8 +103,7 @@ def test_edc_sabine():
         "edc_function",
         [ra.edc.energy_decay_curve_chu,
          ra.edc.energy_decay_curve_lundeby,
-         ra.edc.energy_decay_curve_chu_lundeby,
-         ra.energy_decay_curve_lundeby],
+         ra.edc.energy_decay_curve_chu_lundeby],
 )
 def test_multidim_edc(edc_function):
     """
