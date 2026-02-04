@@ -131,8 +131,8 @@ def test_sti_snr_value_error():
     of the wrong number of components.
     """
     sig = Signal(np.zeros(70560), 44100)
-    snr = np.zeros(6)  # Incorrect number of components
-    match = "SNR consists of wrong number of components."
+    snr = np.zeros(6)  # Incorrect: only 6 bands instead of 7
+    match = "SNR must have 7 octave bands"
     with pytest.raises(ValueError, match=match):
         speech_transmission_index(sig, snr=snr)
 

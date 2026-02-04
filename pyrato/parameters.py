@@ -279,14 +279,21 @@ def speech_transmission_index(
     data = data.flatten()
 
     if snr is not None:
-        snr = np.asarray(snr).flatten()
-         # Check if SNR has the correct number of components
-        if np.squeeze(snr.flatten().shape)/7 != (np.squeeze(data.cshape)):
-            raise ValueError("SNR consists of wrong number of components.")
+        # check if input snr is a numpy array
+        if not isinstance(snr, np.ndarray):
+            raise ValueError("Input 'snr' must be a numpy array.")
+        snr = np.atleast_2d(snr)
+        # Check if SNR has the correct number of component
+        if snr.shape[:-1] != cshape:
+            # error about wrong number of channels
+            raise ValueError("SNR consists of wrong number of channels.")
+        elif snr.shape[-1] != 7:
+            # error about wrong number of octave bands
+            raise ValueError("SNR must have 7 octave bands (125 Hz - 8 kHz).")
         if np.any(snr < 20):
             warnings.warn(
                 "SNR should be at least 20 dB for every octave band.",
-                stacklevel=2,
+                stacklevel=1,
                 )
         snr = np.reshape(snr, (-1,7))
     # set snr to infinity if not given
@@ -294,38 +301,46 @@ def speech_transmission_index(
         snr = np.ones((data.cshape[0],7))*np.inf
 
     if level is not None:
-        level = np.asarray(level).flatten()
-        # Check if level has the correct number of components
-        if np.squeeze(level.shape)/7 != (np.squeeze(data.cshape)):
-            raise ValueError("Level consists of wrong number of components.")
+        # check if input level is a numpy array
+        if not isinstance(level, np.ndarray):
+            raise ValueError("Input 'level' must be a numpy array.")
+        level = np.atleast_2d(level)
+        # Check if level has the correct number of channels
+        if level.shape[:-1] != cshape:
+            raise ValueError("level consists of wrong number of channels.")
+        if level.shape[-1] != 7:
+            raise ValueError("level must have 7 octave bands (125 Hz - 8 kHz).")
         if np.any(level < 1):
             warnings.warn(
-                "Level should be at least 1 dB for every octave band.",
-                stacklevel=2,
+                "level should be at least 1 dB for every octave band.",
+                stacklevel=1,
                 )
         level = np.reshape(level, (-1,7))
-    else:
-        level = np.full((data.cshape[0]), None)
 
-     # check data_type
+    # check data_type
     if data_type is None:
         data_type = "acoustical"
     if data_type not in ["electrical", "acoustical"]:
         raise ValueError(f"Data_type is '{data_type}' but must be "
                          "'electrical' or 'acoustical'.")
+        
+    # Validate amb parameter
+    if not isinstance(amb, bool):
+        raise TypeError("amb must be a boolean.")
 
-    sti_ = np.zeros(data.cshape)
+    sti = np.zeros(data.cshape)
 
-    for cc in range(data.cshape[0]):
-        mtf = modulation_transfer_function(data[cc],
+    for i in range(data.cshape[0]):
+        current_level  = None if level is None else level[i]
+        mtf = modulation_transfer_function(data[i],
                                            data_type,
-                                           level[cc],
-                                           snr[cc],
+                                           current_level,
+                                           snr[i],
                                            amb)
-        sti_[cc] = _sti_calc(mtf)
+        sti[i] = _sti_calc(mtf)
 
-    sti_ = np.reshape(sti_, cshape)
-    return sti_
+    sti = np.reshape(sti, cshape)
+    return sti
 
 
 def modulation_transfer_function(data, data_type, level, snr, amb):
@@ -369,11 +384,45 @@ def modulation_transfer_function(data, data_type, level, snr, amb):
     -------
     mtf : np.ndarray
         Modulation transfer function with shape ``(7, 14)``.
+        
+    References
+    ----------
+    .. [#iec] IEC 60268-16:2020
+     Sound system equipment - Part 16: Objective rating of speech
+     intelligibility by speech transmission index.
     """
+    # Check if input data a pyfar.Signal
+    if not isinstance(data, pf.Signal):
+        raise TypeError("Input data must be a pyfar.Signal.")
+    
+    # Check if data is single-channel
+    if data.cshape != (1,):
+        raise ValueError(
+            f"Input must be a single-channel impulse response, but got shape {data.cshape}."
+        )
+    
+    # Validate snr parameter
+    if not isinstance(snr, np.ndarray):
+        raise TypeError("snr must be a numpy array.")
+    if snr.shape != (7,):
+        raise ValueError(f"snr must have shape (7,) for 7 octave bands (125 Hz - 8 kHz), but got {snr.shape}.")
+    
+    # Validate level parameter 
+    if level is not None:
+        if not isinstance(level, np.ndarray):
+            raise TypeError("level must be a numpy array or None.")
+        if level.shape != (7,):
+            raise ValueError(f"Level must have shape (7,) for 7 octave bands (125 Hz - 8 kHz), but got {level.shape}.")
+      
+    
+    # Validate amb parameter
+    if not isinstance(amb, bool):
+        raise TypeError("amb must be a boolean.")
+    
     data_oct = pf.dsp.filter.fractional_octave_bands(
-        data, num_fractions=1, freq_range=(125, 8000),
+        data, num_fractions=1, frequency_range=(125, 8000),
     )
-
+    # Modulation frequencies according to IEC 60268-16:2020, section A.1.4
     f_m = np.array(
         [0.63, 0.80, 1.0, 1.25, 1.60, 2.0, 2.5,
          3.15, 4.0, 5.0, 6.3, 8.0, 10.0, 12.5],
@@ -382,20 +431,21 @@ def modulation_transfer_function(data, data_type, level, snr, amb):
     f_m = np.tile(f_m, (data_oct.cshape[0], 1))
     energy = data_oct.time ** 2
 
+    # Modulation transfer function calculation according to IEC 60268-16:2020, section 6.1
     term_exp = np.exp(-2j * np.pi * f_m[:, :, None] * data_oct.times)
     numerator = np.abs(np.sum(energy * term_exp, axis=-1))
     denominator = np.sum(energy, axis=-1)
-
     mtf = numerator / denominator
     mtf *= 1 / (1 + 10 ** (-snr[:, None] / 10))
 
     if level is not None:
+        # Total intensity (signal + noise) according to IEC 60268-16:2020, Annex A.2.3
         Ik = 10 * np.log10(10 ** (level / 10) + 10 ** ((level - snr) / 10))
-
         if amb:
+            # Ambient noise correction according to IEC 60268-16:2020, Annex A.2.3
             mtf *= level[:, None] / Ik[:, None]
-
         if data_type == "acoustical":
+            # Level-dependent auditory masking factor according to IEC 60268-16:2020, Annex A.2.4
             amdb = level.copy()
             amdb[amdb < 63] = 0.5*amdb[amdb < 63] - 65
             amdb[(63 <= amdb) & (amdb < 67)] = 1.8*amdb[(63 <= amdb) &
@@ -404,17 +454,16 @@ def modulation_transfer_function(data, data_type, level, snr, amb):
                                                         (amdb < 100)]-59.8
             amdb[100 <= amdb] = amdb[100 <= amdb]-10
             a = 10**(amdb/10)
-
-            # masking intensity
+            # Masking intensity according to IEC 60268-16:2020, Annex A.2.4
             L_k1 = np.roll(Ik,1)
             I_k1 = 10**(L_k1/10)
-
+            # Upward spread of masking: lower frequency bands mask higher bands
             I_amk = 10*np.log10(I_k1*a)
-            I_amk[0] = 0
-            # absolute speech reception threshold ([1], section A.4.3)
+            I_amk[0] = 0  # No masking for lowest band (125 Hz)
+            # Absolute speech reception threshold according to IEC 60268-16:2020, Annex A.4.3
             A_k = np.array([[46, 27, 12, 6.5, 7.5, 8, 12]]).T
             I_rt = 10**(A_k/10)
-            # apply auditory and masking effects ([1], section A.2.4)
+            # Apply auditory and masking effects according to IEC 60268-16:2020, Annex A.2.4
             mtf = mtf* ( Ik[:,None] / (
                 10*np.log10(10**(Ik[:,None]/10)+10**(I_amk[:,None] /10) + I_rt)
                 ))
@@ -436,21 +485,28 @@ def _sti_calc(mtf):
     sti : np.ndarray
         Speech Transmission Index.
     """
+    # Effective SNR from MTF according to IEC 60268-16:2020, Annex A.2.1
     with np.errstate(divide="ignore"):
         snr_eff = 10 * np.log10(mtf / (1 - mtf))
-
+    # Clip SNR to [-15, 15] dB range according to IEC 60268-16:2020, Annex A.2.1
     snr_eff = np.clip(snr_eff, -15, 15)
+    
+    # Transmission index (TI) for each octave band and modulation frequency
+    # according to IEC 60268-16:2020, Annex A.2.1
     TI = (snr_eff + 15) / 30
-
+    
+    # Modulation transmission index per octave band: average over modulation frequencies
+    # according to IEC 60268-16:2020, Annex A.2.1
     mti = np.mean(TI, axis=-1)
 
-    # STI Octave evaluation factors according tabelle A.1.
+    # STI Octave evaluation factors according to IEC 60268-16:2020, Table A.1
     alpha = np.array([0.085, 0.127, 0.230, 0.233, 0.309, 0.224, 0.173])
     beta = np.array([0.085, 0.078, 0.065, 0.011, 0.047, 0.095])
-
+    
+    # Speech Transmission Index (STI) according to IEC 60268-16:2020, Annex A.2.1
     sti = (
         np.sum(alpha * mti)
         - np.sum(beta * np.sqrt(mti[:-1] * mti[1:]))
     )
-    # limit STI to 1 ([1], section A.5.6)
+    # limit STI to 1 according to IEC 60268-16:2020, section A.2.1
     return min(sti, 1.0)
