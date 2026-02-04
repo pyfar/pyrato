@@ -204,17 +204,8 @@ def clarity(energy_decay_curve, early_time_limit=80):
     return clarity_db
 
 
-
-
-
-
 def speech_transmission_index(
-    data,
-    data_type="acoustical",
-    level=None,
-    snr=None,
-    amb=True,
-):
+        data,data_type="acoustical",level=None,snr=None, amb=True):
     """
     Computes the Speech Transmission Index (STI) according to [#iec]_ using
     the indirect method.
