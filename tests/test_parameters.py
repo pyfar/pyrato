@@ -8,7 +8,7 @@ import re
 
 import os
 from pyfar import Signal, signals
-from pyrato.parameters import speech_transmission_index
+from pyrato.parameters import speech_transmission_index_indirect
 from pyrato.parameters import modulation_transfer_function
 
 
@@ -123,7 +123,7 @@ def test_sti_data_input():
     sig = np.zeros(100)
     match="Input data must be a pyfar.Signal."
     with pytest.raises(TypeError, match=match):
-        speech_transmission_index(sig)
+        speech_transmission_index_indirect(sig)
 
 def test_sti_snr_value_error():
     """
@@ -134,7 +134,7 @@ def test_sti_snr_value_error():
     snr = np.zeros(6)  # Incorrect: only 6 bands instead of 7
     match = "SNR must have 7 octave bands"
     with pytest.raises(ValueError, match=match):
-        speech_transmission_index(sig, snr=snr)
+        speech_transmission_index_indirect(sig, snr=snr)
 
 def test_sti_snr_warning():
     """
@@ -144,7 +144,7 @@ def test_sti_snr_warning():
     snr = np.ones(7) * 10  # SNR less than 20 dB
     match = "SNR should be at least 20 dB for every octave band."
     with pytest.warns(UserWarning, match=match):
-        speech_transmission_index(sig, snr=snr)
+        speech_transmission_index_indirect(sig, snr=snr)
 
 def test_sti_warn_length():
     """
@@ -153,8 +153,8 @@ def test_sti_warn_length():
     sig = Signal(np.ones((31072)), 44100)
     match  = "Input signal must be at least 1.6 seconds long."
     with pytest.raises(ValueError, match=match):
-        speech_transmission_index(sig)
-
+        speech_transmission_index_indirect(sig)
+        
 def test_sti_warn_data_type_unknown():
     """
     ValueError is raised when an unknown data type is given.
@@ -162,7 +162,7 @@ def test_sti_warn_data_type_unknown():
     sig = Signal(np.zeros(70560), 44100)
     with pytest.raises(ValueError, match="Data_type is 'generic' but must "
                        "be 'electrical' or 'acoustical'."):
-        speech_transmission_index(sig, data_type="generic")
+        speech_transmission_index_indirect(sig, rir_type="generic")
 
 def test_sti_1D_shape():
     """
@@ -170,7 +170,7 @@ def test_sti_1D_shape():
     """
     shape_expected = (2,)
     sig = Signal(np.ones((2,70560)), 44100)
-    array = speech_transmission_index(sig, data_type="acoustical")
+    array = speech_transmission_index_indirect(sig, rir_type="acoustical")
     assert array.shape == shape_expected
 
 def test_sti_2D_shape():
@@ -179,7 +179,7 @@ def test_sti_2D_shape():
     """
     shape_expected = (2,2)
     sig = Signal(np.ones((2,2,70560)), 44100)
-    sti_test = speech_transmission_index(sig, data_type="acoustical")
+    sti_test = speech_transmission_index_indirect(sig, rir_type="acoustical")
     assert sti_test.shape == shape_expected
 
 def test_sti_unit_impuls():
@@ -189,7 +189,7 @@ def test_sti_unit_impuls():
     """
     sti_expected = 1
     sig = signals.impulse(70560)
-    sti_test = speech_transmission_index(sig, data_type="acoustical")
+    sti_test = speech_transmission_index_indirect(sig, rir_type="acoustical")
     np.testing.assert_allclose(sti_test, sti_expected,atol=0.01)
 
 def test_sti_ir():
@@ -201,7 +201,7 @@ def test_sti_ir():
     time = np.loadtxt(os.path.join(
         os.path.dirname(__file__), "test_data", "ir_simulated.csv"))
     ir = Signal(time, 44100)
-    sti_test = speech_transmission_index(ir, data_type="acoustical")
+    sti_test = speech_transmission_index_indirect(ir, rir_type="acoustical")
     np.testing.assert_allclose(sti_test, sti_expected,atol=0.01)
 
 def test_sti_ir_level_snr():
@@ -218,8 +218,7 @@ def test_sti_ir_level_snr():
     time = np.loadtxt(os.path.join(
         os.path.dirname(__file__), "test_data", "ir_simulated.csv"))
     ir = Signal(time, 44100)
-    sti_test = speech_transmission_index(ir,
-                                         data_type="acoustical",
+    sti_test = speech_transmission_index_indirect(ir, rir_type="acoustical",
                                          level=level,snr=snr)
     np.testing.assert_allclose(sti_test, sti_expected,atol=0.01)
 
@@ -231,8 +230,7 @@ def test_mtf_shape():
     snr = np.ones(7) * 30
 
     mtf = modulation_transfer_function(
-        sig, data_type="acoustical", level=None, snr=snr, amb=True
-    )
+        sig, rir_type="acoustical", level=None, snr=snr, ambient_noise=True)
 
     assert mtf.shape == (7, 14)
 
@@ -244,18 +242,18 @@ def test_mtf_snr_reduction():
 
     mtf_high = modulation_transfer_function(
         sig,
-        data_type="acoustical",
+        rir_type="acoustical",
         level=None,
         snr=np.ones(7) * 100,
-        amb=False,
+        ambient_noise=False,
     )
 
     mtf_low = modulation_transfer_function(
         sig,
-        data_type="acoustical",
+        rir_type="acoustical",
         level=None,
         snr=np.ones(7) * 10,
-        amb=False,
+        ambient_noise=False,
     )
 
     assert np.all(mtf_low < mtf_high)
@@ -269,11 +267,11 @@ def test_mtf_ambient_noise_effect():
     snr = np.ones(7) * 20
 
     mtf_no_amb = modulation_transfer_function(
-        sig, "acoustical", level=level, snr=snr, amb=False
+        sig, "acoustical", level=level, snr=snr, ambient_noise=False
     )
 
     mtf_amb = modulation_transfer_function(
-        sig, "acoustical", level=level, snr=snr, amb=True
+        sig, "acoustical", level=level, snr=snr, ambient_noise=True
     )
 
     assert np.all(mtf_amb <= mtf_no_amb)
@@ -287,11 +285,11 @@ def test_mtf_electrical_vs_acoustical():
     snr = np.ones(7) * 20
 
     mtf_ac = modulation_transfer_function(
-        sig, "acoustical", level=level, snr=snr, amb=True
+        sig, "acoustical", level=level, snr=snr, ambient_noise=True
     )
 
     mtf_el = modulation_transfer_function(
-        sig, "electrical", level=level, snr=snr, amb=True
+        sig, "electrical", level=level, snr=snr, ambient_noise=True
     )
 
     assert np.any(mtf_ac != mtf_el)
@@ -304,7 +302,7 @@ def test_mtf_bounds():
     snr = np.ones(7) * 5
 
     mtf = modulation_transfer_function(
-        sig, "acoustical", level=None, snr=snr, amb=True
+        sig, "acoustical", level=None, snr=snr, ambient_noise=True
     )
 
     assert np.all(mtf >= 0.0)
