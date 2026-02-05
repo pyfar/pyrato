@@ -305,7 +305,6 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
     finite_limits_denominator = np.isfinite(limits_denominator)
     finite_limits_numerator = np.isfinite(limits_numerator)
 
-
     # Denominator values (EDC1, limits 0:2)
     values_shape1 = energy_decay_curve1.cshape + (2,)
     energy_decay_curve1_values = np.zeros(values_shape1)
