@@ -7,6 +7,7 @@ import re
 
 from pyrato.parameters import clarity
 from pyrato.parameters import _energy_ratio
+from pyrato.edc import energy_decay_curve_chu
 
 # parameter clarity tests
 def test_clarity_accepts_timedata_returns_correct_type(make_edc):
@@ -299,3 +300,19 @@ def test_energy_ratio_handles_different_edc_lengths(make_edc):
         match=r"limits\[2:4\] must be between 0 and",
     ):
         _energy_ratio(limits, edc1, edc2)
+
+def test_energy_ratio_with_clarity(make_edc):
+    """
+    Test for _energy_ratio to check if the end of a long EDC is now handled correctly.
+    """
+    rir = pf.signals.files.room_impulse_response(sampling_rate = 44100)
+    edc = energy_decay_curve_chu(rir)
+    early_time_limit_sec = 0.08
+
+    limits = np.array([early_time_limit_sec,
+                        np.inf,
+                        0.0,
+                        early_time_limit_sec])
+
+    result = _energy_ratio(limits=limits, energy_decay_curve1=edc, energy_decay_curve2=edc)
+    assert not np.isnan(result)
