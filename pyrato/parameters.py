@@ -330,4 +330,13 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
 
     energy_ratio = numerator / denominator
 
+
+
+    numerator = np.diff(
+        energy_decay_curve2.time[..., limits_energy_decay_curve2_idx],
+        axis=-1)[..., 0]
+    denominator = np.diff(
+        energy_decay_curve1.time[..., limits_energy_decay_curve1_idx],
+        axis=-1)[..., 0]
+
     return energy_ratio
