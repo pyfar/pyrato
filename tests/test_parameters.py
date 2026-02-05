@@ -187,7 +187,8 @@ def test_energy_ratio_np_inf_limits(make_edc):
     edc = make_edc(energy=energy, sampling_rate = 1.0) #sampling rate = 1 sek
 
     # For linear EDC:
-    limits = np.array([0, np.inf, np.inf, np.inf]) # should yield 0 - 0 / 1 - 0 = 0
+    # should yield 0 - 0 / 1 - 0 = 0
+    limits = np.array([0, np.inf, np.inf, np.inf])
     result = _energy_ratio(limits, edc, edc)
     npt.assert_allclose(result, 0.0, atol=1e-12)
 
@@ -301,9 +302,10 @@ def test_energy_ratio_handles_different_edc_lengths(make_edc):
     ):
         _energy_ratio(limits, edc1, edc2)
 
-def test_energy_ratio_with_clarity(make_edc):
+def test_energy_ratio_with_clarity():
     """
-    Test for _energy_ratio to check if the end of a long EDC is now handled correctly.
+    Test for _energy_ratio to check if the end of a long EDC is
+    handled correctly.
     """
     rir = pf.signals.files.room_impulse_response(sampling_rate = 44100)
     edc = energy_decay_curve_chu(rir)
@@ -314,5 +316,9 @@ def test_energy_ratio_with_clarity(make_edc):
                         0.0,
                         early_time_limit_sec])
 
-    result = _energy_ratio(limits=limits, energy_decay_curve1=edc, energy_decay_curve2=edc)
+    result = _energy_ratio(
+        limits=limits,
+        energy_decay_curve1=edc,
+        energy_decay_curve2=edc,
+    )
     assert not np.isnan(result)
