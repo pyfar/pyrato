@@ -236,7 +236,7 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
     ----------
     limits : np.ndarray, list or tuple
         Four time limits (:math:`t_e`) in seconds, shape (4,)
-        in ascending order.
+        in ascending order. Limits must be either numerical or np.inf.
     energy_decay_curve1 : pyfar.TimeData
         Energy decay curve 1 (EDC1) of the room impulse response
         (time-domain signal). The EDC must start at time zero.
@@ -279,20 +279,22 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
 
     # Check if limits are within valid time range
     if (
-        np.any(limits[0:2] < 0)
-        or np.any(limits[0:2] > energy_decay_curve1.signal_length)
+        np.any(limits[0:2] < 0) or
+        np.any((limits[0:2] > energy_decay_curve1.signal_length) &
+               (limits[0:2] != np.inf))
     ):
         raise ValueError(
             f"limits[0:2] must be between 0 and "
-            f"{energy_decay_curve1.signal_length} seconds.",
+            f"{energy_decay_curve1.signal_length} seconds or np.inf.",
         )
     if (
-        np.any(limits[2:4] < 0)
-        or np.any(limits[2:4] > energy_decay_curve2.signal_length)
+        np.any(limits[2:4] < 0) or
+        np.any((limits[2:4] > energy_decay_curve1.signal_length) &
+               (limits[2:4] != np.inf))
     ):
         raise ValueError(
             f"limits[2:4] must be between 0 and "
-            f"{energy_decay_curve2.signal_length} seconds.",
+            f"{energy_decay_curve2.signal_length} seconds or np.inf.",
         )
 
     limits_energy_decay_curve1_idx = energy_decay_curve1.find_nearest_time(
