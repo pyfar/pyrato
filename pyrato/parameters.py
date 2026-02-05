@@ -289,7 +289,7 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
         )
     if (
         np.any(limits[2:4] < 0) or
-        np.any((limits[2:4] > energy_decay_curve1.signal_length) &
+        np.any((limits[2:4] > energy_decay_curve2.signal_length) &
                (np.isfinite(limits[2:4])))
     ):
         raise ValueError(
@@ -305,38 +305,32 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
     finite_limits_denominator = np.isfinite(limits_denominator)
     finite_limits_numerator = np.isfinite(limits_numerator)
 
+
     # Denominator values (EDC1, limits 0:2)
-    energy_decay_curve1_values = np.zeros((2))
+    values_shape1 = energy_decay_curve1.cshape + (2,)
+    energy_decay_curve1_values = np.zeros(values_shape1)
     if np.any(finite_limits_denominator):
         limits_energy_decay_curve1_idx = energy_decay_curve1.find_nearest_time(
             limits_denominator[finite_limits_denominator],
         )
-        energy_decay_curve1_values[
-            finite_limits_denominator
-            ] = energy_decay_curve1.time[..., limits_energy_decay_curve1_idx]
+
+        energy_decay_curve1_values[..., finite_limits_denominator] = \
+            energy_decay_curve1.time[..., limits_energy_decay_curve1_idx]
 
     # Numerator values (EDC2, limits 2:4)
-    energy_decay_curve2_values = np.zeros((2,))
+    values_shape2 = energy_decay_curve1.cshape + (2,)
+    energy_decay_curve2_values = np.zeros(values_shape2)
     if np.any(finite_limits_numerator):
         limits_energy_decay_curve2_idx = energy_decay_curve2.find_nearest_time(
             limits_numerator[finite_limits_numerator],
         )
-        energy_decay_curve2_values[
-            finite_limits_numerator
-            ] = energy_decay_curve2.time[...,limits_energy_decay_curve2_idx]
+
+        energy_decay_curve2_values[..., finite_limits_numerator] = \
+            energy_decay_curve2.time[..., limits_energy_decay_curve2_idx]
 
     numerator = np.diff(energy_decay_curve2_values, axis=-1)[..., 0]
     denominator = np.diff(energy_decay_curve1_values, axis=-1)[..., 0]
 
     energy_ratio = numerator / denominator
-
-
-
-    numerator = np.diff(
-        energy_decay_curve2.time[..., limits_energy_decay_curve2_idx],
-        axis=-1)[..., 0]
-    denominator = np.diff(
-        energy_decay_curve1.time[..., limits_energy_decay_curve1_idx],
-        axis=-1)[..., 0]
 
     return energy_ratio
