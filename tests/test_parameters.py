@@ -178,6 +178,18 @@ def test_energy_ratio_computes_known_ratio_correctly(make_edc):
     result = _energy_ratio(limits, edc, edc)
     npt.assert_allclose(result, 1.0, atol=1e-12)
 
+def test_energy_ratio_np_inf_limits(make_edc):
+    """
+    Check if np.inf limits are handled correctly.
+    """
+    energy = [1,0,0,0] # vier samples (Dirac)
+    edc = make_edc(energy=energy, sampling_rate = 1.0) #sampling rate = 1 sek
+
+    # For linear EDC:
+    limits = np.array([1, np.inf, np.inf, np.inf]) # should yield 0 - 0 / 1 - 0 = 0
+    result = _energy_ratio(limits, edc, edc)
+    npt.assert_allclose(result, 0.0, atol=1e-12)
+
 @pytest.mark.parametrize(
     "energy",
     [
