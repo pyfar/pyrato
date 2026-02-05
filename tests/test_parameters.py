@@ -186,7 +186,7 @@ def test_energy_ratio_np_inf_limits(make_edc):
     edc = make_edc(energy=energy, sampling_rate = 1.0) #sampling rate = 1 sek
 
     # For linear EDC:
-    limits = np.array([1, np.inf, np.inf, np.inf]) # should yield 0 - 0 / 1 - 0 = 0
+    limits = np.array([0, np.inf, np.inf, np.inf]) # should yield 0 - 0 / 1 - 0 = 0
     result = _energy_ratio(limits, edc, edc)
     npt.assert_allclose(result, 0.0, atol=1e-12)
 
