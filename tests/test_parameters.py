@@ -178,12 +178,25 @@ def test_energy_ratio_computes_known_ratio_correctly(make_edc):
     result = _energy_ratio(limits, edc, edc)
     npt.assert_allclose(result, 1.0, atol=1e-12)
 
+def test_energy_ratio_np_inf_limits(make_edc):
+    """
+    Check if np.inf limits are handled correctly.
+    """
+    energy = [1,0,0,0] # four samples (Dirac)
+    edc = make_edc(energy=energy, sampling_rate = 1.0) #sampling rate = 1 sec
+
+    # For linear EDC:
+    # should yield 0 - 0 / 1 - 0 = 0
+    limits = np.array([0, np.inf, np.inf, np.inf])
+    result = _energy_ratio(limits, edc, edc)
+    npt.assert_allclose(result, 0.0, atol=1e-12)
+
 @pytest.mark.parametrize(
     "energy",
     [
-        # 1D, einzelner Kanal
+        # 1D, single channel
         np.linspace(1, 0, 10),
-        # 2D, zwei Kanäle
+        # 2D, two channels
         np.stack([
             np.linspace(1, 0, 10),
             np.linspace(0.5, 0, 10),
@@ -199,7 +212,6 @@ def test_energy_ratio_preserves_multichannel_shape_correctly(energy, make_edc):
 
     result = _energy_ratio(limits, edc, edc)
 
-    # Ergebnis muss exakt dieselbe Kanalform haben wie das EDC
     assert result.shape == edc.cshape
 
 def test_energy_ratio_returns_nan_for_zero_denominator(make_edc):
@@ -287,3 +299,46 @@ def test_energy_ratio_handles_different_edc_lengths(make_edc):
         match=r"limits\[2:4\] must be between 0 and",
     ):
         _energy_ratio(limits, edc1, edc2)
+
+def test_energy_ratio_with_clarity(make_edc):
+    """
+    Test for _energy_ratio in-use of a RAP-function to check if an edc
+    ending with NaN is handled correctly.
+    """
+    energy = np.ones(1000)
+    energy[900:] = np.nan #last ~100ms elements np.nan
+    edc = make_edc(energy=energy, sampling_rate=1000)
+    early_time_limit_sec = 0.08
+
+    limits = np.array([early_time_limit_sec,
+                        np.inf,
+                        0.0,
+                        early_time_limit_sec])
+
+    result = _energy_ratio(
+        limits=limits,
+        energy_decay_curve1=edc,
+        energy_decay_curve2=edc,
+    )
+    assert not np.isnan(result)
+
+def test_energy_ratio_with_clarity_nan_limit(make_edc):
+    """
+    Test for _energy_ratio in-use of a RAP-function to check if np.inf
+    are hanled correctly. Should return 1.
+    """
+    energy = np.ones(1000)
+    energy[900:] = np.nan #last ~100ms elements np.nan
+    edc = make_edc(energy=energy, sampling_rate=1000)
+
+    limits = np.array([0.0,
+                        np.inf,
+                        0.0,
+                        np.inf])
+
+    result = _energy_ratio(
+        limits=limits,
+        energy_decay_curve1=edc,
+        energy_decay_curve2=edc,
+    )
+    assert np.allclose(result, 1.0)
