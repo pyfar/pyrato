@@ -7,7 +7,6 @@ import re
 
 from pyrato.parameters import clarity
 from pyrato.parameters import _energy_ratio
-from pyrato.edc import energy_decay_curve_chu
 
 # parameter clarity tests
 def test_clarity_accepts_timedata_returns_correct_type(make_edc):
