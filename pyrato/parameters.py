@@ -498,11 +498,11 @@ def _sti_calc(mtf):
     Parameters
     ----------
     mtf : numpy.ndarray
-        Modulation transfer function with shape ``(7,14 )`` for which the STI is computed.
+        Modulation transfer function with shape ``(7, 14)`` for which the STI is computed.
 
     Returns
     -------
-    sti : numpy.ndarray
+    sti : float
         Speech Transmission Index.
     """
     # Check if mtf is a numpy array
