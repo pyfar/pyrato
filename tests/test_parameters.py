@@ -183,7 +183,7 @@ def test_energy_ratio_np_inf_limits(make_edc):
     """
     Check if np.inf limits are handled correctly.
     """
-    energy = [1,0,0,0] # vier samples (Dirac)
+    energy = [1,0,0,0] # four samples (Dirac)
     edc = make_edc(energy=energy, sampling_rate = 1.0) #sampling rate = 1 sek
 
     # For linear EDC:
