@@ -306,7 +306,6 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
             f"{energy_decay_curve2.signal_length} seconds or np.inf.",
         )
 
-    # split lmits
     limits_denominator = limits[0:2]
     limits_numerator = limits[2:4]
 
