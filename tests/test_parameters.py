@@ -195,7 +195,7 @@ def test_energy_ratio_np_inf_limits(make_edc):
 @pytest.mark.parametrize(
     "energy",
     [
-        # 1D, singel channel
+        # 1D, single channel
         np.linspace(1, 0, 10),
         # 2D, two channels
         np.stack([
@@ -301,13 +301,14 @@ def test_energy_ratio_handles_different_edc_lengths(make_edc):
     ):
         _energy_ratio(limits, edc1, edc2)
 
-def test_energy_ratio_with_clarity():
+def test_energy_ratio_with_clarity(make_edc):
     """
-    Test for _energy_ratio to check if the end of a long EDC is
-    handled correctly.
+    Test for _energy_ratio in-use of a RAP-function to check if an edc
+    ending with NaN is handled correctly.
     """
-    rir = pf.signals.files.room_impulse_response(sampling_rate = 44100)
-    edc = energy_decay_curve_chu(rir)
+    energy = np.ones(1000)
+    energy[900:] = np.nan #last ~100ms elements np.nan
+    edc = make_edc(energy=energy, sampling_rate=1000)
     early_time_limit_sec = 0.08
 
     limits = np.array([early_time_limit_sec,
@@ -321,3 +322,24 @@ def test_energy_ratio_with_clarity():
         energy_decay_curve2=edc,
     )
     assert not np.isnan(result)
+
+def test_energy_ratio_with_clarity_nan_limit(make_edc):
+    """
+    Test for _energy_ratio in-use of a RAP-function to check if np.inf
+    are hanled correctly. Should return 1.
+    """
+    energy = np.ones(1000)
+    energy[900:] = np.nan #last ~100ms elements np.nan
+    edc = make_edc(energy=energy, sampling_rate=1000)
+
+    limits = np.array([0.0,
+                        np.inf,
+                        0.0,
+                        np.inf])
+
+    result = _energy_ratio(
+        limits=limits,
+        energy_decay_curve1=edc,
+        energy_decay_curve2=edc,
+    )
+    assert np.allclose(result, 1.0)
