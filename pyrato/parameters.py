@@ -213,10 +213,12 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
     distinguish between time regions using the four provided limits, and some,
     such as Strength (:math:`G`), Early lateral sound (:math:`J_\mathrm{LF}`),
     and Late lateral sound (:math:`L_J`), require EDCs obtained from different
-    impulse-response measurements [#iso]_.
+    impulse-response measurements [#iso2]_.
 
     Energy-Ratio is calculated as:
+
     .. math::
+
         ER = \frac{
             \displaystyle \int_{lim3}^{lim4} p_2^2(t) \, dt
         }{
@@ -225,12 +227,19 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
     where :math:`[lim1, ..., lim4]` are the time limits and :math:`p(t)` is the
     pressure of a room impulse response. Here, the energy ratio is
     efficiently computed from the EDC :math:`e(t)` directly by:
+
     .. math::
+
         ER = \frac{
             \displaystyle e_2(lim3) - e_2(lim4)
         }{
             \displaystyle e_1(lim1) - e_1(lim2)
         }.
+
+    By definition, the EDC represents the remaining energy up to
+    :math:`\infty` and converges to zero, i.e., :math:`e(\infty)=0`.
+    Thus, ``np.inf`` may be used as a limit to select the full
+    remaining energy of an EDC.
 
     Parameters
     ----------
@@ -252,7 +261,7 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
 
     References
     ----------
-    .. [#iso] ISO 3382, Acoustics — Measurement of the reverberation time of
+    .. [#iso2] ISO 3382, Acoustics — Measurement of the reverberation time of
         rooms with reference to other acoustical parameters.
     """
 
