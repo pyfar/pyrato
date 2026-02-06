@@ -184,7 +184,7 @@ def test_energy_ratio_np_inf_limits(make_edc):
     Check if np.inf limits are handled correctly.
     """
     energy = [1,0,0,0] # four samples (Dirac)
-    edc = make_edc(energy=energy, sampling_rate = 1.0) #sampling rate = 1 sek
+    edc = make_edc(energy=energy, sampling_rate = 1.0) #sampling rate = 1 sec
 
     # For linear EDC:
     # should yield 0 - 0 / 1 - 0 = 0
@@ -195,9 +195,9 @@ def test_energy_ratio_np_inf_limits(make_edc):
 @pytest.mark.parametrize(
     "energy",
     [
-        # 1D, einzelner Kanal
+        # 1D, singel channel
         np.linspace(1, 0, 10),
-        # 2D, zwei Kanäle
+        # 2D, two channels
         np.stack([
             np.linspace(1, 0, 10),
             np.linspace(0.5, 0, 10),
@@ -213,7 +213,6 @@ def test_energy_ratio_preserves_multichannel_shape_correctly(energy, make_edc):
 
     result = _energy_ratio(limits, edc, edc)
 
-    # Ergebnis muss exakt dieselbe Kanalform haben wie das EDC
     assert result.shape == edc.cshape
 
 def test_energy_ratio_returns_nan_for_zero_denominator(make_edc):
