@@ -1143,7 +1143,7 @@ def _threshold_energy_decay_curve(energy_decay_curve, threshold_level):
     ----------
     energy_decay_curve : array like
         The energy decay curve
-    threshold : float
+    threshold_level : float
         The threshold level in dB. The data below the threshold level are set
         to ``numpy.nan`` values.
 
