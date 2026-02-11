@@ -187,6 +187,42 @@ def air_attenuation_coefficient(
 
     return air_abs_coeff
 
+  
+def critical_distance(
+                     volume,
+                     reverberation_time):
+    r"""Calculate the critical distance of a room with
+    given volume and reverberation time.
+    Assumes the source directivity is 1 (omnidirectional source).
+    See [#kra]_.
+
+    .. math::
+        d_c = 0.057 \sqrt{\frac{V}{T_{60}}}
+
+    Parameters
+    ----------
+    volume : double
+        Volume of the room in cubic meters.
+    reverberation_time : double
+        Reverberation time of the room in seconds.
+
+    Returns
+    -------
+    critical_dist : double
+        The resulting critical distance in meters.
+
+    References
+    ----------
+    .. [#kra] H. Kuttruff, Room acoustics, 4th Ed. Taylor & Francis, 2009.
+
+    """
+    if reverberation_time <= 0:
+        raise ValueError("Reverberation time must be greater than zero.")
+    if volume <= 0:
+        raise ValueError("Volume must be greater than zero.")
+    critical_dist = 0.057 * np.sqrt(volume / reverberation_time)
+    return critical_dist
+
 
 def mean_free_path(
         volume,
