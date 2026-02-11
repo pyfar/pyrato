@@ -88,7 +88,7 @@ def test_edc_truncation_2D():
         freq='broadband',
         is_energy=False,
         time_shift=True,
-        channel_independent=False,
+        channel_independent=True,
         normalize=True,
         threshold=-np.inf)
     npt.assert_allclose(actual.time, expected)
@@ -126,7 +126,7 @@ def test_edc_lundeby_2D():
         freq='broadband',
         is_energy=False,
         time_shift=True,
-        channel_independent=False,
+        channel_independent=True,
         normalize=True,
         plot=False)
     npt.assert_allclose(actual.time, expected)
@@ -164,7 +164,7 @@ def test_edc_lundeby_chu_2D():
         freq='broadband',
         is_energy=False,
         time_shift=True,
-        channel_independent=False,
+        channel_independent=True,
         normalize=True,
         plot=False)
     npt.assert_allclose(actual.time, expected)
@@ -220,7 +220,7 @@ def test_edc_chu_2D():
         rir,
         is_energy=False,
         time_shift=True,
-        channel_independent=False,
+        channel_independent=True,
         normalize=True,
         threshold=None,
         plot=False)
@@ -263,7 +263,7 @@ def test_intersection_time_2D():
     npt.assert_allclose(actual, expected)
 
 
-def test_energy_decay_curve_threshold():
+def test__threshold_energy_decay_curve():
 
     t_60 = 1
     m = -60/t_60
@@ -274,7 +274,7 @@ def test_energy_decay_curve_threshold():
 
     edc_log = np.tile(edc_log, (2, 3, 1))
 
-    edc = enh._truncate_energy_decay_curve(10**(edc_log.copy()/10), 30)
+    edc = enh._threshold_energy_decay_curve(10**(edc_log.copy()/10), 30)
 
     edc_ref = 10**(edc_log.copy()/10)
     edc_ref[..., n_samples//2:] = np.nan
@@ -282,7 +282,7 @@ def test_energy_decay_curve_threshold():
     npt.assert_allclose(edc, edc_ref)
 
 
-def test_truncate_energy_decay_curve():
+def test_threshold_energy_decay_curve():
     t_60 = 1
     m = -60/t_60
 
@@ -293,7 +293,7 @@ def test_truncate_energy_decay_curve():
     edc_log = np.tile(edc_log, (2, 3, 1))
 
     edc = pf.TimeData(10**(edc_log.copy()/10), times)
-    edc_trunc = enh.truncate_energy_decay_curve(edc, 30)
+    edc_trunc = enh.threshold_energy_decay_curve(edc, 30)
 
     edc_ref = 10**(edc_log.copy()/10)
     edc_ref[..., n_samples//2:] = np.nan
