@@ -97,3 +97,29 @@ def test_edc_sabine():
         6.37107964e-04, 5.46555336e-04,
         ])
     npt.assert_almost_equal(edc, truth)
+
+
+@pytest.mark.parametrize(
+        "edc_function",
+        [ra.edc.energy_decay_curve_chu,
+         ra.edc.energy_decay_curve_lundeby,
+         ra.edc.energy_decay_curve_chu_lundeby],
+)
+def test_multidim_edc(edc_function):
+    """
+    Test if edcs from multichannel signal are equal to corresponding single
+    channel edcs.
+    """
+    rir = pf.signals.files.room_impulse_response()
+    rir_oct = pf.dsp.filter.fractional_octave_bands(rir, 1)
+    shape = rir_oct.time.shape
+    edc = edc_function(rir_oct, channel_independent=True)
+
+    assert shape == edc.time.shape
+
+    edc = edc.flatten()
+    rir_oct = rir_oct.flatten()
+
+    for i in range(edc.cshape[0]):
+        baseline = edc_function(rir_oct[i])
+        npt.assert_array_equal(edc[i].time, baseline.time)
