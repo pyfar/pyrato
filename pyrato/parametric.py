@@ -187,7 +187,7 @@ def air_attenuation_coefficient(
 
     return air_abs_coeff
 
-  
+
 def mean_free_path(
         volume,
         surface_area):
@@ -213,7 +213,7 @@ def mean_free_path(
 
     return 4 * volume / surface_area
 
-  
+
 def reverberation_time_eyring(volume,surface,mean_alpha):
     r"""
     function which calculates reverberation time in rooms as
@@ -248,14 +248,14 @@ def reverberation_time_eyring(volume,surface,mean_alpha):
         raise ValueError("Volume should be larger than 0")
     if surface <= 0:
         raise ValueError("Surface should be larger than 0")
-    if mean_alpha <0 or mean_alpha >1: 
+    if mean_alpha <0 or mean_alpha >1:
         raise ValueError("mean_alpha should be between 0 and 1")
 
     T60 = -0.161 * (volume / (surface * np.log(1 - mean_alpha)))
 
     return T60
-  
-  
+
+
 def calculate_sabine_reverberation_time(surfaces, alphas, volume):
     """Calculate the reverberation time using Sabine's equation.
 
