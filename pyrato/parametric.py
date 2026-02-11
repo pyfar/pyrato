@@ -187,7 +187,33 @@ def air_attenuation_coefficient(
 
     return air_abs_coeff
 
+  
+def mean_free_path(
+        volume,
+        surface_area):
+    """Calculate the mean free path. Source https://ccrma.stanford.edu/~jos/smith-nam/Mean_Free_Path.html.
 
+    Parameters
+    ----------
+    volume : double
+        Room volume
+    surface_area : double
+        Total surface area
+
+    Returns
+    -------
+    mean free path : double
+        The calculated mean free path
+    """
+
+    if volume < 0:
+        raise ValueError(f"Volume ({volume}) is smaller than 0.")
+    if surface_area < 0:
+        raise ValueError(f"Surface area ({surface_area}) is smaller than 0.")
+
+    return 4 * volume / surface_area
+
+  
 def reverberation_time_eyring(volume,surface,mean_alpha):
     r"""
     function which calculates reverberation time in rooms as
