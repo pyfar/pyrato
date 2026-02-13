@@ -12,6 +12,9 @@ import numpy.testing as npt
 from pyrato import edc as enh
 from numpy import genfromtxt
 import pyfar as pf
+import pytest
+import re
+
 test_data_path = os.path.join(os.path.dirname(__file__), 'test_data')
 
 
@@ -261,6 +264,45 @@ def test_intersection_time_2D():
         channel_independent=False,
         plot=False)
     npt.assert_allclose(actual, expected)
+
+
+def test_intersection_time_failure_handling():
+    """Test warnings and errors when computing the intersection time."""
+
+    # this 'rir' as an SNR of -infinity and causes an error when computing the
+    # lundeby parameters
+    rir = pf.Signal(np.random.default_rng().standard_normal(44100), 44100)
+
+    message = re.escape('Regression failed for channel (0,) due to low SNR.')
+
+    # test raising errors
+    with pytest.raises(ValueError, match=message):
+        enh.intersection_time_lundeby(rir, failure_policy='error')
+
+    # test warning
+    with pytest.warns(UserWarning, match=message):
+        enh.intersection_time_lundeby(rir, failure_policy='warning')
+
+
+@pytest.mark.parametrize('calling_function', [
+    enh.energy_decay_curve_truncation,
+    enh.energy_decay_curve_lundeby,
+    enh.energy_decay_curve_chu_lundeby])
+def test_intersection_time_failure_handling_from_calling_functions(
+    calling_function):
+    """
+    Test if functions calling `intersection_time_lundeby` raise warnings and
+    not errors.
+    """
+
+    # this 'rir' as an SNR of -infinity and causes an error when computing the
+    # lundeby parameters
+    rir = pf.Signal(np.random.default_rng().standard_normal(44100), 44100)
+
+    # Using only 'SNR' to match the warning message because different warnings
+    # are raised depending on the tested function
+    with pytest.warns(UserWarning, match='SNR'):
+        calling_function(rir)
 
 
 def test__threshold_energy_decay_curve():

@@ -187,8 +187,15 @@ def energy_decay_curve_truncation(
         normalize=True,
         threshold=15,
         plot=False):
-    """This function truncates a given room impulse response by the
-    intersection time after Lundeby and calculates the energy decay curve.
+    """
+    Compute the noise compensated energy decay curve.
+
+    This function truncates a given room impulse response by the intersection
+    time after Lundeby and calculates the noise compensated energy decay curve.
+
+    .. note::
+        The EDC is NaN if the intersection time could not be computed due to a
+        low signal-to-noise ration. In this case a warning is raised as well.
 
     Parameters
     ----------
@@ -281,38 +288,37 @@ def energy_decay_curve_truncation(
         is_energy=True,
         time_shift=False,
         channel_independent=False,
-        plot=False)[0]
-
-    intersection_time_idx = np.rint(intersection_time * data.sampling_rate)
-
-    psnr = dsp.peak_signal_to_noise_ratio(
-        data, noise_level, is_energy=is_energy)
-    trunc_levels = 10*np.log10((psnr)) - threshold
+        plot=False,
+        failure_policy='warning')[0]
 
     energy_decay_curve = np.zeros([*data.cshape, n_samples])
+
     for ch in np.ndindex(data.cshape):
+
+        if np.isnan(intersection_time[ch]):
+            energy_decay_curve[ch] = np.nan
+            continue
+
+        intersection_time_idx = np.rint(
+            intersection_time[ch] * data.sampling_rate)
+
+        psnr = dsp.peak_signal_to_noise_ratio(
+            data[ch], noise_level, is_energy=is_energy)
+        trunc_level = 10*np.log10((psnr)) - threshold
+
         energy_decay_curve[
-            ch, :int(intersection_time_idx[ch])] = \
+            ch, :int(intersection_time_idx)] = \
                 _schroeder_integration(
                     energy_data.time[
-                        ch, :int(intersection_time_idx[ch])],
+                        ch, :int(intersection_time_idx)],
                     is_energy=True)
 
-    energy_decay_curve = _threshold_energy_decay_curve(
-        energy_decay_curve, trunc_levels)
+        energy_decay_curve[ch] = _threshold_energy_decay_curve(
+            energy_decay_curve[ch], trunc_level)
 
     if normalize:
-        # Normalize the EDC...
-        if not channel_independent:
-            # by the max across all channels
-            energy_decay_curve = \
-                np.divide(energy_decay_curve[..., :],
-                          np.nanmax(energy_decay_curve))
-        else:
-            # by the max of each individual channel
-            energy_decay_curve = \
-                energy_decay_curve[..., :] \
-                    / np.nanmax(energy_decay_curve, axis=-1, keepdims=True)
+        energy_decay_curve = _normalize_edc(
+            energy_decay_curve, channel_independent)
 
     edc = pf.TimeData(
         energy_decay_curve.reshape(shape), data.times, comment=data.comment)
@@ -335,10 +341,15 @@ def energy_decay_curve_lundeby(
         channel_independent=False,
         normalize=True,
         plot=False):
-    """Correction term to prevent the truncation error.
+    """
+    Compute Lundeby energy decay curve.
 
     The missing signal energy from truncation time to infinity is
-    estimated and added to the truncated integral. After Lundeby et al. [#]_.
+    estimated and added to the truncated integral after Lundeby et al. [#]_.
+
+     .. note::
+        The EDC is NaN if the intersection time could not be computed due to a
+        low signal-to-noise ration. In this case a warning is raised as well.
 
     Parameters
     ----------
@@ -427,12 +438,18 @@ def energy_decay_curve_lundeby(
             is_energy=True,
             time_shift=False,
             channel_independent=False,
-            plot=False)
+            plot=False,
+            failure_policy='warning')
     time_vector = data.times
 
     energy_decay_curve = np.zeros([*data.cshape, n_samples])
 
     for ch in np.ndindex(data.cshape):
+
+        if np.isnan(intersection_time[ch]):
+            energy_decay_curve[ch] = np.nan
+            continue
+
         intersection_time_idx = np.argmin(
             np.abs(time_vector - intersection_time[ch]))
         p_square_at_intersection = noise_estimation[ch]
@@ -452,17 +469,8 @@ def energy_decay_curve_lundeby(
         energy_decay_curve[ch, intersection_time_idx:] = np.nan
 
     if normalize:
-        # Normalize the EDC...
-        if not channel_independent:
-            # by the max across all channels
-            energy_decay_curve = \
-                np.divide(energy_decay_curve[..., :],
-                          np.nanmax(energy_decay_curve))
-        else:
-            # by the max of each individual channel
-            energy_decay_curve = \
-                energy_decay_curve[..., :] \
-                    / np.nanmax(energy_decay_curve, axis=-1, keepdims=True)
+        energy_decay_curve = _normalize_edc(
+            energy_decay_curve, channel_independent)
 
     edc = pf.TimeData(
         energy_decay_curve.reshape(shape), data.times, comment=data.comment)
@@ -575,17 +583,8 @@ def energy_decay_curve_chu(
     edc = schroeder_integration(subtracted, is_energy=True)
 
     if normalize:
-        # Normalize the EDC...
-        if not channel_independent:
-            # by the max across all channels
-            edc.time = \
-                np.divide(edc.time[..., :],
-                          np.nanmax(edc.time))
-        else:
-            # by the max of each individual channel
-            edc.time = \
-                edc.time[..., :] \
-                    / np.nanmax(edc.time, axis=-1, keepdims=True)
+        edc.time = _normalize_edc(
+            edc.time, channel_independent)
 
     mask = edc.time <= 2*np.finfo(float).eps
     if np.any(mask):
@@ -626,11 +625,15 @@ def energy_decay_curve_chu_lundeby(
         channel_independent=False,
         normalize=True,
         plot=False):
-    """This function combines Chu's and Lundeby's methods.
+    """Compute the energy decay curve using Chu's and Lundeby's methods.
 
     The estimated noise level is subtracted before backward integration,
     the impulse response is truncated at the intersection time,
     and the correction for the truncation is applied [#]_, [#]_, [#]_.
+
+     .. note::
+        The EDC is NaN if the intersection time could not be computed due to a
+        low signal-to-noise ration. In this case a warning is raised as well.
 
     Parameters
     ----------
@@ -729,12 +732,18 @@ def energy_decay_curve_chu_lundeby(
             is_energy=True,
             time_shift=False,
             channel_independent=False,
-            plot=False)
+            plot=False,
+            failure_policy='warning')
 
     time_vector = data.times
     energy_decay_curve = np.zeros([*data.cshape, n_samples])
 
     for ch in np.ndindex(data.cshape):
+
+        if np.isnan(intersection_time[ch]):
+            energy_decay_curve[ch] = np.nan
+            continue
+
         intersection_time_idx = np.argmin(np.abs(
             time_vector - intersection_time[ch]))
         if isinstance(noise_level, str) and noise_level == 'auto':
@@ -757,17 +766,8 @@ def energy_decay_curve_chu_lundeby(
         energy_decay_curve[ch, intersection_time_idx:] = np.nan
 
     if normalize:
-        # Normalize the EDC...
-        if not channel_independent:
-            # by the max across all channels
-            energy_decay_curve = \
-                np.divide(energy_decay_curve[..., :],
-                          np.nanmax(energy_decay_curve))
-        else:
-            # by the max of each individual channel
-            energy_decay_curve = \
-                energy_decay_curve[..., :] \
-                    / np.nanmax(energy_decay_curve, axis=-1, keepdims=True)
+        energy_decay_curve = _normalize_edc(
+            energy_decay_curve, channel_independent)
 
     edc = pf.TimeData(
         energy_decay_curve.reshape(shape), data.times, comment=data.comment)
@@ -927,9 +927,9 @@ def intersection_time_lundeby(
             use_dyn_range_for_regression, sampling_rate, ch, failure_policy)
 
         if output is None:
-            slope, noise_estimation_current_channel, crossing_point, \
-            time_window_data_current_channel, idx_last_10_percent, \
-            idx_10dB_below_crosspoint = (np.nan, ) * 6
+            reverberation_time[ch] = np.nan
+            noise_level[ch] = np.nan
+            intersection_time[ch] = np.nan
 
         else:
             slope, noise_estimation_current_channel, crossing_point, \
@@ -938,12 +938,12 @@ def intersection_time_lundeby(
             preliminary_crossing_point, time_vector_window_current_channel \
                 = output
 
-        reverberation_time[ch] = -60/slope[1]
-        noise_level[ch] = noise_estimation_current_channel
-        intersection_time[ch] = crossing_point
-        noise_peak_level[ch] = 10 * np.log10(
-            np.nanmax(time_window_data_current_channel[int(np.nanmin(
-                [idx_last_10_percent, idx_10dB_below_crosspoint])):]))
+            reverberation_time[ch] = -60/slope[1]
+            noise_level[ch] = noise_estimation_current_channel
+            intersection_time[ch] = crossing_point
+            noise_peak_level[ch] = 10 * np.log10(
+                np.nanmax(time_window_data_current_channel[int(np.nanmin(
+                    [idx_last_10_percent, idx_10dB_below_crosspoint])):]))
 
     if plot:
 
@@ -1263,3 +1263,42 @@ def threshold_energy_decay_curve(energy_decay_curve, threshold):
         _threshold_energy_decay_curve(energy_decay_curve.time, threshold),
         energy_decay_curve.times,
         energy_decay_curve.comment)
+
+
+def _normalize_edc(energy_decay_curve, channel_independent):
+    """
+    Helper function to normalize the energy decay curve.
+
+    Parameters
+    ----------
+    energy_decay_curve : numpy array
+        EDC of shape `(..., n_samples)`.
+    channel_independent : boolean
+        Defines, if the time shift and normalization is done
+        channel-independently or not.
+
+    Returns
+    -------
+    energy_decay_curve : numpy array
+        The normalized EDC
+    """
+
+    # ignore runtime warnings due to NaN values in edc. More informative
+    # warnings are raised by `intersection_time_lundeby` and everything
+    # that happens below is by intention
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+
+        # Normalize the EDC...
+        if not channel_independent:
+            # by the max across all channels
+            energy_decay_curve = \
+                np.divide(energy_decay_curve[..., :],
+                        np.nanmax(energy_decay_curve))
+        else:
+            # by the max of each individual channel
+            energy_decay_curve = \
+                energy_decay_curve[..., :] \
+                    / np.nanmax(energy_decay_curve, axis=-1, keepdims=True)
+
+    return energy_decay_curve
