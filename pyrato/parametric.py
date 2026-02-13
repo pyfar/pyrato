@@ -5,6 +5,41 @@ such as Sabine's theory of sound in rooms.
 """
 import numpy as np
 
+def calculate_speed_of_sound(temperature):
+    r"""Calculate the speed of sound in air depending on the temperature.
+
+    Speed of sound is calculated as [#]_.
+
+    .. math::
+        c = c_0 \sqrt{\frac{T - T_0}{20 - T_0}}
+    .. math::
+        T_0=-273.15
+    .. math::
+        c_0 = 343.2
+
+    Parameters
+    ----------
+    temperature : double
+        Temperature in degrees Celsius.
+
+    Returns
+    -------
+    speed_of_sound : double
+        Speed of sound in m/s.
+
+    References
+    ----------
+    .. [#] ISO 9613-1 (Formula A.5)
+    """
+    if temperature < -273.15:
+        raise ValueError(
+            "Temperature must be greater than absolute zero (-273.15 °C).")
+    T_0 = -273.15
+    c_0 = 343.2
+    speed_of_sound = c_0 * np.sqrt((temperature - T_0)/(20 - T_0))
+    return speed_of_sound
+
+
 def energy_decay_curve_analytic(
         surfaces, alphas, volume, times, source=None,
         receiver=None, method='eyring', c=343.4, frequency=None,
@@ -151,3 +186,159 @@ def air_attenuation_coefficient(
             ) * 20.0 / np.log(10.0) / (np.log10(np.exp(1.0)) * 10.0))
 
     return air_abs_coeff
+
+  
+def critical_distance(
+                     volume,
+                     reverberation_time):
+    r"""Calculate the critical distance of a room with
+    given volume and reverberation time.
+    Assumes the source directivity is 1 (omnidirectional source).
+    See [#kra]_.
+
+    .. math::
+        d_c = 0.057 \sqrt{\frac{V}{T_{60}}}
+
+    Parameters
+    ----------
+    volume : double
+        Volume of the room in cubic meters.
+    reverberation_time : double
+        Reverberation time of the room in seconds.
+
+    Returns
+    -------
+    critical_dist : double
+        The resulting critical distance in meters.
+
+    References
+    ----------
+    .. [#kra] H. Kuttruff, Room acoustics, 4th Ed. Taylor & Francis, 2009.
+
+    """
+    if reverberation_time <= 0:
+        raise ValueError("Reverberation time must be greater than zero.")
+    if volume <= 0:
+        raise ValueError("Volume must be greater than zero.")
+    critical_dist = 0.057 * np.sqrt(volume / reverberation_time)
+    return critical_dist
+
+
+def mean_free_path(
+        volume,
+        surface_area):
+    """Calculate the mean free path. Source https://ccrma.stanford.edu/~jos/smith-nam/Mean_Free_Path.html.
+
+    Parameters
+    ----------
+    volume : double
+        Room volume
+    surface_area : double
+        Total surface area
+
+    Returns
+    -------
+    mean free path : double
+        The calculated mean free path
+    """
+
+    if volume < 0:
+        raise ValueError(f"Volume ({volume}) is smaller than 0.")
+    if surface_area < 0:
+        raise ValueError(f"Surface area ({surface_area}) is smaller than 0.")
+
+    return 4 * volume / surface_area
+
+
+def reverberation_time_eyring(volume,surface,mean_alpha):
+    r"""
+    function which calculates reverberation time in rooms as
+    defined by Carl F. Eyring.
+
+    .. math::
+        T_{60} = -0.161 \frac{\text{volume}}{\text{surface} \cdot
+            \ln(1 - \text{mean\_alpha})}
+
+    Parameters
+    ----------
+    volume : float, np.ndarray
+        Room volume in m3
+    surface : float, np.ndarray
+        Surface areas of all surfaces in the room in m2
+    mean_alpha : float, np.ndarray
+        Average absorption coefficient of room surfaces
+
+    Returns
+    -------
+    reverberation_time_eyring: double
+         Eyring reverberation time in s
+
+    References
+    ----------
+    .. [#] Eyring, C.F., 1930. Reverberation time in “dead” rooms. The Journal
+    of the Acoustical Society of America, 1(2A_Supplement), pp.168-168.
+
+    """
+
+    if volume <= 0:
+        raise ValueError("Volume should be larger than 0")
+    if surface <= 0:
+        raise ValueError("Surface should be larger than 0")
+    if mean_alpha <0 or mean_alpha >1:
+        raise ValueError("mean_alpha should be between 0 and 1")
+
+    T60 = -0.161 * (volume / (surface * np.log(1 - mean_alpha)))
+
+    return T60
+
+
+def calculate_sabine_reverberation_time(surfaces, alphas, volume):
+    """Calculate the reverberation time using Sabine's equation.
+
+    Calculation according to [#]_.
+
+    Parameters
+    ----------
+    surfaces : ndarray, double
+        Surface areas of all surfaces in the room in square meters.
+    alphas : ndarray, double
+        Absorption coefficients corresponding to each surface
+    volume : double
+        Room volume in cubic meters
+
+    The shape of `surfaces` and `alphas` must match.
+
+    Returns
+    -------
+    reverberation_time_sabine :  double
+        The value of calculated reverberation time in seconds
+
+    References
+    ----------
+    .. [#] H. Kuttruff, Room acoustics, 4th Ed. Taylor & Francis, 2009.
+
+    """
+    surfaces = np.asarray(surfaces)
+    alphas = np.asarray(alphas)
+
+    if alphas.shape != surfaces.shape:
+       raise ValueError("Size of alphas and surfaces " \
+       "ndarray sizes must match.")
+
+    if np.any(alphas) < 0 or np.any(alphas > 1):
+       raise ValueError("Absorption coefficient values must "\
+                        f"be in range [0, 1]. Got {alphas}.")
+    if np.any(surfaces < 0):
+       raise ValueError("Surface areas cannot "\
+                        f"be negative. Got {surfaces}.")
+    if volume < 0:
+       raise ValueError(f"Volume cannot be negative. Got {volume}.")
+
+    absorption_area = np.sum(surfaces*alphas)
+
+    if absorption_area == 0:
+       raise ZeroDivisionError("Absorption area should be positive.")
+
+    reverberation_time_sabine = 0.161*volume/(absorption_area)
+
+    return reverberation_time_sabine

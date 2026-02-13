@@ -596,7 +596,7 @@ def energy_decay_curve_chu(
         psnr = dsp.peak_signal_to_noise_ratio(
             data, noise_level, is_energy=is_energy)
         trunc_levels = 10*np.log10((psnr)) - threshold
-        edc = truncate_energy_decay_curve(edc, trunc_levels)
+        edc = threshold_energy_decay_curve(edc, trunc_levels)
 
     edc = edc.reshape(shape)
 
@@ -1213,7 +1213,23 @@ def _intersection_time_lundby(
             preliminary_crossing_point, time_vector_window_current_channel)
 
 
-def _truncate_energy_decay_curve(energy_decay_curve, threshold_level):
+def _threshold_energy_decay_curve(energy_decay_curve, threshold_level):
+    """
+    Threshold an energy decay curve.
+
+    Parameters
+    ----------
+    energy_decay_curve : array like
+        The energy decay curve
+    threshold_level : float
+        The threshold level in dB. The data below the threshold level are set
+        to ``numpy.nan`` values.
+
+    Returns
+    -------
+    energy_decay_curve : numpy.ndarray
+        The thresholded energy decay curve
+    """
 
     edc = np.atleast_2d(energy_decay_curve)
     threshold_level = np.atleast_2d(threshold_level)
@@ -1226,8 +1242,9 @@ def _truncate_energy_decay_curve(energy_decay_curve, threshold_level):
     return edc
 
 
-def truncate_energy_decay_curve(energy_decay_curve, threshold):
-    """Truncate an energy decay curve, discarding values below the threshold.
+def threshold_energy_decay_curve(energy_decay_curve, threshold):
+    """
+    Threshold an energy decay curve.
 
     Parameters
     ----------
@@ -1235,10 +1252,15 @@ def truncate_energy_decay_curve(energy_decay_curve, threshold):
         The energy decay curve
     threshold : float
         The threshold level in dB. The data below the threshold level are set
-        to numpy.nan values.
+        to ``numpy.nan`` values.
+
+    Returns
+    -------
+    energy_decay_curve : pyfar.TimeData
+        The thresholded energy decay curve
     """
     return pf.TimeData(
-        _truncate_energy_decay_curve(energy_decay_curve.time, threshold),
+        _threshold_energy_decay_curve(energy_decay_curve.time, threshold),
         energy_decay_curve.times,
         energy_decay_curve.comment)
 
