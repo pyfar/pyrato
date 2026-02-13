@@ -789,7 +789,7 @@ def intersection_time_lundeby(
         time_shift=False,
         channel_independent=False,
         plot=False,
-        failure_handling='error'):
+        failure_policy='error'):
     """Calculate the intersection time between impulse response and noise.
 
     This function uses the algorithm after Lundeby et al. [#]_ to calculate
@@ -817,8 +817,8 @@ def intersection_time_lundeby(
         channel-independently or not.
     plot: Boolean
         Specifies, whether the results should be visualized or not.
-    failure_handling : string, optional
-        Specifies how failires in detecting the Lundby parameters (see return
+    failure_policy : string, optional
+        Specifies how failures in detecting the Lundby parameters (see return
         values below) are handled.
 
         - ``'error'``: raises an error and the computation is terminated.
@@ -924,16 +924,14 @@ def intersection_time_lundeby(
         output = _intersection_time_lundby(
             time_window_data[ch], noise_estimation[ch], energy_data[ch],
             time_vector_window, dB_above_noise, n_intervals_per_10dB,
-            use_dyn_range_for_regression, sampling_rate, ch, failure_handling)
+            use_dyn_range_for_regression, sampling_rate, ch, failure_policy)
 
         if output is None:
-            plot_possible = False
             slope, noise_estimation_current_channel, crossing_point, \
             time_window_data_current_channel, idx_last_10_percent, \
             idx_10dB_below_crosspoint = (np.nan, ) * 6
 
         else:
-            plot_possible = True
             slope, noise_estimation_current_channel, crossing_point, \
             time_window_data_current_channel, idx_last_10_percent, \
             idx_10dB_below_crosspoint, regression_time, regression_values, \
@@ -953,7 +951,7 @@ def intersection_time_lundeby(
             raise ValueError(
                 'The plot can only be done for single channel input')
 
-        if not plot_possible:
+        if output is None:
             raise ValueError('The plot can not be done because the estimation '
                              'failed (see warnings for more information)')
 
@@ -1039,7 +1037,7 @@ def intersection_time_lundeby(
 def _intersection_time_lundby(
     time_window_data, noise_estimation, energy_data,
     time_vector_window, dB_above_noise, n_intervals_per_10dB,
-    use_dyn_range_for_regression, sampling_rate, ch, failure_handling):
+    use_dyn_range_for_regression, sampling_rate, ch, failure_policy):
     """
     Private function to handle the channel-wise processing for
     `intersection_time_lundby`.
@@ -1060,7 +1058,7 @@ def _intersection_time_lundby(
                     dB_above_noise))[-1, 0] + start_idx)
     except IndexError as e:
         message = f'Regression failed for channel {ch} due to low SNR.'
-        if failure_handling == 'error':
+        if failure_policy == 'error':
             raise ValueError(message) from e
         else:
             warnings.warn(message, stacklevel=2)
@@ -1072,7 +1070,7 @@ def _intersection_time_lundby(
 
     if (stop_idx == start_idx) or dyn_range > -5:
         message = f'Regression failed for channel {ch} due to low SNR.'
-        if failure_handling == 'error':
+        if failure_policy == 'error':
             raise ValueError(message)
         else:
             warnings.warn(message, stacklevel=2)
@@ -1090,7 +1088,7 @@ def _intersection_time_lundby(
         message = (
             f'Regression failed for channel {ch}. '
             'Remove preceeding delay or check the SNR')
-        if failure_handling == 'error':
+        if failure_policy == 'error':
             raise ValueError(message)
         else:
             warnings.warn(message, stacklevel=2)
@@ -1165,7 +1163,7 @@ def _intersection_time_lundby(
                     + dB_above_noise))[0, 0] + start_idx_loop
         except IndexError as e:
             message = f'Regression failed for channel {ch} due to low SNR.'
-            if failure_handling == 'error':
+            if failure_policy == 'error':
                 raise ValueError(message) from e
             else:
                 warnings.warn(message, stacklevel=2)
@@ -1187,7 +1185,7 @@ def _intersection_time_lundby(
             message = (
                 f'Regression failed for channel {ch}. '
                 'Remove preceeding delay or check the SNR')
-            if failure_handling == 'error':
+            if failure_policy == 'error':
                 raise ValueError(message)
             else:
                 warnings.warn(message, stacklevel=2)
