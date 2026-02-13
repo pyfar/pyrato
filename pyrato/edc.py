@@ -313,7 +313,7 @@ def energy_decay_curve_truncation(
                         ch, :int(intersection_time_idx)],
                     is_energy=True)
 
-        energy_decay_curve[ch] = _truncate_energy_decay_curve(
+        energy_decay_curve[ch] = _threshold_energy_decay_curve(
             energy_decay_curve[ch], trunc_level)
 
     if normalize:
