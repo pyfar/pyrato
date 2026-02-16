@@ -254,7 +254,7 @@ def mean_free_path(
 def reverberation_time_eyring(
         volume: float,
         surface_area: float,
-        mean_absorption: np.typing.NDArray[float],
+        mean_absorption: Union[float, np.typing.NDArray[float]],
         speed_of_sound: float = 343.4,
     ):
     r"""
