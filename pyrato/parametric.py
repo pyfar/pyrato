@@ -309,11 +309,12 @@ def reverberation_time_eyring(
            of the Acoustical Society of America, 1(2A_Supplement), pp.168-168.
 
     """
-    mean_absorption = np.asarray(mean_absorption)
     if np.any(volume) <= 0:
         raise ValueError("Volume should be larger than 0")
     if np.any(surface_area) <= 0:
         raise ValueError("Surface area should be larger than 0")
+
+    mean_absorption = np.asarray(mean_absorption)
     if np.any(mean_absorption < 0) or np.any(mean_absorption > 1):
         raise ValueError("mean_absorption should be between 0 and 1")
 
