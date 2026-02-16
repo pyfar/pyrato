@@ -252,18 +252,15 @@ def mean_free_path(
 
 
 def reverberation_time_eyring(
-        volume: float,
-        surface_area: float,
-        mean_absorption: Union[float, np.ndarray],
-        speed_of_sound: float = 343.4,
-    ) -> np.ndarray:
+        volume, surface_area, mean_absorption, speed_of_sound=343.4,
+    ):
     r"""
     Calculate the reverberation time in rooms as defined by Carl Eyring.
 
     The reverberation time is calculated according to Ref. [#]_ as
 
     .. math::
-        T_{60} = -\frac{24 \cdot \ln(10)}{c}
+        T_{60} = \frac{24 \cdot \ln(10)}{c}
         \cdot \frac{V}{S \ln(1 - \tilde{\alpha})}
 
     where :math:`V` is the room volume, :math:`S` is the total surface area
@@ -274,63 +271,52 @@ def reverberation_time_eyring(
     ----------
     volume : float
         Room volume in :math:`\mathrm{m}^3`
-    surface_area : float
+    surface : float
         Total surface area of the room in :math:`\mathrm{m}^2`
     mean_absorption : float, numpy.ndarray
         Average absorption coefficient of room surfaces between 0 and 1. If
         an array is passed, the reverberation time is calculated for each value
         in the array.
-    speed_of_sound : float
+    speed_of_sound : float, numpy.ndarray
         Speed of sound in m/s. Default is 343.4 m/s, which corresponds to the
         speed of sound in air at 20 °C.
 
     Returns
     -------
-    numpy.ndarray
+    float, numpy.ndarray
         Reverberation time in seconds. The shape matches the shape of the input
         variable `mean_absorption`.
 
     Examples
     --------
+
     >>> from pyrato.parametric import reverberation_time_eyring
     >>> import numpy as np
     >>> volume = 64
     >>> surface_area = 96
     >>> mean_absorption = [0.1, 0.3, 0.4]
     >>> reverb_time = reverberation_time_eyring(
-    ...     volume, surface_area, mean_absorption)
+    >>>     volume, surface_area, mean_absorption)
     >>> np.round(reverb_time, 2)
-    ... array([1.02, 0.3 , 0.21])
 
     References
     ----------
     .. [#] Eyring, C.F., 1930. Reverberation time in "dead" rooms. The Journal
            of the Acoustical Society of America, 1(2A_Supplement), pp.168-168.
+    .. [#] Eyring, C.F., 1930. Reverberation time in "dead" rooms. The Journal
+           of the Acoustical Society of America, 1(2A_Supplement), pp.168-168.
 
     """
-    if speed_of_sound <= 0:
-        raise ValueError("Speed of sound should be larger than 0")
-    if volume <= 0:
-        raise ValueError("Volume should be larger than 0")
-    if surface_area <= 0:
-        raise ValueError("Surface area should be larger than 0")
-
     mean_absorption = np.asarray(mean_absorption)
+    if np.any(volume) <= 0:
+        raise ValueError("Volume should be larger than 0")
+    if np.any(surface_area) <= 0:
+        raise ValueError("Surface should be larger than 0")
     if np.any(mean_absorption < 0) or np.any(mean_absorption > 1):
         raise ValueError("mean_absorption should be between 0 and 1")
 
     factor = 24 * np.log(10) / speed_of_sound
-
-    with np.errstate(divide='ignore'):
-        reverberation_time = -factor * (
-            volume/(surface_area * np.log(1 - mean_absorption)))
-
-    reverberation_time = np.where(
-        np.isclose(mean_absorption, 0, atol=1e-10, rtol=1e-10),
-        np.inf,
-        reverberation_time)
-
-    return reverberation_time
+    return -factor * (volume / (surface_area * np.log(1 - mean_absorption)))
 
 
 def calculate_sabine_reverberation_time(surfaces, alphas, volume):
