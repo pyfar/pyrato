@@ -1,4 +1,5 @@
 """Tests for Eyring's equation."""
+"""Tests for Eyring's equation."""
 import numpy.testing as npt
 import pytest
 from pyrato.parametric import reverberation_time_eyring
@@ -19,9 +20,9 @@ def test_analytic_Eyring(mean_absorption, expected):
     reverb_test = reverberation_time_eyring(volume, surface, mean_alpha)
     npt.assert_allclose(reverb_test, 0.481, rtol=1e-3)
 
-@pytest.mark.parametrize(("volume", "surface_area"), [(0, -2), (-1, 0)])
-def test_input_geometry_Eyring(volume, surface_area):
-    mean_absorption = 0.2
+@pytest.mark.parametrize(("volume", "surface"), [(0, -2), (-1, 0)])
+def test_input_geometry_Eyring(volume, surface):
+    mean_alpha = 0.2
     with pytest.raises(ValueError, match="should be larger than 0"):
         reverberation_time_eyring(volume, surface, mean_alpha)
 
