@@ -300,7 +300,8 @@ def reverberation_time_eyring(
     >>> reverb_time = reverberation_time_eyring(
     ...     volume, surface_area, mean_absorption)
     >>> np.round(reverb_time, 2)
-    array([1.02, 0.3 , 0.21])
+        array([1.02, 0.3 , 0.21])
+
     References
     ----------
     .. [#] Eyring, C.F., 1930. Reverberation time in "dead" rooms. The Journal
