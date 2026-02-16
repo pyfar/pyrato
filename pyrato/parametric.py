@@ -4,6 +4,7 @@ Parametric room acoustics calculations using simple geometric considerations
 such as Sabine's theory of sound in rooms.
 """
 import numpy as np
+from typing import Union
 
 def calculate_speed_of_sound(temperature):
     r"""Calculate the speed of sound in air depending on the temperature.
@@ -217,7 +218,7 @@ def mean_free_path(
 def reverberation_time_eyring(
         volume: float,
         surface_area: float,
-        mean_absorption: np.typing.NDArray[float],
+        mean_absorption: Union[float, np.typing.NDArray[float]],
         speed_of_sound: float = 343.4,
     ):
     r"""
