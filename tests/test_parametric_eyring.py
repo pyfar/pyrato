@@ -42,3 +42,12 @@ def test_input_absorption_Eyring(mean_absorption):
     surface_area = 96
     with pytest.raises(ValueError, match="should be between 0 and 1"):
         reverberation_time_eyring(volume, surface_area, mean_absorption)
+
+def test_error_speed_of_sound_Eyring():
+    volume = 64
+    surface_area = 96
+    mean_absorption = 0.2
+    with pytest.raises(ValueError, match="should be larger than 0"):
+        reverberation_time_eyring(
+            volume, surface_area, mean_absorption,
+            speed_of_sound=-1)
