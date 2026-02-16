@@ -285,8 +285,9 @@ def reverberation_time_eyring(
 
     factor = 24 * np.log(10) / speed_of_sound
 
-    reverberation_time = -factor * (
-        volume/(surface_area * np.log(1 - mean_absorption)))
+    with np.errstate(divide='ignore'):
+        reverberation_time = -factor * (
+            volume/(surface_area * np.log(1 - mean_absorption)))
 
     reverberation_time = np.where(
         np.isclose(mean_absorption, 0, atol=1e-10, rtol=1e-10),
