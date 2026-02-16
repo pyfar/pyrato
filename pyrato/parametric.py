@@ -220,14 +220,14 @@ def reverberation_time_eyring(
         surface_area: float,
         mean_absorption: Union[float, np.typing.NDArray[float]],
         speed_of_sound: float = 343.4,
-    ):
+    ) -> np.typing.NDArray[float]:
     r"""
     Calculate the reverberation time in rooms as defined by Carl Eyring.
 
     The reverberation time is calculated according to Ref. [#]_ as
 
     .. math::
-        T_{60} = \frac{24 \cdot \ln(10)}{c}
+        T_{60} = -\frac{24 \cdot \ln(10)}{c}
         \cdot \frac{V}{S \ln(1 - \tilde{\alpha})}
 
     where :math:`V` is the room volume, :math:`S` is the total surface area
@@ -250,7 +250,7 @@ def reverberation_time_eyring(
 
     Returns
     -------
-    float, numpy.ndarray
+    numpy.ndarray
         Reverberation time in seconds. The shape matches the shape of the input
         variable `mean_absorption`.
 
