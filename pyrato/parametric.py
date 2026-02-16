@@ -325,9 +325,10 @@ def reverberation_time_eyring(
     reverberation_time = -factor * (
         volume/(surface_area * np.log(1 - mean_absorption)))
 
-    mask = np.isclose(mean_absorption, 0, atol=1e-10, rtol=1e-10)
-
-    reverberation_time = np.where(mask, np.inf, reverberation_time)
+    reverberation_time = np.where(
+        np.isclose(mean_absorption, 0, atol=1e-10, rtol=1e-10),
+        np.inf,
+        reverberation_time)
 
     return reverberation_time
 
