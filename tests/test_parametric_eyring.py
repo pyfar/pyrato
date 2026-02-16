@@ -27,7 +27,8 @@ import numpy as np
 def test_analytic_Eyring(mean_absorption, expected):
     volume = 64
     surface_area = 96
-    reverb_test = reverberation_time_eyring(volume, surface_area, mean_absorption)
+    reverb_test = reverberation_time_eyring(
+        volume, surface_area, mean_absorption)
     npt.assert_allclose(reverb_test, expected, rtol=1e-3)
 
 @pytest.mark.parametrize(("volume", "surface_area"), [(0, -2), (-1, 0)])
