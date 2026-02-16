@@ -298,7 +298,7 @@ def reverberation_time_eyring(
     >>> surface_area = 96
     >>> mean_absorption = [0.1, 0.3, 0.4]
     >>> reverb_time = reverberation_time_eyring(
-    >>>     volume, surface_area, mean_absorption)
+    ...     volume, surface_area, mean_absorption)
     >>> np.round(reverb_time, 2)
     array([1.02, 0.3 , 0.21])
     References
