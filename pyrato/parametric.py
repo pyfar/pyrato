@@ -215,7 +215,10 @@ def mean_free_path(
 
 
 def reverberation_time_eyring(
-        volume, surface_area, mean_absorption, speed_of_sound=343.4,
+        volume: float,
+        surface_area: float,
+        mean_absorption: np.typing.NDArray[float],
+        speed_of_sound: float = 343.4,
     ):
     r"""
     Calculate the reverberation time in rooms as defined by Carl Eyring.
@@ -234,13 +237,13 @@ def reverberation_time_eyring(
     ----------
     volume : float
         Room volume in :math:`\mathrm{m}^3`
-    surface : float
+    surface_area : float
         Total surface area of the room in :math:`\mathrm{m}^2`
     mean_absorption : float, numpy.ndarray
         Average absorption coefficient of room surfaces between 0 and 1. If
         an array is passed, the reverberation time is calculated for each value
         in the array.
-    speed_of_sound : float, numpy.ndarray
+    speed_of_sound : float
         Speed of sound in m/s. Default is 343.4 m/s, which corresponds to the
         speed of sound in air at 20 °C.
 
@@ -252,7 +255,6 @@ def reverberation_time_eyring(
 
     Examples
     --------
-
     >>> from pyrato.parametric import reverberation_time_eyring
     >>> import numpy as np
     >>> volume = 64
@@ -272,7 +274,7 @@ def reverberation_time_eyring(
     if np.any(volume) <= 0:
         raise ValueError("Volume should be larger than 0")
     if np.any(surface_area) <= 0:
-        raise ValueError("Surface should be larger than 0")
+        raise ValueError("Surface area should be larger than 0")
     if np.any(mean_absorption < 0) or np.any(mean_absorption > 1):
         raise ValueError("mean_absorption should be between 0 and 1")
 
