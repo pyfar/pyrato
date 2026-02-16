@@ -319,7 +319,15 @@ def reverberation_time_eyring(
         raise ValueError("mean_absorption should be between 0 and 1")
 
     factor = 24 * np.log(10) / speed_of_sound
-    return -factor * (volume / (surface_area * np.log(1 - mean_absorption)))
+
+    reverberation_time = -factor * (
+        volume/(surface_area * np.log(1 - mean_absorption)))
+
+    mask = np.isclose(mean_absorption, 0, atol=1e-10, rtol=1e-10)
+
+    reverberation_time = np.where(mask, np.inf, reverberation_time)
+
+    return reverberation_time
 
 
 def calculate_sabine_reverberation_time(surfaces, alphas, volume):
