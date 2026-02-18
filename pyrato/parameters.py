@@ -125,11 +125,15 @@ def clarity(energy_decay_curve, early_time_limit=80):
 
     where :math:`t_e` is the early time limit and :math:`p(t)` is the pressure
     of a room impulse response. Here, the clarity is efficiently computed
-    from the EDC :math:`e(t)` directly by:
+    from the EDC :math:`e(t)` directly via :func:`_energy_ratio` with
+    ``limits = [t_e, np.inf, 0, t_e]``:
 
     .. math::
 
-        C_{t_e} = 10 \log_{10} \left( \frac{e(0)}{e(t_e)} - 1 \right).
+        C_{t_e} = 10 \log_{10} \frac{e(0) - e(t_e)}{e(t_e) - e(\infty)}
+                = 10 \log_{10} \left( \frac{e(0)}{e(t_e)} - 1 \right),
+
+    where :math:`e(\infty) = 0` by definition of the EDC.
 
     Parameters
     ----------
@@ -174,7 +178,7 @@ def clarity(energy_decay_curve, early_time_limit=80):
     early_time_limit_sec = early_time_limit / 1000
 
     limits = np.array([early_time_limit_sec,
-                        energy_decay_curve.times[-1],
+                        np.inf,
                         0.0,
                         early_time_limit_sec])
 
