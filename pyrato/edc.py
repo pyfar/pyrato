@@ -263,6 +263,10 @@ def energy_decay_curve_truncation(
         >>> ax.legend()
 
     """
+    # flatten to allow signals with cdim > 1
+    shape = data.time.shape
+    data = data.flatten()
+
     energy_data = dsp.preprocess_rir(
         data,
         is_energy=is_energy,
@@ -294,22 +298,24 @@ def energy_decay_curve_truncation(
                         ch, :int(intersection_time_idx[ch])],
                     is_energy=True)
 
-    energy_decay_curve = _truncate_energy_decay_curve(
+    energy_decay_curve = _threshold_energy_decay_curve(
         energy_decay_curve, trunc_levels)
 
     if normalize:
         # Normalize the EDC...
         if not channel_independent:
-            # ...by the first element of each channel.
-            energy_decay_curve = (energy_decay_curve.T /
-                                  energy_decay_curve[..., 0]).T
+            # by the max across all channels
+            energy_decay_curve = \
+                np.divide(energy_decay_curve[..., :],
+                          np.nanmax(energy_decay_curve))
         else:
-            # ...by the maximum first element of each channel.
-            max_start_value = np.amax(energy_decay_curve[..., 0])
-            energy_decay_curve /= max_start_value
+            # by the max of each individual channel
+            energy_decay_curve = \
+                energy_decay_curve[..., :] \
+                    / np.nanmax(energy_decay_curve, axis=-1, keepdims=True)
 
     edc = pf.TimeData(
-        energy_decay_curve, data.times, comment=data.comment)
+        energy_decay_curve.reshape(shape), data.times, comment=data.comment)
 
     if plot:
         ax = pf.plot.time(data, dB=True, label='RIR')
@@ -401,6 +407,9 @@ def energy_decay_curve_lundeby(
         >>> ax.legend()
 
     """
+    # flatten to allow signals with cdim > 1
+    shape = data.time.shape
+    data = data.flatten()
 
     energy_data = dsp.preprocess_rir(
         data,
@@ -445,17 +454,18 @@ def energy_decay_curve_lundeby(
     if normalize:
         # Normalize the EDC...
         if not channel_independent:
-            # ...by the first element of each channel.
-            energy_decay_curve = (
-                energy_decay_curve.T /
-                energy_decay_curve[..., 0]).T
+            # by the max across all channels
+            energy_decay_curve = \
+                np.divide(energy_decay_curve[..., :],
+                          np.nanmax(energy_decay_curve))
         else:
-            # ...by the maximum first element of each channel.
-            max_start_value = np.amax(energy_decay_curve[..., 0])
-            energy_decay_curve /= max_start_value
+            # by the max of each individual channel
+            energy_decay_curve = \
+                energy_decay_curve[..., :] \
+                    / np.nanmax(energy_decay_curve, axis=-1, keepdims=True)
 
     edc = pf.TimeData(
-        energy_decay_curve, data.times, comment=data.comment)
+        energy_decay_curve.reshape(shape), data.times, comment=data.comment)
 
     if plot:
         ax = pf.plot.time(data, dB=True, label='RIR')
@@ -548,6 +558,10 @@ def energy_decay_curve_chu(
         >>> ax.legend()
 
     """
+    # flatten to allow signals with cdim > 1
+    shape = data.cshape
+    data = data.flatten()
+
     energy_data = dsp.preprocess_rir(
         data,
         is_energy=is_energy,
@@ -563,12 +577,15 @@ def energy_decay_curve_chu(
     if normalize:
         # Normalize the EDC...
         if not channel_independent:
-            # ...by the first element of each channel.
-            edc.time = (edc.time.T / edc.time[..., 0]).T
+            # by the max across all channels
+            edc.time = \
+                np.divide(edc.time[..., :],
+                          np.nanmax(edc.time))
         else:
-            # ...by the maximum first element of all channels.
-            max_start_value = np.amax(edc.time[..., 0])
-            edc.time /= max_start_value
+            # by the max of each individual channel
+            edc.time = \
+                edc.time[..., :] \
+                    / np.nanmax(edc.time, axis=-1, keepdims=True)
 
     mask = edc.time <= 2*np.finfo(float).eps
     if np.any(mask):
@@ -580,7 +597,9 @@ def energy_decay_curve_chu(
         psnr = dsp.peak_signal_to_noise_ratio(
             data, noise_level, is_energy=is_energy)
         trunc_levels = 10*np.log10((psnr)) - threshold
-        edc = truncate_energy_decay_curve(edc, trunc_levels)
+        edc = threshold_energy_decay_curve(edc, trunc_levels)
+
+    edc = edc.reshape(shape)
 
     if plot:
         plt.figure(figsize=(15, 3))
@@ -687,6 +706,9 @@ def energy_decay_curve_chu_lundeby(
         >>> ax.legend()
 
     """
+    # flatten to allow signals with cdim > 1
+    shape = data.time.shape
+    data = data.flatten()
 
     energy_data = dsp.preprocess_rir(
         data,
@@ -737,16 +759,18 @@ def energy_decay_curve_chu_lundeby(
     if normalize:
         # Normalize the EDC...
         if not channel_independent:
-            # ...by the first element of each channel.
-            energy_decay_curve = (energy_decay_curve.T /
-                                  energy_decay_curve[..., 0]).T
+            # by the max across all channels
+            energy_decay_curve = \
+                np.divide(energy_decay_curve[..., :],
+                          np.nanmax(energy_decay_curve))
         else:
-            # ...by the maximum first element of each channel.
-            max_start_value = np.amax(energy_decay_curve[..., 0])
-            energy_decay_curve /= max_start_value
+            # by the max of each individual channel
+            energy_decay_curve = \
+                energy_decay_curve[..., :] \
+                    / np.nanmax(energy_decay_curve, axis=-1, keepdims=True)
 
     edc = pf.TimeData(
-        energy_decay_curve, data.times, comment=data.comment)
+        energy_decay_curve.reshape(shape), data.times, comment=data.comment)
 
     if plot:
         ax = pf.plot.time(data, dB=True, label='RIR')
@@ -1111,7 +1135,23 @@ def intersection_time_lundeby(
     return intersection_time, reverberation_time, noise_level
 
 
-def _truncate_energy_decay_curve(energy_decay_curve, threshold_level):
+def _threshold_energy_decay_curve(energy_decay_curve, threshold_level):
+    """
+    Threshold an energy decay curve.
+
+    Parameters
+    ----------
+    energy_decay_curve : array like
+        The energy decay curve
+    threshold_level : float
+        The threshold level in dB. The data below the threshold level are set
+        to ``numpy.nan`` values.
+
+    Returns
+    -------
+    energy_decay_curve : numpy.ndarray
+        The thresholded energy decay curve
+    """
 
     edc = np.atleast_2d(energy_decay_curve)
     threshold_level = np.atleast_2d(threshold_level)
@@ -1124,8 +1164,9 @@ def _truncate_energy_decay_curve(energy_decay_curve, threshold_level):
     return edc
 
 
-def truncate_energy_decay_curve(energy_decay_curve, threshold):
-    """Truncate an energy decay curve, discarding values below the threshold.
+def threshold_energy_decay_curve(energy_decay_curve, threshold):
+    """
+    Threshold an energy decay curve.
 
     Parameters
     ----------
@@ -1133,9 +1174,14 @@ def truncate_energy_decay_curve(energy_decay_curve, threshold):
         The energy decay curve
     threshold : float
         The threshold level in dB. The data below the threshold level are set
-        to numpy.nan values.
+        to ``numpy.nan`` values.
+
+    Returns
+    -------
+    energy_decay_curve : pyfar.TimeData
+        The thresholded energy decay curve
     """
     return pf.TimeData(
-        _truncate_energy_decay_curve(energy_decay_curve.time, threshold),
+        _threshold_energy_decay_curve(energy_decay_curve.time, threshold),
         energy_decay_curve.times,
         energy_decay_curve.comment)
