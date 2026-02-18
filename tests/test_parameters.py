@@ -8,6 +8,16 @@ import re
 from pyrato.parameters import clarity
 from pyrato.parameters import _energy_ratio
 
+# Shared parametrize data for multichannel shape tests
+_MULTICHANNEL_ENERGY_SHAPES = [
+    # 1D, single channel
+    (np.linspace(1, 0, 1000), (1,)),
+    # 2D, two channels
+    (np.linspace((1, 0.5), (0, 0), 1000).T, (2,)),
+    # 3D multichannel (2x3 channels)
+    (np.arange(2 * 3 * 1000).reshape(2, 3, 1000), (2, 3)),
+]
+
 # parameter clarity tests
 def test_clarity_accepts_timedata_returns_correct_type(make_edc):
     energy = np.concatenate(([1, 1, 1, 1], np.zeros(124)))
@@ -191,28 +201,15 @@ def test_energy_ratio_np_inf_limits(make_edc):
     result = _energy_ratio(limits, edc, edc)
     npt.assert_allclose(result, 0.0, atol=1e-12)
 
-@pytest.mark.parametrize(
-    "energy",
-    [
-        # 1D, single channel
-        np.linspace(1, 0, 10),
-        # 2D, two channels
-        np.stack([
-            np.linspace(1, 0, 10),
-            np.linspace(0.5, 0, 10),
-        ]),
-        # 3D – deterministic 2×3×4 “multichannel” structure
-        np.arange(2 * 3 * 4).reshape(2, 3, 4),
-    ],
-)
-def test_energy_ratio_preserves_multichannel_shape_correctly(energy, make_edc):
-    """Preserves any multichannel shape (1,), (2,), (2,3,)."""
+@pytest.mark.parametrize("energy,expected_shape", _MULTICHANNEL_ENERGY_SHAPES)
+def test_energy_ratio_preserves_multichannel_shape_correctly(
+        energy, expected_shape, make_edc):
+    """Preserves any multichannel shape (1,), (2,), (2,3,) with finite limits."""
     edc = make_edc(energy=energy, sampling_rate=1000)
     limits = np.array([0.0, 0.001, 0.0, 0.003])
-
     result = _energy_ratio(limits, edc, edc)
-
     assert result.shape == edc.cshape
+    assert result.shape == expected_shape
 
 def test_energy_ratio_returns_nan_for_zero_denominator(make_edc):
     """If denominator e(lim1)-e(lim2)=0, expect NaN (invalid ratio)."""
@@ -321,6 +318,19 @@ def test_energy_ratio_with_clarity(make_edc):
         energy_decay_curve2=edc,
     )
     assert not np.isnan(result)
+
+@pytest.mark.parametrize("energy,expected_shape", _MULTICHANNEL_ENERGY_SHAPES)
+def test_energy_ratio_inf_limit_multichannel_shape(energy, expected_shape,
+                                                   make_edc):
+    """
+    _energy_ratio with one np.inf limit must return correct shape for
+    multi-channel EDCs. Regression test for shape mismatch when
+    find_nearest_time returns a 0-d array for a single finite limit.
+    """
+    edc = make_edc(energy=energy, sampling_rate=1000)
+    limits = np.array([0.08, np.inf, 0.0, 0.08])
+    result = _energy_ratio(limits, edc, edc)
+    assert result.shape == expected_shape
 
 def test_energy_ratio_with_clarity_nan_limit(make_edc):
     """
