@@ -276,7 +276,7 @@ def definition(energy_decay_curve, early_time_limit=50):
     early_time_limit_sec = early_time_limit / 1000
 
     limits = np.array([0.0,
-                        energy_decay_curve.times[-1],
+                        np.inf,
                         0.0,
                         early_time_limit_sec])
 
