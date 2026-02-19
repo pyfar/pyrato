@@ -252,8 +252,9 @@ def mean_free_path(
 
 def reverberation_time_eyring(volume,surface,mean_alpha):
     r"""
-    function which calculates reverberation time in rooms as
-    defined by Carl F. Eyring.
+    Calculate reverberation time using Eyring's equation.
+
+    The Eyring reverberation time is defined as [#]_
 
     .. math::
         T_{60} = -0.161 \frac{\text{volume}}{\text{surface} \cdot
@@ -276,8 +277,7 @@ def reverberation_time_eyring(volume,surface,mean_alpha):
     References
     ----------
     .. [#] Eyring, C.F., 1930. Reverberation time in “dead” rooms. The Journal
-    of the Acoustical Society of America, 1(2A_Supplement), pp.168-168.
-
+           of the Acoustical Society of America, 1(2A_Supplement), pp.168-168.
     """
 
     if volume <= 0:
