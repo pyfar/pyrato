@@ -218,7 +218,7 @@ def definition(energy_decay_curve, early_time_limit=50):
 
     .. math::
 
-        D_{t_e} = 10 \log_{10} \frac{
+        D_{t_e} = \frac{
             \displaystyle \int_0^{t_e} p^2(t) \, dt
         }{
             \displaystyle \int_{0}^{\infty} p^2(t) \, dt
@@ -226,11 +226,15 @@ def definition(energy_decay_curve, early_time_limit=50):
 
     where :math:`t_e` is the early time limit and :math:`p(t)` is the pressure
     of a room impulse response. Here, the definition is efficiently computed
-    from the EDC :math:`e(t)` directly by:
+    from the EDC :math:`e(t)` directly via :func:`_energy_ratio` with
+    ``limits = [0, t_e, 0, np.inf]``:
 
     .. math::
 
-        D_{t_e} = 10 \log_{10} \left(1 - \frac{e(t_e)}{e(0)} \right).
+        D_{t_e} = \frac{e(0) - e(t_e)}{e(0) - e(\infty)}
+                = 1 - \left( \frac{e(t_e)}{e(0)} \right),
+
+    where :math:`e(\infty) = 0` by definition of the EDC.
 
     Parameters
     ----------
@@ -244,7 +248,7 @@ def definition(energy_decay_curve, early_time_limit=50):
     Returns
     -------
     definition : numpy.ndarray[float]
-        DEfinition index (early-to-total energy ratio) in decibels,
+        Definition index (early-to-total energy ratio),
         shaped according to the channel shape of the input EDC.
 
     References
@@ -280,9 +284,9 @@ def definition(energy_decay_curve, early_time_limit=50):
                         0.0,
                         early_time_limit_sec])
 
-    return 10*np.log10(_energy_ratio(limits,
-                                    energy_decay_curve,
-                                    energy_decay_curve))
+    return _energy_ratio(limits,
+                        energy_decay_curve,
+                        energy_decay_curve)
 
 def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
     r"""
@@ -421,4 +425,5 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
 
     energy_ratio = numerator / denominator
 
-    return energy_ratio
+    return energy_ratio 
+  
