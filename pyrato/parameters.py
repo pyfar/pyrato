@@ -320,7 +320,7 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
         limits_energy_decay_curve1_idx = np.atleast_1d(
             energy_decay_curve1.find_nearest_time(
                 limits_denominator[finite_limits_denominator],
-            )
+            ),
         )
 
         energy_decay_curve1_values[..., finite_limits_denominator] = \
@@ -333,7 +333,7 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
         limits_energy_decay_curve2_idx = np.atleast_1d(
             energy_decay_curve2.find_nearest_time(
                 limits_numerator[finite_limits_numerator],
-            )
+            ),
         )
 
         energy_decay_curve2_values[..., finite_limits_numerator] = \
