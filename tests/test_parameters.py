@@ -153,14 +153,14 @@ def test_definition_returns_nan_for_zero_signal(make_edc):
 
 def test_definition_calculates_known_reference_value(make_edc):
     """
-    Linear decay → early_time_limit at index 2 -> ratio = 0.5 -> -3.0103 dB.
+    Linear decay → early_time_limit at index 2 -> ratio = 0.5
     Monotonic decay, 1 sample = 1ms.
     """
     edc_vals = np.array([1.0, 0.75, 0.5, 0.25, 0.0])  # monotonic decay
     edc = make_edc(energy=edc_vals[np.newaxis, :], sampling_rate=1000)
 
     result = definition(edc, early_time_limit=2)
-    expected = 10 * np.log10(0.5)  # ≈ -3.0103 dB
+    expected = 0.5
     np.testing.assert_allclose(result, expected, atol=1e-5)
 
 def test_definition_for_exponential_decay(make_edc):
@@ -180,8 +180,7 @@ def test_definition_for_exponential_decay(make_edc):
     te = early_cutoff / 1000  # convert ms to seconds
     a = 13.8155 / rt60
     expected_ratio = 1- np.exp(-a * te)
-    expected_dB = 10 * np.log10(expected_ratio)
-    np.testing.assert_allclose(result, expected_dB, atol=1e-5)
+    np.testing.assert_allclose(result, expected_ratio, atol=1e-5)
 
 
 def test_definition_values_for_given_ratio(make_edc):
@@ -197,13 +196,8 @@ def test_definition_values_for_given_ratio(make_edc):
     edc = ra.edc.schroeder_integration(edc, is_energy=True)
     edc = pf.dsp.normalize(edc, reference_method='max')
     result = definition(edc, early_time_limit=80)
-    definition_value_db = 10 * np.log10(energy_early/(energy_late+energy_early))
-    np.testing.assert_allclose(result, definition_value_db, atol=1e-5)
-
-
-
-
-
+    definition_value = energy_early/(energy_late+energy_early)
+    np.testing.assert_allclose(result, definition_value, atol=1e-5)
 
 # _energy_ratio tests
 @pytest.mark.parametrize(
