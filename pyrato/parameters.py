@@ -346,7 +346,7 @@ def modulation_transfer_function(rir, rir_type, level, snr, ambient_noise):
     Parameters
     ----------
     rir : pyfar.Signal
-          Single-channel room impulse response for which the MTF is computed.
+          Single-channel room impulse response with ``rir.cshape = (1, )``.
           The room impulse response must be at least 1.6 seconds long.
 
     rir_type : {'electrical', 'acoustical'}
