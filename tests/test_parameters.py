@@ -250,7 +250,7 @@ def test_sti_multichannel_different_snr_level():
         [50, 50, 50, 50, 50, 50, 50],  # Channel 1: lower level
     ])
 
-    with pytest.warns(UserWarning, match="Input 'snr' should be at least 20 dB"):
+    with pytest.warns(UserWarning, match="snr' should be at least 20 dB"):
         sti_test = speech_transmission_index_indirect(
             sig, level=level, snr=snr)
 
@@ -296,7 +296,7 @@ def test_sti_ir_level_snr():
     time = np.loadtxt(os.path.join(
         os.path.dirname(__file__), "test_data", "ir_simulated.csv"))
     ir = Signal(time, 44100)
-    with pytest.warns(UserWarning, match="Input 'snr' should be at least 20 dB"):
+    with pytest.warns(UserWarning, match="snr' should be at least 20 dB"):
         sti_test = speech_transmission_index_indirect(
             ir, rir_type="acoustical", level=level, snr=snr)
     np.testing.assert_allclose(sti_test, sti_expected, atol=0.01)
@@ -458,7 +458,7 @@ def test_mtf_snr_reduction():
         ambient_noise=False,
     )
 
-    with pytest.warns(UserWarning, match="Input 'snr' should be at least 20 dB"):
+    with pytest.warns(UserWarning, match="snr' should be at least 20 dB"):
         mtf_low = modulation_transfer_function(
             sig,
             rir_type="acoustical",
@@ -512,7 +512,7 @@ def test_mtf_bounds():
     sig = signals.impulse(70560)
     snr = np.ones(7) * 5
 
-    with pytest.warns(UserWarning, match="Input 'snr' should be at least 20 dB"):
+    with pytest.warns(UserWarning, match="snr' should be at least 20 dB"):
         mtf = modulation_transfer_function(
             sig, "acoustical", level=None, snr=snr, ambient_noise=True,
         )
