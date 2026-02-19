@@ -179,7 +179,7 @@ def test_sti_warn_length():
     match  = "Input signal must be at least 1.6 seconds long."
     with pytest.raises(ValueError, match=match):
         speech_transmission_index_indirect(sig)
-        
+
 def test_sti_warn_data_type_unknown():
     """
     ValueError is raised when an unknown data type is given.
@@ -243,15 +243,15 @@ def test_sti_multichannel_different_snr_level():
     # Channel 0: high SNR/level, Channel 1: lower SNR/level
     snr = np.array([
         [40, 40, 40, 40, 40, 40, 40],  # Channel 0: high SNR
-        [10, 10, 10, 10, 10, 10, 10]   # Channel 1: low SNR
+        [10, 10, 10, 10, 10, 10, 10],  # Channel 1: low SNR
     ])
     level = np.array([
         [70, 70, 70, 70, 70, 70, 70],  # Channel 0: high level
-        [50, 50, 50, 50, 50, 50, 50]   # Channel 1: lower level
+        [50, 50, 50, 50, 50, 50, 50],  # Channel 1: lower level
     ])
-    
+
     sti_test = speech_transmission_index_indirect(sig, level=level, snr=snr)
-    
+
     # Different SNR/level should produce different STI values
     assert sti_test.shape == (2,)
     assert sti_test[0] != sti_test[1]
@@ -305,12 +305,12 @@ def test_sti_electrical_vs_acoustical():
     sig = signals.impulse(70560)
     level = np.ones(7) * 60
     snr = np.ones(7) * 30
-    
+
     sti_acoustical = speech_transmission_index_indirect(
         sig, rir_type="acoustical", level=level, snr=snr)
     sti_electrical = speech_transmission_index_indirect(
         sig, rir_type="electrical", level=level, snr=snr)
-    
+
     # Electrical should have higher STI (no masking)
     assert sti_electrical >= sti_acoustical
 
@@ -321,14 +321,15 @@ def test_sti_ambient_noise_effect():
     sig = signals.impulse(70560)
     level = np.ones(7) * 60
     snr = np.ones(7) * 20
-    
+
     sti_with_noise = speech_transmission_index_indirect(
         sig, rir_type="acoustical", level=level, snr=snr, ambient_noise=True)
     sti_without_noise = speech_transmission_index_indirect(
         sig, rir_type="acoustical", level=level, snr=snr, ambient_noise=False)
-    
-    # With ambient noise correction, STI should be different
+
+    # Ambient noise correction reduces STI
     assert sti_with_noise != sti_without_noise
+    assert sti_without_noise > sti_with_noise
 
 def test_mtf_data_input():
     """
@@ -338,7 +339,9 @@ def test_mtf_data_input():
     snr = np.ones(7) * 30
     match = "Input data must be a pyfar.Signal."
     with pytest.raises(TypeError, match=match):
-        modulation_transfer_function(sig, rir_type="acoustical", level=None, snr=snr, ambient_noise=True)
+        modulation_transfer_function(
+            sig, rir_type="acoustical", level=None,
+            snr=snr, ambient_noise=True)
 
 def test_mtf_multichannel_error():
     """
@@ -348,7 +351,9 @@ def test_mtf_multichannel_error():
     snr = np.ones(7) * 30
     match = "Input must be a single-channel impulse response"
     with pytest.raises(ValueError, match=match):
-        modulation_transfer_function(sig, rir_type="acoustical", level=None, snr=snr, ambient_noise=True)
+        modulation_transfer_function(
+            sig, rir_type="acoustical", level=None,
+            snr=snr, ambient_noise=True)
 
 def test_mtf_short_signal_error():
     """
@@ -358,7 +363,9 @@ def test_mtf_short_signal_error():
     snr = np.ones(7) * 30
     match = "Input signal must be at least 1.6 seconds long"
     with pytest.raises(ValueError, match=match):
-        modulation_transfer_function(sig, rir_type="acoustical", level=None, snr=snr, ambient_noise=True)
+        modulation_transfer_function(
+            sig, rir_type="acoustical", level=None,
+            snr=snr, ambient_noise=True)
 
 def test_mtf_snr_type_error():
     """
@@ -368,7 +375,9 @@ def test_mtf_snr_type_error():
     snr = [30, 30, 30, 30, 30, 30, 30]  # List instead of array
     match = "snr must be a numpy array."
     with pytest.raises(TypeError, match=match):
-        modulation_transfer_function(sig, rir_type="acoustical", level=None, snr=snr, ambient_noise=True)
+        modulation_transfer_function(
+            sig, rir_type="acoustical", level=None,
+            snr=snr, ambient_noise=True)
 
 def test_mtf_snr_shape_error():
     """
@@ -376,9 +385,11 @@ def test_mtf_snr_shape_error():
     """
     sig = signals.impulse(70560)
     snr = np.ones(6)  # Wrong: 6 bands instead of 7
-    match = "snr must have shape \(7,\) for 7 octave bands"
+    match = re.escape('snr must have shape (7,) for 7 octave bands')
     with pytest.raises(ValueError, match=match):
-        modulation_transfer_function(sig, rir_type="acoustical", level=None, snr=snr, ambient_noise=True)
+        modulation_transfer_function(
+            sig, rir_type="acoustical", level=None,
+            snr=snr, ambient_noise=True)
 
 def test_mtf_level_type_error():
     """
@@ -389,7 +400,9 @@ def test_mtf_level_type_error():
     level = [60, 60, 60, 60, 60, 60, 60]  # List instead of array
     match = "level must be a numpy array or None."
     with pytest.raises(TypeError, match=match):
-        modulation_transfer_function(sig, rir_type="acoustical", level=level, snr=snr, ambient_noise=True)
+        modulation_transfer_function(
+            sig, rir_type="acoustical", level=level,
+            snr=snr, ambient_noise=True)
 
 def test_mtf_level_shape_error():
     """
@@ -398,9 +411,11 @@ def test_mtf_level_shape_error():
     sig = signals.impulse(70560)
     snr = np.ones(7) * 30
     level = np.ones(6) * 60  # Wrong: 6 bands instead of 7
-    match = "Level must have shape \(7,\) for 7 octave bands"
+    match = r"Level must have shape \(7,\) for 7 octave bands"
     with pytest.raises(ValueError, match=match):
-        modulation_transfer_function(sig, rir_type="acoustical", level=level, snr=snr, ambient_noise=True)
+        modulation_transfer_function(
+            sig, rir_type="acoustical", level=level,
+            snr=snr, ambient_noise=True)
 
 def test_mtf_ambient_noise_type_error():
     """
@@ -410,7 +425,9 @@ def test_mtf_ambient_noise_type_error():
     snr = np.ones(7) * 30
     match = "ambient_noise must be a boolean."
     with pytest.raises(TypeError, match=match):
-        modulation_transfer_function(sig, rir_type="acoustical", level=None, snr=snr, ambient_noise="yes")
+        modulation_transfer_function(
+            sig, rir_type="acoustical", level=None,
+            snr=snr, ambient_noise="yes")
 
 def test_mtf_shape():
     """
@@ -457,11 +474,11 @@ def test_mtf_ambient_noise_effect():
     snr = np.ones(7) * 20
 
     mtf_no_amb = modulation_transfer_function(
-        sig, "acoustical", level=level, snr=snr, ambient_noise=False
+        sig, "acoustical", level=level, snr=snr, ambient_noise=False,
     )
 
     mtf_amb = modulation_transfer_function(
-        sig, "acoustical", level=level, snr=snr, ambient_noise=True
+        sig, "acoustical", level=level, snr=snr, ambient_noise=True,
     )
 
     assert np.all(mtf_amb <= mtf_no_amb)
@@ -475,11 +492,11 @@ def test_mtf_electrical_vs_acoustical():
     snr = np.ones(7) * 20
 
     mtf_ac = modulation_transfer_function(
-        sig, "acoustical", level=level, snr=snr, ambient_noise=True
+        sig, "acoustical", level=level, snr=snr, ambient_noise=True,
     )
 
     mtf_el = modulation_transfer_function(
-        sig, "electrical", level=level, snr=snr, ambient_noise=True
+        sig, "electrical", level=level, snr=snr, ambient_noise=True,
     )
 
     assert np.any(mtf_ac != mtf_el)
@@ -492,7 +509,7 @@ def test_mtf_bounds():
     snr = np.ones(7) * 5
 
     mtf = modulation_transfer_function(
-        sig, "acoustical", level=None, snr=snr, ambient_noise=True
+        sig, "acoustical", level=None, snr=snr, ambient_noise=True,
     )
 
     assert np.all(mtf >= 0.0)
@@ -512,7 +529,10 @@ def test_sti_calc_mtf_shape_error():
     ValueError is raised when mtf has wrong shape.
     """
     mtf = np.ones((6, 14))  # Wrong: 6 bands instead of 7
-    match = "mtf must have shape \\(7, 14\\) for 7 octave bands and 14 modulation frequencies"
+    match = (
+        r"mtf must have shape \(7, 14\) for 7 octave bands "
+        r"and 14 modulation frequencies"
+    )
     with pytest.raises(ValueError, match=match):
         _sti_calc(mtf)
 
@@ -523,7 +543,7 @@ def test_sti_calc_mtf_zero_clipping():
     # MTF = 0 leads to log10(0 / (1-0)) = log10(0) = -inf
     mtf = np.zeros((7, 14))
     sti = _sti_calc(mtf)
-    
+
     # With SNR clipped to -15 dB, TI = (-15 + 15)/30 = 0, STI should be 0
     assert sti == 0.0
 
@@ -534,7 +554,7 @@ def test_sti_calc_mtf_one_clipping():
     # MTF = 1 leads to log10(1 / (1-1)) = log10(1/0) = +inf
     mtf = np.ones((7, 14))
     sti = _sti_calc(mtf)
-    
+
     # With SNR clipped to 15 dB, TI = (15 + 15)/30 = 1, STI should be 1
     assert sti == 1.0
 
