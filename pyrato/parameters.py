@@ -338,6 +338,7 @@ def modulation_transfer_function(rir, rir_type, level, snr, ambient_noise):
     of the Speech Transmission Index (STI).
 
     The calculation includes:
+
     - Energy-based MTF estimation from octave-band impulse responses
     - Limitation due to signal-to-noise ratio
     - Optional ambient noise correction (Annex A.2.3)

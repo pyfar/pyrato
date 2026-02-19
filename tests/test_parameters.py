@@ -250,7 +250,9 @@ def test_sti_multichannel_different_snr_level():
         [50, 50, 50, 50, 50, 50, 50],  # Channel 1: lower level
     ])
 
-    sti_test = speech_transmission_index_indirect(sig, level=level, snr=snr)
+    with pytest.warns(UserWarning, match="Input 'snr' should be at least 20 dB"):
+        sti_test = speech_transmission_index_indirect(
+            sig, level=level, snr=snr)
 
     # Different SNR/level should produce different STI values
     assert sti_test.shape == (2,)
@@ -294,9 +296,10 @@ def test_sti_ir_level_snr():
     time = np.loadtxt(os.path.join(
         os.path.dirname(__file__), "test_data", "ir_simulated.csv"))
     ir = Signal(time, 44100)
-    sti_test = speech_transmission_index_indirect(ir, rir_type="acoustical",
-                                         level=level,snr=snr)
-    np.testing.assert_allclose(sti_test, sti_expected,atol=0.01)
+    with pytest.warns(UserWarning, match="Input 'snr' should be at least 20 dB"):
+        sti_test = speech_transmission_index_indirect(
+            ir, rir_type="acoustical", level=level, snr=snr)
+    np.testing.assert_allclose(sti_test, sti_expected, atol=0.01)
 
 def test_sti_electrical_vs_acoustical():
     """
@@ -455,13 +458,14 @@ def test_mtf_snr_reduction():
         ambient_noise=False,
     )
 
-    mtf_low = modulation_transfer_function(
-        sig,
-        rir_type="acoustical",
-        level=None,
-        snr=np.ones(7) * 10,
-        ambient_noise=False,
-    )
+    with pytest.warns(UserWarning, match="Input 'snr' should be at least 20 dB"):
+        mtf_low = modulation_transfer_function(
+            sig,
+            rir_type="acoustical",
+            level=None,
+            snr=np.ones(7) * 10,
+            ambient_noise=False,
+        )
 
     assert np.all(mtf_low < mtf_high)
 
@@ -508,14 +512,13 @@ def test_mtf_bounds():
     sig = signals.impulse(70560)
     snr = np.ones(7) * 5
 
-    mtf = modulation_transfer_function(
-        sig, "acoustical", level=None, snr=snr, ambient_noise=True,
-    )
+    with pytest.warns(UserWarning, match="Input 'snr' should be at least 20 dB"):
+        mtf = modulation_transfer_function(
+            sig, "acoustical", level=None, snr=snr, ambient_noise=True,
+        )
 
     assert np.all(mtf >= 0.0)
     assert np.all(mtf <= 1.0)
-
-def test_sti_calc_mtf_type_error():
     """
     TypeError is raised when mtf is not a numpy array.
     """
@@ -653,10 +656,9 @@ def test_energy_ratio_returns_nan_for_zero_denominator(make_edc):
     energy = np.ones(10)
     edc = make_edc(energy=energy, sampling_rate=1000)
     limits = np.array([0.0, 0.001, 0.002, 0.003])
-    result = _energy_ratio(limits, edc, edc)
+    with pytest.warns(RuntimeWarning, match="invalid value encountered"):
+        result = _energy_ratio(limits, edc, edc)
     assert np.isnan(result)
-
-def test_energy_ratio_matches_reference_case(make_edc):
     r"""
     Analytical reference:
     EDC = exp(-a*t). For exponential decay, ratio known analytically from
