@@ -270,7 +270,8 @@ def test_energy_ratio_matches_reference_case(make_edc):
 
 def test_energy_ratio_works_with_two_different_edcs(make_edc):
     """Energy ratio between two different EDCs should compute
-    distinct ratio."""
+    distinct ratio.
+    """
     edc1 = make_edc(energy=np.linspace(1, 0, 10), sampling_rate=1000)
     edc2 = make_edc(energy=np.linspace(1, 0, 10) ** 2, sampling_rate=1000)
 
