@@ -218,9 +218,9 @@ def mean_free_path(
 def reverberation_time_eyring(
         volume: float,
         surface_area: float,
-        mean_absorption: Union[float, np.typing.NDArray[float]],
+        mean_absorption: Union[float, np.ndarray],
         speed_of_sound: float = 343.4,
-    ) -> np.typing.NDArray[float]:
+    ) -> np.ndarray:
     r"""
     Calculate the reverberation time in rooms as defined by Carl Eyring.
 
