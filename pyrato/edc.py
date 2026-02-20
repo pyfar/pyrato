@@ -194,8 +194,9 @@ def energy_decay_curve_truncation(
     time after Lundeby and calculates the noise compensated energy decay curve.
 
     .. note::
-        The EDC is NaN if the intersection time could not be computed due to a
-        low signal-to-noise ration. In this case a warning is raised as well.
+        The EDC contains ``np.nan`` values if the intersection time could not
+        be computed due to a low signal-to-noise ration. In this case a warning
+        is raised as well.
 
     Parameters
     ----------
@@ -347,9 +348,10 @@ def energy_decay_curve_lundeby(
     The missing signal energy from truncation time to infinity is
     estimated and added to the truncated integral after Lundeby et al. [#]_.
 
-     .. note::
-        The EDC is NaN if the intersection time could not be computed due to a
-        low signal-to-noise ration. In this case a warning is raised as well.
+    .. note::
+        The EDC contains ``np.nan`` values if the intersection time could not
+        be computed due to a low signal-to-noise ration. In this case a warning
+        is raised as well.
 
     Parameters
     ----------
@@ -631,9 +633,10 @@ def energy_decay_curve_chu_lundeby(
     the impulse response is truncated at the intersection time,
     and the correction for the truncation is applied [#]_, [#]_, [#]_.
 
-     .. note::
-        The EDC is NaN if the intersection time could not be computed due to a
-        low signal-to-noise ration. In this case a warning is raised as well.
+    .. note::
+        The EDC contains ``np.nan`` values if the intersection time could not
+        be computed due to a low signal-to-noise ration. In this case a warning
+        is raised as well.
 
     Parameters
     ----------
@@ -823,7 +826,7 @@ def intersection_time_lundeby(
 
         - ``'error'``: raises an error and the computation is terminated.
         - ``'warning'``: raises a warning and returns NaN values. This is
-          useful when cpmuting parameters for multi-channel input, e.g., in
+          useful when computing parameters for multi-channel input, e.g., in
           octave bands.
 
         The default is ``'error'``.
