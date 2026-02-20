@@ -5,6 +5,13 @@ import pyrato as ra
 import numpy.testing as npt
 import re
 
+import os
+from pyfar import Signal, signals
+from pyrato.parameters import speech_transmission_index_indirect
+from pyrato.parameters import modulation_transfer_function
+from pyrato.parameters import _sti_calc
+
+
 from pyrato.parameters import clarity
 from pyrato.parameters import _energy_ratio
 
@@ -111,6 +118,448 @@ def test_clarity_for_exponential_decay(make_edc):
     expected_ratio = np.exp(a * te) - 1
     expected_dB = 10 * np.log10(expected_ratio)
     np.testing.assert_allclose(result, expected_dB, atol=1e-6)
+
+
+def test_sti_data_input():
+    """
+    TypeError is raised when input data is not a pyfar.Signal.
+    """
+    sig = np.zeros(100)
+    match="Input data must be a pyfar.Signal."
+    with pytest.raises(TypeError, match=match):
+        speech_transmission_index_indirect(sig)
+
+def test_sti_snr_value_error():
+    """
+    ValueError is raised when SNR consists
+    of the wrong number of components.
+    """
+    sig = Signal(np.zeros(70560), 44100)
+    snr = np.zeros(6)  # Incorrect: only 6 bands instead of 7
+    match = r"Input 'snr' must have shape.*7 octave bands"
+    with pytest.raises(ValueError, match=match):
+        speech_transmission_index_indirect(sig, snr=snr)
+
+def test_sti_level_value_error():
+    """
+    ValueError is raised when level consists
+    of the wrong number of components.
+    """
+    sig = Signal(np.zeros(70560), 44100)
+    level = np.zeros(6)  # Incorrect: only 6 bands instead of 7
+    match = r"Input 'level' must have shape.*7 octave bands"
+    with pytest.raises(ValueError, match=match):
+        speech_transmission_index_indirect(sig, level=level)
+
+def test_sti_snr_warning():
+    """
+    UserWarning is raised when SNR is less than 20 dB for every octave band.
+    """
+    sig = Signal(np.zeros(70560), 44100)
+    snr = np.ones(7) * 10  # SNR less than 20 dB
+    match = "Input 'snr' should be at least 20 dB for every octave band."
+    with pytest.warns(UserWarning, match=match):
+        speech_transmission_index_indirect(sig, snr=snr)
+
+def test_sti_level_warning():
+    """
+    UserWarning is raised when level is less than 1 dB for every octave band.
+    """
+    sig = Signal(np.zeros(70560), 44100)
+    level = np.ones(7) * 0.5  # level less than 1 dB
+    match = "Input 'level' should be at least 1 dB for every octave band."
+    with pytest.warns(UserWarning, match=match):
+        speech_transmission_index_indirect(sig, level=level)
+
+def test_sti_warn_length():
+    """
+    ValueError is raised when the input signal is less than 1.6 seconds long.
+    """
+    sig = Signal(np.ones((31072)), 44100)
+    match  = "Input signal must be at least 1.6 seconds long."
+    with pytest.raises(ValueError, match=match):
+        speech_transmission_index_indirect(sig)
+
+def test_sti_warn_data_type_unknown():
+    """
+    ValueError is raised when an unknown data type is given.
+    """
+    sig = Signal(np.zeros(70560), 44100)
+    with pytest.raises(ValueError, match="Data_type is 'generic' but must "
+                       "be 'electrical' or 'acoustical'."):
+        speech_transmission_index_indirect(sig, rir_type="generic")
+
+def test_sti_ambient_noise_type_error():
+    """
+    TypeError is raised when ambient_noise is not a boolean.
+    """
+    sig = Signal(np.zeros(70560), 44100)
+    match = "ambient_noise must be a boolean."
+    with pytest.raises(TypeError, match=match):
+        speech_transmission_index_indirect(sig, ambient_noise="yes")
+
+def test_sti_1D_shape():
+    """
+    Output shape is correct for a 1D input signal.
+    """
+    shape_expected = (2,)
+    sig = Signal(np.ones((2,70560)), 44100)
+    array = speech_transmission_index_indirect(sig, rir_type="acoustical")
+    assert array.shape == shape_expected
+
+def test_sti_2D_shape():
+    """
+    Output shape is correct for a 2D input signal.
+    """
+    shape_expected = (2,2)
+    sig = Signal(np.ones((2,2,70560)), 44100)
+    sti_test = speech_transmission_index_indirect(sig, rir_type="acoustical")
+    assert sti_test.shape == shape_expected
+
+def test_sti_snr_shape_broadcast():
+    """
+    SNR with shape (7,) is correctly broadcast to all channels.
+    """
+    sig = Signal(np.ones((2, 70560)), 44100)
+    snr = np.ones(7) * 30  # Shape (7,) should work for any channel count
+    sti_test = speech_transmission_index_indirect(sig, snr=snr)
+    assert sti_test.shape == (2,)
+
+def test_sti_level_shape_broadcast():
+    """
+    Level with shape (7,) is correctly broadcast to all channels.
+    """
+    sig = Signal(np.ones((2, 70560)), 44100)
+    level = np.ones(7) * 60  # Shape (7,) should work for any channel count
+    snr = np.ones(7) * 30
+    sti_test = speech_transmission_index_indirect(sig, level=level, snr=snr)
+    assert sti_test.shape == (2,)
+
+def test_sti_multichannel_different_snr_level():
+    """
+    Different channels can have different SNR and level values.
+    """
+    sig = Signal(np.ones((2, 70560)), 44100)
+    # Channel 0: high SNR/level, Channel 1: lower SNR/level
+    snr = np.array([
+        [40, 40, 40, 40, 40, 40, 40],  # Channel 0: high SNR
+        [10, 10, 10, 10, 10, 10, 10],  # Channel 1: low SNR
+    ])
+    level = np.array([
+        [70, 70, 70, 70, 70, 70, 70],  # Channel 0: high level
+        [50, 50, 50, 50, 50, 50, 50],  # Channel 1: lower level
+    ])
+
+    with pytest.warns(UserWarning, match="snr' should be at least 20 dB"):
+        sti_test = speech_transmission_index_indirect(
+            sig, level=level, snr=snr)
+
+    # Different SNR/level should produce different STI values
+    assert sti_test.shape == (2,)
+    assert sti_test[0] != sti_test[1]
+    # Higher SNR/level should generally produce higher STI
+    assert sti_test[0] > sti_test[1]
+
+def test_sti_unit_impuls():
+    """
+    STI value for a unit impulse signal.
+    Ideal case: STI = 1.
+    """
+    sti_expected = 1
+    sig = signals.impulse(70560)
+    sti_test = speech_transmission_index_indirect(sig, rir_type="acoustical")
+    np.testing.assert_allclose(sti_test, sti_expected,atol=0.01)
+
+def test_sti_ir():
+    """
+    STI value for a simulated IR.
+    Compare with WinMF - Measurement Software.
+    """
+    sti_expected =  0.86
+    time = np.loadtxt(os.path.join(
+        os.path.dirname(__file__), "test_data", "ir_simulated.csv"))
+    ir = Signal(time, 44100)
+    sti_test = speech_transmission_index_indirect(ir, rir_type="acoustical")
+    np.testing.assert_allclose(sti_test, sti_expected,atol=0.01)
+
+def test_sti_ir_level_snr():
+    """
+    STI value for a simulated IR.
+    Considered level and snr values.
+    Compare with WinMF - Measurement Software.
+    """
+
+    sti_expected =  0.62
+    level = np.array([54, 49 , 54, 48, 45,40 , 31])
+    noise_level = np.array([53, 48, 46, 42, 38, 34, 30])
+    snr = level - noise_level
+    time = np.loadtxt(os.path.join(
+        os.path.dirname(__file__), "test_data", "ir_simulated.csv"))
+    ir = Signal(time, 44100)
+    with pytest.warns(UserWarning, match="snr' should be at least 20 dB"):
+        sti_test = speech_transmission_index_indirect(
+            ir, rir_type="acoustical", level=level, snr=snr)
+    np.testing.assert_allclose(sti_test, sti_expected, atol=0.01)
+
+def test_sti_electrical_vs_acoustical():
+    """
+    STI for electrical signals differs from acoustical due to masking effects.
+    """
+    sig = signals.impulse(70560)
+    level = np.ones(7) * 60
+    snr = np.ones(7) * 30
+
+    sti_acoustical = speech_transmission_index_indirect(
+        sig, rir_type="acoustical", level=level, snr=snr)
+    sti_electrical = speech_transmission_index_indirect(
+        sig, rir_type="electrical", level=level, snr=snr)
+
+    # Electrical should have higher STI (no masking)
+    assert sti_electrical >= sti_acoustical
+
+def test_sti_ambient_noise_effect():
+    """
+    Ambient noise correction affects STI values.
+    """
+    sig = signals.impulse(70560)
+    level = np.ones(7) * 60
+    snr = np.ones(7) * 20
+
+    sti_with_noise = speech_transmission_index_indirect(
+        sig, rir_type="acoustical", level=level, snr=snr, ambient_noise=True)
+    sti_without_noise = speech_transmission_index_indirect(
+        sig, rir_type="acoustical", level=level, snr=snr, ambient_noise=False)
+
+    # Ambient noise correction reduces STI
+    assert sti_with_noise != sti_without_noise
+    assert sti_without_noise > sti_with_noise
+
+def test_mtf_data_input():
+    """
+    TypeError is raised when input data is not a pyfar.Signal.
+    """
+    sig = np.zeros(70560)
+    snr = np.ones(7) * 30
+    match = "Input data must be a pyfar.Signal."
+    with pytest.raises(TypeError, match=match):
+        modulation_transfer_function(
+            sig, rir_type="acoustical", level=None,
+            snr=snr, ambient_noise=True)
+
+def test_mtf_multichannel_error():
+    """
+    ValueError is raised when input has more than one channel.
+    """
+    sig = Signal(np.ones((2, 70560)), 44100)
+    snr = np.ones(7) * 30
+    match = "Input must be a single-channel impulse response"
+    with pytest.raises(ValueError, match=match):
+        modulation_transfer_function(
+            sig, rir_type="acoustical", level=None,
+            snr=snr, ambient_noise=True)
+
+def test_mtf_short_signal_error():
+    """
+    ValueError is raised when signal is shorter than 1.6 seconds.
+    """
+    sig = Signal(np.ones(44100), 44100)  # 1 second
+    snr = np.ones(7) * 30
+    match = "Input signal must be at least 1.6 seconds long"
+    with pytest.raises(ValueError, match=match):
+        modulation_transfer_function(
+            sig, rir_type="acoustical", level=None,
+            snr=snr, ambient_noise=True)
+
+def test_mtf_snr_type_error():
+    """
+    TypeError is raised when snr is not a numpy array.
+    """
+    sig = signals.impulse(70560)
+    snr = [30, 30, 30, 30, 30, 30, 30]  # List instead of array
+    match = "snr must be a numpy array."
+    with pytest.raises(TypeError, match=match):
+        modulation_transfer_function(
+            sig, rir_type="acoustical", level=None,
+            snr=snr, ambient_noise=True)
+
+def test_mtf_snr_shape_error():
+    """
+    ValueError is raised when snr has wrong shape.
+    """
+    sig = signals.impulse(70560)
+    snr = np.ones(6)  # Wrong: 6 bands instead of 7
+    match = re.escape('snr must have shape (7,) for 7 octave bands')
+    with pytest.raises(ValueError, match=match):
+        modulation_transfer_function(
+            sig, rir_type="acoustical", level=None,
+            snr=snr, ambient_noise=True)
+
+def test_mtf_level_type_error():
+    """
+    TypeError is raised when level is not a numpy array or None.
+    """
+    sig = signals.impulse(70560)
+    snr = np.ones(7) * 30
+    level = [60, 60, 60, 60, 60, 60, 60]  # List instead of array
+    match = "level must be a numpy array or None."
+    with pytest.raises(TypeError, match=match):
+        modulation_transfer_function(
+            sig, rir_type="acoustical", level=level,
+            snr=snr, ambient_noise=True)
+
+def test_mtf_level_shape_error():
+    """
+    ValueError is raised when level has wrong shape.
+    """
+    sig = signals.impulse(70560)
+    snr = np.ones(7) * 30
+    level = np.ones(6) * 60  # Wrong: 6 bands instead of 7
+    match = r"Level must have shape \(7,\) for 7 octave bands"
+    with pytest.raises(ValueError, match=match):
+        modulation_transfer_function(
+            sig, rir_type="acoustical", level=level,
+            snr=snr, ambient_noise=True)
+
+def test_mtf_ambient_noise_type_error():
+    """
+    TypeError is raised when ambient_noise is not a boolean.
+    """
+    sig = signals.impulse(70560)
+    snr = np.ones(7) * 30
+    match = "ambient_noise must be a boolean."
+    with pytest.raises(TypeError, match=match):
+        modulation_transfer_function(
+            sig, rir_type="acoustical", level=None,
+            snr=snr, ambient_noise="yes")
+
+def test_mtf_shape():
+    """
+    MTF output shape is (7, 14) for a valid impulse response.
+    """
+    sig = signals.impulse(70560)
+    snr = np.ones(7) * 30
+
+    mtf = modulation_transfer_function(
+        sig, rir_type="acoustical", level=None, snr=snr, ambient_noise=True)
+
+    assert mtf.shape == (7, 14)
+
+def test_mtf_snr_reduction():
+    """
+    MTF is reduced when SNR decreases.
+    """
+    sig = signals.impulse(70560)
+
+    mtf_high = modulation_transfer_function(
+        sig,
+        rir_type="acoustical",
+        level=None,
+        snr=np.ones(7) * 100,
+        ambient_noise=False,
+    )
+
+    with pytest.warns(UserWarning, match="snr' should be at least 20 dB"):
+        mtf_low = modulation_transfer_function(
+            sig,
+            rir_type="acoustical",
+            level=None,
+            snr=np.ones(7) * 10,
+            ambient_noise=False,
+        )
+
+    assert np.all(mtf_low < mtf_high)
+
+def test_mtf_ambient_noise_effect():
+    """
+    Ambient noise correction reduces MTF values.
+    """
+    sig = signals.impulse(70560)
+    level = np.ones(7) * 60
+    snr = np.ones(7) * 20
+
+    mtf_no_amb = modulation_transfer_function(
+        sig, "acoustical", level=level, snr=snr, ambient_noise=False,
+    )
+
+    mtf_amb = modulation_transfer_function(
+        sig, "acoustical", level=level, snr=snr, ambient_noise=True,
+    )
+
+    assert np.all(mtf_amb <= mtf_no_amb)
+
+def test_mtf_electrical_vs_acoustical():
+    """
+    Auditory masking is applied only for acoustical signals.
+    """
+    sig = signals.impulse(70560)
+    level = np.ones(7) * 65
+    snr = np.ones(7) * 20
+
+    mtf_ac = modulation_transfer_function(
+        sig, "acoustical", level=level, snr=snr, ambient_noise=True,
+    )
+
+    mtf_el = modulation_transfer_function(
+        sig, "electrical", level=level, snr=snr, ambient_noise=True,
+    )
+
+    assert np.any(mtf_ac != mtf_el)
+
+def test_mtf_bounds():
+    """
+    MTF values are bounded between 0 and 1.
+    """
+    sig = signals.impulse(70560)
+    snr = np.ones(7) * 5
+
+    with pytest.warns(UserWarning, match="snr' should be at least 20 dB"):
+        mtf = modulation_transfer_function(
+            sig, "acoustical", level=None, snr=snr, ambient_noise=True,
+        )
+
+    assert np.all(mtf >= 0.0)
+    assert np.all(mtf <= 1.0)
+    """
+    TypeError is raised when mtf is not a numpy array.
+    """
+    mtf = [[0.5] * 14] * 7  # List instead of array
+    match = "mtf must be a numpy array."
+    with pytest.raises(TypeError, match=match):
+        _sti_calc(mtf)
+
+def test_sti_calc_mtf_shape_error():
+    """
+    ValueError is raised when mtf has wrong shape.
+    """
+    mtf = np.ones((6, 14))  # Wrong: 6 bands instead of 7
+    match = (
+        r"mtf must have shape \(7, 14\) for 7 octave bands "
+        r"and 14 modulation frequencies"
+    )
+    with pytest.raises(ValueError, match=match):
+        _sti_calc(mtf)
+
+def test_sti_calc_mtf_zero_clipping():
+    """
+    _sti_calc correctly handles MTF=0 (SNR=-inf) by clipping to -15 dB.
+    """
+    # MTF = 0 leads to log10(0 / (1-0)) = log10(0) = -inf
+    mtf = np.zeros((7, 14))
+    sti = _sti_calc(mtf)
+
+    # With SNR clipped to -15 dB, TI = (-15 + 15)/30 = 0, STI should be 0
+    assert sti == 0.0
+
+def test_sti_calc_mtf_one_clipping():
+    """
+    _sti_calc correctly handles MTF=1 (SNR=+inf) by clipping to 15 dB.
+    """
+    # MTF = 1 leads to log10(1 / (1-1)) = log10(1/0) = +inf
+    mtf = np.ones((7, 14))
+    sti = _sti_calc(mtf)
+
+    # With SNR clipped to 15 dB, TI = (15 + 15)/30 = 1, STI should be 1
+    assert sti == 1.0
 
 # _energy_ratio tests
 @pytest.mark.parametrize(
@@ -219,10 +668,9 @@ def test_energy_ratio_returns_nan_for_zero_denominator(make_edc):
     energy = np.ones(10)
     edc = make_edc(energy=energy, sampling_rate=1000)
     limits = np.array([0.0, 0.001, 0.002, 0.003])
-    result = _energy_ratio(limits, edc, edc)
+    with pytest.warns(RuntimeWarning, match="invalid value encountered"):
+        result = _energy_ratio(limits, edc, edc)
     assert np.isnan(result)
-
-def test_energy_ratio_matches_reference_case(make_edc):
     r"""
     Analytical reference:
     EDC = exp(-a*t). For exponential decay, ratio known analytically from
