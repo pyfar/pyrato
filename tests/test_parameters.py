@@ -191,9 +191,9 @@ def test_energy_ratio_np_inf_limits(make_edc):
     result = _energy_ratio(limits, edc, edc)
     npt.assert_allclose(result, 0.0, atol=1e-12)
 
-@pytest.mark.parametrize(
-    "energy",
-    [
+
+@pytest.fixture(
+    params=[
         # 1D, single channel
         np.linspace(1, 0, 10),
         # 2D, two channels
@@ -201,14 +201,53 @@ def test_energy_ratio_np_inf_limits(make_edc):
             np.linspace(1, 0, 10),
             np.linspace(0.5, 0, 10),
         ]),
-        # 3D – deterministic 2×3×4 “multichannel” structure
+        # 3D – deterministic 2×3×4 "multichannel" structure
         np.arange(2 * 3 * 4).reshape(2, 3, 4),
     ],
+    ids=["1D_single_channel", "2D_two_channels", "3D_deterministic"],
 )
-def test_energy_ratio_preserves_multichannel_shape_correctly(energy, make_edc):
+def multichannel_energy(request):
+    """Fixture providing different multichannel energy configurations."""
+    return request.param
+
+
+def test_energy_ratio_preserves_multichannel_shape_correctly(
+    multichannel_energy,
+    make_edc,
+):
     """Preserves any multichannel shape (1,), (2,), (2,3,)."""
-    edc = make_edc(energy=energy, sampling_rate=1000)
-    limits = np.array([0.0, 0.001, 0.0, 0.003])
+    edc = make_edc(energy=multichannel_energy, sampling_rate=1000)
+    limits = np.array([0.0, np.inf, 0.0, 0.003])
+
+    result = _energy_ratio(limits, edc, edc)
+
+    assert result.shape == edc.cshape
+
+@pytest.mark.parametrize(
+    "limits_config",
+    [
+        (np.array([0.0, 0.003, 0.0, np.inf]), "infinite_numerator"),
+        (np.array([0.0, np.inf, 0.0, 0.003]), "infinite_denominator"),
+        (np.array([0.0, np.inf, 0.0, np.inf]), "infinite_both"),
+    ],
+    ids=["numerator_inf", "denominator_inf", "both_inf"],
+)
+def test_energy_ratio_infinite_limits_multichannel(
+    multichannel_energy,
+    make_edc,
+    limits_config,
+):
+    """
+    Handle infinite limits in various combinations with multichannel EDCs.
+
+    Tests three scenarios:
+    - Infinite numerator limit only (lim4 = ∞)
+    - Infinite denominator limit only (lim2 = ∞)
+    - Both infinite limits (lim2 = ∞ and lim4 = ∞)
+
+    """
+    limits, description = limits_config
+    edc = make_edc(energy=multichannel_energy, sampling_rate=1000)
 
     result = _energy_ratio(limits, edc, edc)
 
@@ -342,3 +381,33 @@ def test_energy_ratio_with_clarity_nan_limit(make_edc):
         energy_decay_curve2=edc,
     )
     assert np.allclose(result, 1.0)
+
+
+def test_energy_ratio_handles_different_channel_shapes(make_edc):
+    """
+    Test that _energy_ratio raises an error for EDCs with different channel
+    shapes.
+    """
+    # Create EDC with cshape (2,)
+    energy1 = np.stack([
+        np.linspace(1, 0, 100),
+        np.linspace(0.8, 0, 100),
+    ])
+    edc1 = make_edc(energy=energy1, sampling_rate=1000)
+    assert edc1.cshape == (2,)
+
+    # Create EDC with cshape (3,)
+    energy2 = np.stack([
+        np.linspace(1, 0, 100),
+        np.linspace(0.8, 0, 100),
+        np.linspace(0.6, 0, 100),
+    ])
+    edc2 = make_edc(energy=energy2, sampling_rate=1000)
+    assert edc2.cshape == (3,)
+
+    # Limits for both numerator and denominator
+    limits = np.array([0.0, 0.02, 0.0, 0.05])
+
+    # Should raise ValueError due to shape mismatch during broadcasting
+    with pytest.raises(ValueError, match="could not be broadcast"):
+        _energy_ratio(limits, edc1, edc2)
