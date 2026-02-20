@@ -4,6 +4,7 @@ Parametric room acoustics calculations using simple geometric considerations
 such as Sabine's theory of sound in rooms.
 """
 import numpy as np
+from typing import Union
 
 def calculate_speed_of_sound(temperature):
     r"""Calculate the speed of sound in air depending on the temperature.
@@ -250,46 +251,86 @@ def mean_free_path(
     return 4 * volume / surface_area
 
 
-def reverberation_time_eyring(volume,surface,mean_alpha):
+def reverberation_time_eyring(
+        volume: float,
+        surface_area: float,
+        mean_absorption: Union[float, np.ndarray],
+        speed_of_sound: float = 343.4,
+    ) -> np.ndarray:
     r"""
-    function which calculates reverberation time in rooms as
-    defined by Carl F. Eyring.
+    Calculate the reverberation time in rooms as defined by Carl Eyring.
+
+    The reverberation time is calculated according to Ref. [#]_ as
 
     .. math::
-        T_{60} = -0.161 \frac{\text{volume}}{\text{surface} \cdot
-            \ln(1 - \text{mean\_alpha})}
+        T_{60} = -\frac{24 \cdot \ln(10)}{c}
+        \cdot \frac{V}{S \ln(1 - \tilde{\alpha})}
+
+    where :math:`V` is the room volume, :math:`S` is the total surface area
+    of the room, :math:`\tilde{\alpha}` is the average absorption coefficient
+    of the room surfaces, and :math:`c` is the speed of sound.
 
     Parameters
     ----------
-    volume : float, np.ndarray
-        Room volume in m3
-    surface : float, np.ndarray
-        Surface areas of all surfaces in the room in m2
-    mean_alpha : float, np.ndarray
-        Average absorption coefficient of room surfaces
+    volume : float
+        Room volume in :math:`\mathrm{m}^3`
+    surface_area : float
+        Total surface area of the room in :math:`\mathrm{m}^2`
+    mean_absorption : float, numpy.ndarray
+        Average absorption coefficient of room surfaces between 0 and 1. If
+        an array is passed, the reverberation time is calculated for each value
+        in the array.
+    speed_of_sound : float
+        Speed of sound in m/s. Default is 343.4 m/s, which corresponds to the
+        speed of sound in air at 20 °C.
 
     Returns
     -------
-    reverberation_time_eyring: double
-         Eyring reverberation time in s
+    numpy.ndarray
+        Reverberation time in seconds. The shape matches the shape of the input
+        variable `mean_absorption`.
+
+    Examples
+    --------
+    >>> from pyrato.parametric import reverberation_time_eyring
+    >>> import numpy as np
+    >>> volume = 64
+    >>> surface_area = 96
+    >>> mean_absorption = [0.1, 0.3, 0.4]
+    >>> reverb_time = reverberation_time_eyring(
+    ...     volume, surface_area, mean_absorption)
+    >>> np.round(reverb_time, 2)
+    ... array([1.02, 0.3 , 0.21])
 
     References
     ----------
-    .. [#] Eyring, C.F., 1930. Reverberation time in “dead” rooms. The Journal
-    of the Acoustical Society of America, 1(2A_Supplement), pp.168-168.
+    .. [#] Eyring, C.F., 1930. Reverberation time in "dead" rooms. The Journal
+           of the Acoustical Society of America, 1(2A_Supplement), pp.168-168.
 
     """
-
+    if speed_of_sound <= 0:
+        raise ValueError("Speed of sound should be larger than 0")
     if volume <= 0:
         raise ValueError("Volume should be larger than 0")
-    if surface <= 0:
-        raise ValueError("Surface should be larger than 0")
-    if mean_alpha <0 or mean_alpha >1:
-        raise ValueError("mean_alpha should be between 0 and 1")
+    if surface_area <= 0:
+        raise ValueError("Surface area should be larger than 0")
 
-    T60 = -0.161 * (volume / (surface * np.log(1 - mean_alpha)))
+    mean_absorption = np.asarray(mean_absorption)
+    if np.any(mean_absorption < 0) or np.any(mean_absorption > 1):
+        raise ValueError("mean_absorption should be between 0 and 1")
 
-    return T60
+    factor = 24 * np.log(10) / speed_of_sound
+
+    with np.errstate(divide='ignore'):
+        reverberation_time = -factor * (
+            volume/(surface_area * np.log(1 - mean_absorption)))
+
+    reverberation_time = np.where(
+        np.isclose(mean_absorption, 0, atol=1e-10, rtol=1e-10),
+        np.inf,
+        reverberation_time)
+
+    return reverberation_time
 
 
 def calculate_sabine_reverberation_time(surfaces, alphas, volume):
