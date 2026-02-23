@@ -253,7 +253,7 @@ def test_energy_ratio_infinite_limits_multichannel(
     - Both infinite limits (lim2 = ∞ and lim4 = ∞)
 
     """
-    limits, description = limits_config
+    limits, _description = limits_config
     edc = make_edc(energy=multichannel_energy, sampling_rate=1000)
 
     result = _energy_ratio(limits, edc, edc)
@@ -265,7 +265,9 @@ def test_energy_ratio_returns_nan_for_zero_denominator(make_edc):
     energy = np.ones(10)
     edc = make_edc(energy=energy, sampling_rate=1000)
     limits = np.array([0.0, 0.001, 0.002, 0.003])
-    with pytest.warns(RuntimeWarning, match="invalid value encountered in divide"):
+    with pytest.warns(
+        RuntimeWarning, match="invalid value encountered in divide"
+    ):
         result = _energy_ratio(limits, edc, edc)
     assert np.isnan(result)
 
@@ -419,6 +421,6 @@ def test_energy_ratio_handles_different_channel_shapes(make_edc):
     with pytest.raises(
         ValueError,
         match="energy_decay_curve1 and energy_decay_curve2 must have the same "
-              "channel shape"
+              "channel shape",
     ):
         _energy_ratio(limits, edc1, edc2)
