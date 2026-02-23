@@ -184,7 +184,7 @@ def test_sti_warn_data_type_unknown():
     ValueError is raised when an unknown data type is given.
     """
     sig = Signal(np.zeros(70560), 44100)
-    with pytest.raises(ValueError, match="Data_type is 'generic' but must "
+    with pytest.raises(ValueError, match="rir_type is 'generic' but must "
                        "be 'electrical' or 'acoustical'."):
         speech_transmission_index_indirect(sig, rir_type="generic")
 
@@ -513,8 +513,9 @@ def test_mtf_bounds():
 
     with pytest.warns(UserWarning, match="snr' should be at least 20 dB"):
         mtf = modulation_transfer_function(
-            sig, "acoustical", level=None, snr=snr, ambient_noise=True,
-            rir_type="acoustical")
+            sig, rir_type="acoustical", level=None, snr=snr, 
+            ambient_noise=True,
+        )
 
     assert np.all(mtf >= 0.0)
     assert np.all(mtf <= 1.0)
