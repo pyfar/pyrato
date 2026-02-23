@@ -267,7 +267,7 @@ def test_sti_unit_impulse():
     sti_expected = 1
     sig = signals.impulse(70560)
     sti_test = speech_transmission_index_indirect(sig, rir_type="acoustical")
-    np.testing.assert_allclose(sti_test, sti_expected,atol=0.01)
+    np.testing.assert_allclose(sti_test, sti_expected, atol=0.01)
 
 def test_sti_ir():
     """
@@ -514,7 +514,7 @@ def test_mtf_bounds():
     with pytest.warns(UserWarning, match="snr' should be at least 20 dB"):
         mtf = modulation_transfer_function(
             sig, "acoustical", level=None, snr=snr, ambient_noise=True,
-        )
+            rir_type="acoustical")
 
     assert np.all(mtf >= 0.0)
     assert np.all(mtf <= 1.0)

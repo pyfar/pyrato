@@ -301,7 +301,7 @@ def speech_transmission_index_indirect(
     if rir_type is None:
         rir_type = "acoustical"
     if rir_type not in ["electrical", "acoustical"]:
-        raise ValueError(f"Data_type is '{rir_type}' but must be "
+        raise ValueError(f"rir_type is '{rir_type}' but must be "
                          "'electrical' or 'acoustical'.")
 
     # Validate ambient_noise parameter
@@ -480,11 +480,11 @@ def modulation_transfer_function(
             # (IEC 60268-16:2020, Annex A.4.2)
             amdb = level.copy()
             amdb[amdb < 63] = 0.5*amdb[amdb < 63] - 65
-            amdb[(63 <= amdb) & (amdb < 67)] = 1.8*amdb[(63 <= amdb) &
-                                                        (amdb < 67)]-146.9
-            amdb[(67 <= amdb) & (amdb < 100)] = 0.5*amdb[(67 <= amdb) &
-                                                        (amdb < 100)]-59.8
-            amdb[100 <= amdb] = amdb[100 <= amdb]-10
+            amdb[(63 <= amdb) & (amdb < 67)] = 1.8 * amdb[(63 <= amdb) &
+                                                        (amdb < 67)] - 146.9
+            amdb[(67 <= amdb) & (amdb < 100)] = 0.5 * amdb[(67 <= amdb) &
+                                                        (amdb < 100)] - 59.8
+            amdb[100 <= amdb] = amdb[100 <= amdb] - 10
             a = 10**(amdb/10)
             # Masking intensity (IEC 60268-16:2020, Eq. A.12)
             I_k1_lin = np.roll(Ik_lin, 1)
@@ -493,7 +493,7 @@ def modulation_transfer_function(
             # Absolute speech reception threshold
             # (IEC 60268-16:2020, Annex A.4.3)
             A_k = np.array([[46, 27, 12, 6.5, 7.5, 8, 12]]).T
-            I_rt = 10**(A_k/10)
+            I_rt = 10 ** (A_k / 10)
             # Auditory masking + threshold correction
             # (IEC 60268-16:2020, Eq. A.11)
             mtf = (mtf * Ik_lin[:, None]
