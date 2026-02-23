@@ -259,7 +259,7 @@ def test_sti_multichannel_different_snr_level():
     # Higher SNR/level should generally produce higher STI
     assert sti_test[0] > sti_test[1]
 
-def test_sti_unit_impuls():
+def test_sti_unit_impulse():
     """
     STI value for a unit impulse signal.
     Ideal case: STI = 1.
@@ -518,6 +518,8 @@ def test_mtf_bounds():
 
     assert np.all(mtf >= 0.0)
     assert np.all(mtf <= 1.0)
+
+def test_sti_calc_type_error():
     """
     TypeError is raised when mtf is not a numpy array.
     """
