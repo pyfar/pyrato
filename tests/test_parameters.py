@@ -756,7 +756,7 @@ def test_mtf_winmf_reference():
     # SNR values below 20 dB are intentional for this reference measurement
     with pytest.warns(UserWarning, match="snr' should be at least 20 dB"):
         mtf = modulation_transfer_function(
-            ir, rir_type="acoustical", level=level, snr=snr, 
+            ir, rir_type="acoustical", level=level, snr=snr,
             ambient_noise=False)
 
     # Load WINMF reference values from CSV using numpy
