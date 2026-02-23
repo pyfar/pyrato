@@ -408,7 +408,7 @@ def test_mtf_level_type_error():
 
 def test_mtf_level_shape_error():
     """
-    ValueError is raised when level has wrong shape.
+    ValueErrovcr is raised when level has wrong shape.
     """
     sig = signals.impulse(70560)
     snr = np.ones(7) * 30
@@ -734,3 +734,51 @@ def test_energy_ratio_handles_different_edc_lengths(make_edc):
         match=r"limits\[2:4\] must be between 0 and",
     ):
         _energy_ratio(limits, edc1, edc2)
+
+def test_mtf_winmf_reference():
+    """
+    MTF values match WINMF reference data.
+    
+    Tests the modulation transfer function against reference values
+    computed by WinMF - Measurement Software for a simulated impulse response.
+    """
+    # Load simulated IR
+    time = np.loadtxt(os.path.join(
+        os.path.dirname(__file__), "test_data", "ir_simulated.csv"))
+    ir = Signal(time, 44100)
+    
+    # Compute MTF
+    mtf = modulation_transfer_function(ir)
+    
+    # Load WINMF reference values from CSV
+    # CSV format: band; param; modulation_freq; mtf_band1; ...; mtf_band7
+    csv_file = os.path.join(
+        os.path.dirname(__file__), "test_data", "ir_simulated_mtf_values_from_WINMF.csv")
+    
+    # Read CSV with custom format to handle variable first column
+    def converter(line):
+        parts = line.split(';')
+        # Extract only the 7 MTF bands (indices 3-9)
+        return [float(x.strip()) for x in parts[3:10]]
+    
+    winmf_data = []
+    with open(csv_file, 'r') as f:
+        for line_idx, line in enumerate(f):
+            # Skip line 0 (0 Hz modulation freq) - pyrato doesn't compute this
+            if line_idx == 0:
+                continue
+            try:
+                values = converter(line)
+                winmf_data.append(values)
+            except (ValueError, IndexError):
+                continue
+    
+    winmf_raw = np.array(winmf_data)
+    
+    # WINMF data shape is (14 modulation freqs, 7 bands)
+    # pyrato MTF shape is (7 bands, 14 modulation freqs)
+    # Transpose to match pyrato format
+    mtf_expected = winmf_raw.T
+    
+    # Compare with WINMF reference (allow 1% tolerance due to numerical differences)
+    np.testing.assert_allclose(mtf, mtf_expected, rtol=0.01, atol=0.01)
