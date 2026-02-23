@@ -459,24 +459,23 @@ def modulation_transfer_function(rir, rir_type="acoustical", level=None, snr=Non
         modulation_frequencies, (rir_oct.cshape[0], 1))
     energy = rir_oct.time ** 2
 
-    # MTF calculation according to IEC 60268-16:2020, section 6.1
+    # MTF calculation (IEC 60268-16:2020, Section 6.1)
     term_exp = np.exp(
         -2j * np.pi * modulation_frequencies[:, :, None] * rir_oct.times)
     numerator = np.abs(np.sum(energy * term_exp, axis=-1))
     denominator = np.sum(energy, axis=-1)
     mtf = numerator / denominator
+
+    # SNR correction (IEC 60268-16:2020, Eq. A.9)
     mtf *= 1 / (1 + 10 ** (-snr[:, None] / 10))
 
-    if level is not None:
-        # Total intensity (signal + noise)
-        # according to IEC 60268-16:2020, Annex A.2.4
-        Ik = 10 * np.log10(10 ** (level / 10) + 10 ** ((level - snr) / 10))
-        if ambient_noise:
-            # Ambient noise correction (IEC 60268-16:2020, Annex A.2.3)
-            mtf *= level[:, None] / Ik[:, None]
+    if level is not None and ambient_noise:
+        # Total intensity per octave band: signal + noise
+        # (IEC 60268-16:2020, Annex A.2.4)
+        Ik_lin = 10 ** (level / 10) + 10 ** ((level - snr) / 10)
         if rir_type == "acoustical":
-            # Compute level-dependent auditory masking factor `I_amk`
-            # according to IEC 60268-16:2020, Annex A.4.2
+            # Compute level-dependent auditory masking factor I_amk
+            # (IEC 60268-16:2020, Annex A.4.2)
             amdb = level.copy()
             amdb[amdb < 63] = 0.5*amdb[amdb < 63] - 65
             amdb[(63 <= amdb) & (amdb < 67)] = 1.8*amdb[(63 <= amdb) &
@@ -485,22 +484,15 @@ def modulation_transfer_function(rir, rir_type="acoustical", level=None, snr=Non
                                                         (amdb < 100)]-59.8
             amdb[100 <= amdb] = amdb[100 <= amdb]-10
             a = 10**(amdb/10)
-            # Masking intensity according to IEC 60268-16:2020, Annex A.4.2
-            L_k1 = np.roll(Ik,1)
-            I_k1 = 10**(L_k1/10)
-            # Upward spread of masking: lower frequency bands mask higher bands
-            I_amk = 10*np.log10(I_k1*a)
-            I_amk[0] = 0  # No masking for lowest band (125 Hz)
-            # Absolute speech reception threshold
-            # according to IEC 60268-16:2020, Annex A.4.3
+            # Masking intensity (IEC 60268-16:2020, Eq. A.12)
+            I_k1_lin = np.roll(Ik_lin, 1)
+            I_amk_lin = I_k1_lin * a
+            I_amk_lin[0] = 0  # No masking from below for lowest band (125 Hz)
+            # Absolute speech reception threshold (IEC 60268-16:2020, Annex A.4.3)
             A_k = np.array([[46, 27, 12, 6.5, 7.5, 8, 12]]).T
             I_rt = 10**(A_k/10)
-            # Apply auditory and masking effects
-            # according to IEC 60268-16:2020, Annex A.2.4
-            mtf = mtf * (Ik[:, None] / (
-                10 * np.log10(10 ** (Ik[:, None] / 10) +
-                              10 ** (I_amk[:, None] / 10) + I_rt)
-            ))
+            # Auditory masking + threshold correction (IEC 60268-16:2020, Eq. A.11)
+            mtf = mtf * Ik_lin[:, None] / ( Ik_lin[:, None] + I_amk_lin[:, None] + I_rt )
     # Clip MTF to valid range [0, 1] (IEC 60268-16:2020, Section A.2.4)
     return np.clip(mtf, 0, 1)
 
@@ -531,7 +523,7 @@ def _sti_calc(mtf):
             f"14 modulation frequencies, but got {mtf.shape}.",
         )
 
-    # Effective SNR from MTF according to IEC 60268-16:2020, Annex A.2.1
+    # Effective SNR from MTF (IEC 60268-16:2020, Annex A.2.1)
     with np.errstate(divide='ignore'):
         snr_eff = 10 * np.log10(mtf / (1 - mtf))
 
@@ -539,21 +531,21 @@ def _sti_calc(mtf):
     snr_eff = np.clip(snr_eff, -15, 15)
 
     # Transmission index (TI) for each octave band and modulation
-    # frequency according to IEC 60268-16:2020, Annex A.2.1
+    # frequency (IEC 60268-16:2020, Annex A.2.1)
     TI = (snr_eff + 15) / 30
 
     # Modulation transmission index per octave band: average over
     # modulation frequencies (IEC 60268-16:2020, Annex A.2.1)
     mti = np.mean(TI, axis=-1)
 
-    # STI Octave evaluation factors according to IEC 60268-16:2020, Table A.1
+    # STI Octave evaluation factors (IEC 60268-16:2020, Table A.1)
     alpha = np.array([0.085, 0.127, 0.230, 0.233, 0.309, 0.224, 0.173])
     beta = np.array([0.085, 0.078, 0.065, 0.011, 0.047, 0.095])
 
-    # STI according to IEC 60268-16:2020, Annex A.2.1
+    # STI (IEC 60268-16:2020, Annex A.2.1)
     sti = np.sum(alpha * mti) - np.sum(beta * np.sqrt(mti[:-1] * mti[1:]))
 
-    # limit STI to 1 according to IEC 60268-16:2020, section A.2.1
+    # limit STI to 1 (IEC 60268-16:2020, Section A.2.1)
     return min(sti, 1.0)
 
 
