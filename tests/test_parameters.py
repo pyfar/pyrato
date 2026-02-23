@@ -175,7 +175,7 @@ def test_sti_warn_length():
     ValueError is raised when the input signal is less than 1.6 seconds long.
     """
     sig = Signal(np.ones((31072)), 44100)
-    match  = "Input signal must be at least 1.6 seconds long."
+    match = "Input signal must be at least 1.6 seconds long."
     with pytest.raises(ValueError, match=match):
         speech_transmission_index_indirect(sig)
 
@@ -274,12 +274,12 @@ def test_sti_ir():
     STI value for a simulated IR.
     Compare with WinMF - Measurement Software.
     """
-    sti_expected =  0.86
+    sti_expected = 0.86
     time = np.loadtxt(os.path.join(
         os.path.dirname(__file__), "test_data", "ir_simulated.csv"))
     ir = Signal(time, 44100)
     sti_test = speech_transmission_index_indirect(ir, rir_type="acoustical")
-    np.testing.assert_allclose(sti_test, sti_expected,atol=0.01)
+    np.testing.assert_allclose(sti_test, sti_expected, atol=0.01)
 
 def test_sti_ir_level_snr():
     """
@@ -288,8 +288,8 @@ def test_sti_ir_level_snr():
     Compare with WinMF - Measurement Software.
     """
 
-    sti_expected =  0.62
-    level = np.array([54, 49 , 54, 48, 45,40 , 31])
+    sti_expected = 0.62
+    level = np.array([54, 49 , 54, 48, 45, 40, 31])
     noise_level = np.array([53, 48, 46, 42, 38, 34, 30])
     snr = level - noise_level
     time = np.loadtxt(os.path.join(
@@ -408,7 +408,7 @@ def test_mtf_level_type_error():
 
 def test_mtf_level_shape_error():
     """
-    ValueErrovcr is raised when level has wrong shape.
+    ValueError is raised when level has wrong shape.
     """
     sig = signals.impulse(70560)
     snr = np.ones(7) * 30
@@ -513,7 +513,7 @@ def test_mtf_bounds():
 
     with pytest.warns(UserWarning, match="snr' should be at least 20 dB"):
         mtf = modulation_transfer_function(
-            sig, rir_type="acoustical", level=None, snr=snr, 
+            sig, rir_type="acoustical", level=None, snr=snr,
             ambient_noise=True,
         )
 
@@ -749,14 +749,15 @@ def test_mtf_winmf_reference():
     time = np.loadtxt(os.path.join(
         os.path.dirname(__file__), "test_data", "ir_simulated.csv"))
     ir = Signal(time, 44100)
-    level = np.array([54, 49 , 54, 48, 45,40 , 31])
+    level = np.array([54, 49 , 54, 48, 45, 40, 31])
     noise_level = np.array([53, 48, 46, 42, 38, 34, 30])
     snr = level - noise_level
     # Compute MTF without auditory masking correction (matches WinMF behaviour)
     # SNR values below 20 dB are intentional for this reference measurement
     with pytest.warns(UserWarning, match="snr' should be at least 20 dB"):
         mtf = modulation_transfer_function(
-            ir, level=level, snr=snr, ambient_noise=False)
+            ir, rir_type="acoustical", level=level, snr=snr, 
+            ambient_noise=False)
 
     # Load WINMF reference values from CSV using numpy
     csv_file = os.path.join(
