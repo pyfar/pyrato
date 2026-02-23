@@ -266,7 +266,7 @@ def test_energy_ratio_returns_nan_for_zero_denominator(make_edc):
     edc = make_edc(energy=energy, sampling_rate=1000)
     limits = np.array([0.0, 0.001, 0.002, 0.003])
     with pytest.warns(
-        RuntimeWarning, match="invalid value encountered in divide"
+        RuntimeWarning, match="invalid value encountered in divide",
     ):
         result = _energy_ratio(limits, edc, edc)
     assert np.isnan(result)
