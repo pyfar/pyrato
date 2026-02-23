@@ -265,7 +265,8 @@ def test_energy_ratio_returns_nan_for_zero_denominator(make_edc):
     energy = np.ones(10)
     edc = make_edc(energy=energy, sampling_rate=1000)
     limits = np.array([0.0, 0.001, 0.002, 0.003])
-    result = _energy_ratio(limits, edc, edc)
+    with pytest.warns(RuntimeWarning, match="invalid value encountered in divide"):
+        result = _energy_ratio(limits, edc, edc)
     assert np.isnan(result)
 
 def test_energy_ratio_matches_reference_case(make_edc):
@@ -414,6 +415,10 @@ def test_energy_ratio_handles_different_channel_shapes(make_edc):
     # Limits for both numerator and denominator
     limits = np.array([0.0, 0.02, 0.0, 0.05])
 
-    # Should raise ValueError due to shape mismatch during broadcasting
-    with pytest.raises(ValueError, match="could not be broadcast"):
+    # Should raise ValueError due to shape mismatch with clear message
+    with pytest.raises(
+        ValueError,
+        match="energy_decay_curve1 and energy_decay_curve2 must have the same "
+              "channel shape"
+    ):
         _energy_ratio(limits, edc1, edc2)

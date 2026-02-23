@@ -273,6 +273,13 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
         raise TypeError(
             "energy_decay_curve2 must be a pyfar.TimeData or derived object.")
 
+    # Check that both EDCs have the same channel shape
+    if energy_decay_curve1.cshape != energy_decay_curve2.cshape:
+        raise ValueError(
+            f"energy_decay_curve1 and energy_decay_curve2 must have the same "
+            f"channel shape. Got cshape={energy_decay_curve1.cshape} and "
+            f"cshape={energy_decay_curve2.cshape}.")
+
     if isinstance(limits, (list, tuple)):
         limits = np.asarray(limits)
 
