@@ -727,7 +727,7 @@ def test_energy_ratio_handles_different_edc_lengths(make_edc):
     edc2 = make_edc(energy=np.linspace(1, 0, 50), sampling_rate=1000)
 
     # Limit valid for edc1 but not edc2
-    limits = np.array([0.0, 0.02, 0.02, 0.06])  
+    limits = np.array([0.0, 0.02, 0.02, 0.06])
 
     with pytest.raises(
         ValueError,
@@ -738,7 +738,7 @@ def test_energy_ratio_handles_different_edc_lengths(make_edc):
 def test_mtf_winmf_reference():
     """
     MTF values match WINMF reference data.
-    
+
     Tests the modulation transfer function against reference values
     computed by WinMF - Measurement Software for a simulated impulse response.
     """
@@ -752,11 +752,13 @@ def test_mtf_winmf_reference():
     # Compute MTF without auditory masking correction (matches WinMF behaviour)
     # SNR values below 20 dB are intentional for this reference measurement
     with pytest.warns(UserWarning, match="snr' should be at least 20 dB"):
-        mtf = modulation_transfer_function(ir, level=level, snr=snr, ambient_noise=False)
+        mtf = modulation_transfer_function(
+            ir, level=level, snr=snr, ambient_noise=False)
 
-    # Load WINMF reference values from CSV using numpy 
+    # Load WINMF reference values from CSV using numpy
     csv_file = os.path.join(
-        os.path.dirname(__file__), "test_data", "ir_simulated_mtf_values_from_WINMF.csv")
+        os.path.dirname(__file__), "test_data",
+        "ir_simulated_mtf_values_from_WINMF.csv")
 
     # Use numpy to load semicolon-delimited floats
     winmf_raw = np.loadtxt(csv_file, delimiter=';')

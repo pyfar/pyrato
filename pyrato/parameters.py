@@ -327,7 +327,9 @@ def speech_transmission_index_indirect(
     return sti
 
 
-def modulation_transfer_function(rir, rir_type="acoustical", level=None, snr=None, ambient_noise=True):
+def modulation_transfer_function(
+        rir, rir_type="acoustical", level=None, snr=None,
+        ambient_noise=True):
     """
     Compute the modulation transfer function (MTF) of an impulse response
     according to IEC 60268-16:2020.
@@ -487,12 +489,15 @@ def modulation_transfer_function(rir, rir_type="acoustical", level=None, snr=Non
             # Masking intensity (IEC 60268-16:2020, Eq. A.12)
             I_k1_lin = np.roll(Ik_lin, 1)
             I_amk_lin = I_k1_lin * a
-            I_amk_lin[0] = 0  # No masking from below for lowest band (125 Hz)
-            # Absolute speech reception threshold (IEC 60268-16:2020, Annex A.4.3)
+            I_amk_lin[0] = 0  # No masking for lowest band (125 Hz)
+            # Absolute speech reception threshold
+            # (IEC 60268-16:2020, Annex A.4.3)
             A_k = np.array([[46, 27, 12, 6.5, 7.5, 8, 12]]).T
             I_rt = 10**(A_k/10)
-            # Auditory masking + threshold correction (IEC 60268-16:2020, Eq. A.11)
-            mtf = mtf * Ik_lin[:, None] / ( Ik_lin[:, None] + I_amk_lin[:, None] + I_rt )
+            # Auditory masking + threshold correction
+            # (IEC 60268-16:2020, Eq. A.11)
+            mtf = (mtf * Ik_lin[:, None]
+                   / (Ik_lin[:, None] + I_amk_lin[:, None] + I_rt))
     # Clip MTF to valid range [0, 1] (IEC 60268-16:2020, Section A.2.4)
     return np.clip(mtf, 0, 1)
 
