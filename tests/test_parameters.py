@@ -191,9 +191,9 @@ def test_energy_ratio_np_inf_limits(make_edc):
     result = _energy_ratio(limits, edc, edc)
     npt.assert_allclose(result, 0.0, atol=1e-12)
 
-
-@pytest.fixture(
-    params=[
+@pytest.mark.parametrize(
+    "multichannel_energy",
+    [
         # 1D, single channel
         np.linspace(1, 0, 10),
         # 2D, two channels
@@ -206,11 +206,6 @@ def test_energy_ratio_np_inf_limits(make_edc):
     ],
     ids=["1D_single_channel", "2D_two_channels", "3D_deterministic"],
 )
-def multichannel_energy(request):
-    """Fixture providing different multichannel energy configurations."""
-    return request.param
-
-
 def test_energy_ratio_preserves_multichannel_shape_correctly(
     multichannel_energy,
     make_edc,
@@ -223,6 +218,18 @@ def test_energy_ratio_preserves_multichannel_shape_correctly(
 
     assert result.shape == edc.cshape
 
+@pytest.mark.parametrize(
+    "multichannel_energy",
+    [
+        np.linspace(1, 0, 10),
+        np.stack([
+            np.linspace(1, 0, 10),
+            np.linspace(0.5, 0, 10),
+        ]),
+        np.arange(2 * 3 * 4).reshape(2, 3, 4),
+    ],
+    ids=["1D", "2D", "3D"],
+)
 @pytest.mark.parametrize(
     "limits_config",
     [
@@ -381,7 +388,6 @@ def test_energy_ratio_with_clarity_nan_limit(make_edc):
         energy_decay_curve2=edc,
     )
     assert np.allclose(result, 1.0)
-
 
 def test_energy_ratio_handles_different_channel_shapes(make_edc):
     """
