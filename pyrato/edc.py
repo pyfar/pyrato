@@ -1290,7 +1290,8 @@ def _normalize_edc(energy_decay_curve, channel_independent):
     # warnings are raised by `intersection_time_lundeby` and everything
     # that happens below is by intention
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", RuntimeWarning)
+        warnings.filterwarnings(
+            "ignore", "All-NaN slice encountered", RuntimeWarning,)
 
         # Normalize the EDC...
         if not channel_independent:
