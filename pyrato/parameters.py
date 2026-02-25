@@ -203,6 +203,100 @@ def clarity(energy_decay_curve, early_time_limit=80):
 
     return clarity_db
 
+def early_lateral_energy_fraction(energy_decay_curve_omni, energy_decay_curve_lateral):
+    r"""
+    Calculate the early lateral energy fraction :math:`J_\mathrm{LF}`
+    according to [#iso]_ from two energy decay curves (EDCs) measured
+    with an omnidirectional and a figure-eight microphone.
+
+    The early lateral energy fraction is defined as the ratio
+    between the lateral sound energy arriving between 5 ms and 80 ms and
+    the total sound energy arriving within the first 80 ms after the direct
+    sound. It is a measure of the apparent source width [#iso]_.
+
+    The parameter is defined as
+
+    .. math::
+
+        J_\mathrm{LF} =
+        10 \log_{10}
+        \frac{
+            \displaystyle \int_{0.005}^{0.08} p_L^2(t)\,\mathrm{d}t
+        }{
+            \displaystyle \int_{0}^{0.08} p^2(t)\,\mathrm{d}t
+        }
+
+    where :math:`p_L(t)` is the lateral sound pressure measured with a
+    figure-eight microphone whose zero axis is oriented towards the source,
+    and :math:`p(t)` is the sound pressure measured at the same position
+    with an omnidirectional microphone.
+
+    Using the energy decay curves of the omnidirectional response
+    :math:`e(t)` and the lateral response :math:`e_L(t)`, the parameter can
+    be computed efficiently as
+
+    .. math::
+
+        J_\mathrm{LF} =
+        10 \log_{10}
+        \frac{
+            e_L(0.005) - e_L(0.08)
+        }{
+            e(0) - e(0.08)
+        }.
+
+    Parameters
+    ----------
+    energy_decay_curve_omni : pyfar.TimeData
+        Energy decay curve of the room impulse response measured with an
+        omnidirectional microphone. The EDC must start at time zero and
+        represent the squared and backward-integrated impulse response.
+
+    energy_decay_curve_lateral : pyfar.TimeData
+        Energy decay curve of the room impulse response measured with a
+        figure-eight microphone oriented according to ISO 3382
+        (zero axis pointing towards the source). The EDC must start at
+        time zero and represent the squared and backward-integrated impulse
+        response.
+
+        Both EDCs must have identical ``signal.cshape``.
+
+    Returns
+    -------
+    J_LF : numpy.ndarray
+        Early lateral energy fraction in decibels. The output array follows
+        the channel shape (``signal.cshape``) of the input EDCs.
+
+    Examples
+    --------
+    Estimate the clarity from a real room impulse response filtered in
+    octave bands:
+
+    >>> import numpy as np
+    >>> import pyfar as pf
+    >>> import pyrato as ra
+    >>> rir_omni = pf.signals.files.room_impulse_response("omni_rir.wav")
+    >>> rir_lateral = pf.io.read_audio("lateral_rir.wav")
+    >>> edc_omni = ra.edc.energy_decay_curve_lundeby(rir_omni)
+    >>> edc_lateral = ra.edc.energy_decay_curve_lundeby(rir_lateral)
+    >>> J_LF = early_lateral_energy_fraction(edc, early_time_limit=80)
+    """
+
+    if not isinstance(energy_decay_curve_omni, pf.TimeData) or\
+        not isinstance(energy_decay_curve_lateral, pf.TimeData):
+            raise TypeError(
+            "energy decay curves must be a pyfar.TimeData or derived object.")
+
+    limits = np.array([0.0,
+                        0.08,
+                        0.005,
+                        0.08])
+
+    return 10*np.log10(_energy_ratio(limits,
+                                    energy_decay_curve_lateral,
+                                    energy_decay_curve_omni))
+
+
 def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
     r"""
     Calculate the energy ratio for the time limits from two energy
@@ -353,3 +447,143 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
     energy_ratio = numerator / denominator
 
     return energy_ratio
+
+
+# def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
+#     r"""
+#     Calculate the energy ratio for the time limits from two energy
+#     decay curves (EDC).
+
+#     A variety of room-acoustic parameters are defined by energy ratios derived
+#     from one or two time-domain Energy Decay Curves (EDCs). These parameters
+#     distinguish between time regions using the four provided limits, and some,
+#     such as Strength (:math:`G`), Early lateral sound (:math:`J_\mathrm{LF}`),
+#     and Late lateral sound (:math:`L_J`), require EDCs obtained from different
+#     impulse-response measurements [#iso2]_.
+
+#     Energy-Ratio is calculated as:
+
+#     .. math::
+
+#         ER = \frac{
+#             \displaystyle \int_{lim3}^{lim4} p_2^2(t) \, dt
+#         }{
+#             \displaystyle \int_{lim1}^{lim2} p_1^2(t) \, dt
+#         }
+#     where :math:`[lim1, ..., lim4]` are the time limits and :math:`p(t)` is the
+#     pressure of a room impulse response. Here, the energy ratio is
+#     efficiently computed from the EDC :math:`e(t)` directly by:
+
+#     .. math::
+
+#         ER = \frac{
+#             \displaystyle e_2(lim3) - e_2(lim4)
+#         }{
+#             \displaystyle e_1(lim1) - e_1(lim2)
+#         }.
+
+#     By definition, the EDC represents the remaining energy up to
+#     :math:`\infty` and converges to zero, i.e., :math:`e(\infty)=0`.
+#     Thus, ``np.inf`` may be used as a limit to select the full
+#     remaining energy of an EDC.
+
+#     Parameters
+#     ----------
+#     limits : np.ndarray, list or tuple
+#         Four time limits (:math:`t_e`) in seconds, shape (4,)
+#         in ascending order. Limits must be either numerical or np.inf.
+#     energy_decay_curve1 : pyfar.TimeData
+#         Energy decay curve 1 (EDC1) of the room impulse response
+#         (time-domain signal). The EDC must start at time zero.
+#     energy_decay_curve2 : pyfar.TimeData
+#         Energy decay curve 2 (EDC2) of the room impulse response
+#         (time-domain signal). The EDC must start at time zero.
+
+#     Returns
+#     -------
+#     energy ratio : numpy.ndarray[float]
+#         energy-ratio index (early-to-late energy ratio),
+#         shaped according to the channel shape of the input EDC.
+
+#     References
+#     ----------
+#     .. [#iso2] ISO 3382, Acoustics — Measurement of the reverberation time of
+#         rooms with reference to other acoustical parameters.
+#     """
+
+#     # Check input type
+#     if not isinstance(energy_decay_curve1, pf.TimeData):
+#         raise TypeError(
+#             "energy_decay_curve1 must be a pyfar.TimeData or derived object.")
+#     if not isinstance(energy_decay_curve2, pf.TimeData):
+#         raise TypeError(
+#             "energy_decay_curve2 must be a pyfar.TimeData or derived object.")
+
+#     if isinstance(limits, (list, tuple)):
+#         limits = np.asarray(limits)
+
+#     if not isinstance(limits, np.ndarray):
+#         raise TypeError("limits must be a numpy ndarray, list, or tuple.")
+
+#     # Check shape
+#     if limits.shape != (4,):
+#         raise ValueError(
+#             "limits must have shape (4,), " \
+#             "containing [lim1, lim2, lim3, lim4].",
+#             )
+
+#     # Check if limits are within valid time range
+#     if (
+#         np.any(limits[0:2] < 0) or
+#         np.any((limits[0:2] > energy_decay_curve1.signal_length) &
+#                (np.isfinite(limits[0:2])))
+#     ):
+#         raise ValueError(
+#             f"limits[0:2] must be between 0 and "
+#             f"{energy_decay_curve1.signal_length} seconds or np.inf.",
+#         )
+#     if (
+#         np.any(limits[2:4] < 0) or
+#         np.any((limits[2:4] > energy_decay_curve2.signal_length) &
+#                (np.isfinite(limits[2:4])))
+#     ):
+#         raise ValueError(
+#             f"limits[2:4] must be between 0 and "
+#             f"{energy_decay_curve2.signal_length} seconds or np.inf.",
+#         )
+
+#     limits_denominator = limits[0:2]
+#     limits_numerator = limits[2:4]
+
+#     # finite limits mask
+#     finite_limits_denominator = np.isfinite(limits_denominator)
+#     finite_limits_numerator = np.isfinite(limits_numerator)
+
+#     # Denominator values (EDC1, limits 0:2)
+#     values_shape1 = energy_decay_curve1.cshape + (2,)
+#     energy_decay_curve1_values = np.zeros(values_shape1)
+#     if np.any(finite_limits_denominator):
+#         limits_energy_decay_curve1_idx = energy_decay_curve1.find_nearest_time(
+#             limits_denominator[finite_limits_denominator],
+#         )
+
+#         energy_decay_curve1_values[..., finite_limits_denominator] = \
+#             energy_decay_curve1.time[..., limits_energy_decay_curve1_idx]
+
+#     # Numerator values (EDC2, limits 2:4)
+#     values_shape2 = energy_decay_curve1.cshape + (2,)
+#     energy_decay_curve2_values = np.zeros(values_shape2)
+#     if np.any(finite_limits_numerator):
+#         limits_energy_decay_curve2_idx = energy_decay_curve2.find_nearest_time(
+#             limits_numerator[finite_limits_numerator],
+#         )
+
+#         energy_decay_curve2_values[..., finite_limits_numerator] = \
+#             energy_decay_curve2.time[..., limits_energy_decay_curve2_idx]
+
+#     numerator = np.diff(energy_decay_curve2_values, axis=-1)[..., 0]
+#     denominator = np.diff(energy_decay_curve1_values, axis=-1)[..., 0]
+
+#     energy_ratio = numerator / denominator
+
+#     return energy_ratio
