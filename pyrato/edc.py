@@ -1038,18 +1038,67 @@ def intersection_time_lundeby(
 
 
 def _intersection_time_lundby(
-    time_window_data, noise_estimation, energy_data,
-    time_vector_window, dB_above_noise, n_intervals_per_10dB,
-    use_dyn_range_for_regression, sampling_rate, ch, failure_policy):
+        time_window_data, noise_estimation, energy_data,
+        time_vector_window, dB_above_noise, n_intervals_per_10dB,
+        use_dyn_range_for_regression, sampling_rate, ch, failure_policy):
     """
     Private function to handle the channel-wise processing for
     `intersection_time_lundby`.
 
+    Parameters
+    ----------
+    time_window_data : np.ndarray
+        The smoothed RIR obtained from ``pyrato.dsp._smooth_rir``.
+    noise_estimation : float
+        The energy of the background noise.
+    energy_data : np.ndarray
+        Data returned by ``pyrato.dsp.preprocess_rir``.
+    time_vector_window : ndarray
+        The time vector of the smoothed data obtained from
+        ``pyrato.dsp._smooth_rir``.
+    dB_above_noise : float
+        End-point of the regression in dB.
+    n_intervals_per_10dB : float
+        Time intervals per 10 dB decay.
+    use_dyn_range_for_regression : float
+        Dynamic range for regression in dB.
+    sampling_rate : float, int
+        Sampling rate in Hz.
+    ch : multidimensional index
+        Channel index used for verbose warning messages
+    failure_policy : str
+        Specifies how failures in detecting the Lundby parameters (see return
+        values below) are handled.
+
+        - ``'error'``: raises an error and the computation is terminated.
+        - ``'warning'``: raises a warning and returns NaN values. This is
+          useful when computing parameters for multi-channel input, e.g., in
+          octave bands.
+
     Returns
     -------
-    Return computed parameters and related data required for further processing
-    in `intersection_time_lundby`. If the parameter estimation failed, ``None``
-    is returned.
+    ``None``if the parameter estimation failed, otherwise:
+
+    slope : np.ndarray
+        Coefficients [intercept, slope] of the regression line.
+    noise_estimation_current_channel : float
+        Refined background noise energy for the channel.
+    crossing_point : float
+        Intersection time between decay line and noise floor in seconds.
+    time_window_data_current_channel** : np.ndarray
+        Smoothed energy decay curve at final iteration.
+    idx_last_10_percent : float
+        Index at 90% of the time window length.
+    idx_10dB_below_crosspoint : float
+        Index 10 dB below the crossing point.
+    regression_time : np.ndarray
+        Start and stop times of the regression window in seconds.
+    regression_values : np.ndarray
+        Start and stop values of the regression line in dB.
+    preliminary_crossing_point : float
+        Initial crossing point estimate before iteration.
+    time_vector_window_current_channel : np.ndarray
+        Time vector corresponding to the smoothed data.
     """
 
     time_window_data_current_channel = time_window_data
@@ -1291,7 +1340,7 @@ def _normalize_edc(energy_decay_curve, channel_independent):
     # that happens below is by intention
     with warnings.catch_warnings():
         warnings.filterwarnings(
-            "ignore", "All-NaN slice encountered", RuntimeWarning,)
+            "ignore", "All-NaN slice encountered", RuntimeWarning)
 
         # Normalize the EDC...
         if not channel_independent:
