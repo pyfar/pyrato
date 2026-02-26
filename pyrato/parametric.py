@@ -188,7 +188,7 @@ def air_attenuation_coefficient(
 
     return air_abs_coeff
 
-  
+
 def critical_distance(
                      volume,
                      reverberation_time):
