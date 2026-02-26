@@ -334,4 +334,3 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
     energy_ratio = numerator / denominator
 
     return energy_ratio
-)
