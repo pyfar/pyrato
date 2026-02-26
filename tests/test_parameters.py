@@ -393,6 +393,39 @@ def test_energy_ratio_with_clarity_nan_limit(make_edc):
     )
     assert np.allclose(result, 1.0)
 
+def test_energy_ratio_handles_different_channel_shapes(make_edc):
+    """
+    Test that _energy_ratio raises an error for EDCs with different channel
+    shapes.
+    """
+    # Create EDC with cshape (2,)
+    energy1 = np.stack([
+        np.linspace(1, 0, 100),
+        np.linspace(0.8, 0, 100),
+    ])
+    edc1 = make_edc(energy=energy1, sampling_rate=1000)
+    assert edc1.cshape == (2,)
+
+    # Create EDC with cshape (3,)
+    energy2 = np.stack([
+        np.linspace(1, 0, 100),
+        np.linspace(0.8, 0, 100),
+        np.linspace(0.6, 0, 100),
+    ])
+    edc2 = make_edc(energy=energy2, sampling_rate=1000)
+    assert edc2.cshape == (3,)
+
+    # Limits for both numerator and denominator
+    limits = np.array([0.0, 0.02, 0.0, 0.05])
+
+    # Should raise ValueError due to shape mismatch with clear message
+    with pytest.raises(
+        ValueError,
+        match="energy_decay_curve1 and energy_decay_curve2 must have the same "
+              "channel shape",
+    ):
+        _energy_ratio(limits, edc1, edc2)
+
 
 # parameter early lateral energy fraction (JLF) tests
 @pytest.mark.parametrize(
