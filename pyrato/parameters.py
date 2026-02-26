@@ -233,8 +233,8 @@ def early_lateral_energy_fraction(energy_decay_curve_omni,
     with an omnidirectional microphone.
 
     Using the energy decay curves of the omnidirectional response
-    :math:`e(t)` and the lateral response :math:`e_\mathrm{L}(t)`, the parameter can
-    be computed efficiently as
+    :math:`e(t)` and the lateral response :math:`e_\mathrm{L}(t)`, the
+    parameter can be computed efficiently as
 
     .. math::
 
@@ -265,8 +265,9 @@ def early_lateral_energy_fraction(energy_decay_curve_omni,
     Returns
     -------
     Early Lateral Energy Fraction: numpy.ndarray
-        Early lateral energy fraction (:math:`J_\mathrm{LF}`) in decibels. The output array follows
-        the channel shape (``signal.cshape``) of the input EDCs.
+        Early lateral energy fraction (:math:`J_\mathrm{LF}`) in decibels.
+        The output array follows the channel shape (``signal.cshape``) of
+        the input EDCs.
 
     Examples
     --------

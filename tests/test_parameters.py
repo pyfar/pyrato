@@ -5,8 +5,6 @@ import pyrato as ra
 import numpy.testing as npt
 import re
 
-# from pyrato import edc
-
 from pyrato.parameters import clarity
 from pyrato.parameters import early_lateral_energy_fraction
 from pyrato.parameters import _energy_ratio
