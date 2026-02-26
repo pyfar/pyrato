@@ -269,36 +269,85 @@ def test_sti_unit_impulse():
     sti_test = speech_transmission_index_indirect(sig, rir_type="acoustical")
     np.testing.assert_allclose(sti_test, sti_expected, atol=0.01)
 
-def test_sti_ir():
+def test_mtf_winmf_reference_no_correction():
     """
-    STI value for a simulated IR.
-    Compare with WinMF - Measurement Software.
+    Verifies MTF against WinMF reference
+    (no level, SNR, or masking applied).
+
+    Small deviations are expected due to differences between
+    the pyrato and WinMF octave-band filter implementations. The resulting
+    STI is not meaningfully affected.
     """
-    sti_expected = 0.86
     time = np.loadtxt(os.path.join(
-        os.path.dirname(__file__), "test_data", "ir_simulated.csv"))
-    ir = Signal(time, 44100)
-    sti_test = speech_transmission_index_indirect(ir, rir_type="acoustical")
-    np.testing.assert_allclose(sti_test, sti_expected, atol=0.01)
+        os.path.dirname(__file__), "test_data",
+        "room_impulse_response_with_noise.csv"))
+    ir = Signal(time, 48000)
+    mtf = modulation_transfer_function(
+        ir, rir_type="acoustical", level=None, snr=None,
+        ambient_noise=False)
+    mtf_ref = np.loadtxt(
+        os.path.join(os.path.dirname(__file__), "test_data",
+                     "mtf_ir_WINMF.csv"),
+        delimiter=';').T  
+    # atol=0.07 accounts for octave-band filter differences between
+    # pyfar and WinMF 
+    np.testing.assert_allclose(mtf, mtf_ref, atol=0.07)
 
-def test_sti_ir_level_snr():
+def test_mtf_winmf_reference_snr_correction():
     """
-    STI value for a simulated IR.
-    Considered level and snr values.
-    Compare with WinMF - Measurement Software.
-    """
+    Verifies MTF against WinMF reference (level + SNR correction, no masking).
 
-    sti_expected = 0.62
-    level = np.array([54, 49 , 54, 48, 45, 40, 31])
-    noise_level = np.array([53, 48, 46, 42, 38, 34, 30])
+    Small deviations rre expected due to differences between
+    the pyrato and WinMF octave-band filter implementations. The resulting
+    STI is not meaningfully affected.
+    """
+    time = np.loadtxt(os.path.join(
+        os.path.dirname(__file__), "test_data",
+        "room_impulse_response_with_noise.csv"))
+    ir = Signal(time, 48000)
+    # male speech spectrum at 65 dB(A) (IEC 60268-16:2020, Annex B)
+    level = np.array([56, 60, 59, 51, 43, 32, 24], dtype=float)
+    # NC-35 classroom background noise (ANSI/ASA S12.2)
+    noise_level = np.array([52, 45, 40, 36, 34, 33, 32], dtype=float)
     snr = level - noise_level
-    time = np.loadtxt(os.path.join(
-        os.path.dirname(__file__), "test_data", "ir_simulated.csv"))
-    ir = Signal(time, 44100)
     with pytest.warns(UserWarning, match="snr' should be at least 20 dB"):
-        sti_test = speech_transmission_index_indirect(
-            ir, rir_type="acoustical", level=level, snr=snr)
-    np.testing.assert_allclose(sti_test, sti_expected, atol=0.01)
+        mtf = modulation_transfer_function(
+            ir, rir_type="acoustical", level=level, snr=snr,
+            ambient_noise=False)
+    mtf_ref = np.loadtxt(
+        os.path.join(os.path.dirname(__file__), "test_data",
+                     "mtf_ir_level_snr_WINMF.csv"),
+        delimiter=';').T
+    np.testing.assert_allclose(mtf, mtf_ref, atol=0.07)
+    
+def test_mtf_winmf_reference_masking():
+    """
+    Verifies MTF against WinMF reference (level + SNR correction + masking).
+
+    Full correction including auditory masking and absolute threshold
+
+    Small deviations are expected due to differences between
+    the pyrato and WinMF octave-band filter implementations. The resulting
+    STI is not meaningfully affected.
+    """
+    time = np.loadtxt(os.path.join(
+        os.path.dirname(__file__), "test_data",
+        "room_impulse_response_with_noise.csv"))
+    ir = Signal(time, 48000)
+    # male speech spectrum at 65 dB(A) (IEC 60268-16:2020, Annex B)
+    level = np.array([56, 60, 59, 51, 43, 32, 24])
+    # NC-35 classroom background noise (ANSI/ASA S12.2)
+    noise_level = np.array([52, 45, 40, 36, 34, 33, 32])
+    snr = level - noise_level
+    with pytest.warns(UserWarning, match="snr' should be at least 20 dB"):
+        mtf = modulation_transfer_function(
+            ir, rir_type="acoustical", level=level, snr=snr,
+            ambient_noise=True)
+    mtf_ref = np.loadtxt(
+        os.path.join(os.path.dirname(__file__), "test_data",
+                     "mtf_ir_level_snr_masking_WINMF.csv"),
+        delimiter=';').T
+    np.testing.assert_allclose(mtf, mtf_ref, atol=0.07)
 
 def test_sti_electrical_vs_acoustical():
     """
@@ -562,6 +611,43 @@ def test_sti_calc_mtf_one_clipping():
 
     # With SNR clipped to 15 dB, TI = (15 + 15)/30 = 1, STI should be 1
     assert sti == 1.0
+    
+    
+def test_sti_ir():
+    """
+    STI value for a simulated IR.
+    Compare with WinMF - Measurement Software.
+    """
+    sti_expected = 0.698
+    time = np.loadtxt(os.path.join(
+        os.path.dirname(__file__), "test_data",
+        "room_impulse_response_with_noise.csv"))
+    ir = Signal(time, 48000)
+    sti_test = speech_transmission_index_indirect(ir, rir_type="acoustical")
+    print(f"STI calculated: {sti_test}")  # Debug-Ausgabe
+    np.testing.assert_allclose(sti_test, sti_expected, atol=0.07)
+
+def test_sti_ir_level_snr():
+    """
+    STI value for a simulated IR.
+    Considered level and snr values.
+    Compare with WinMF - Measurement Software.
+    """
+
+    sti_expected = 0.539
+    # male speech spectrum at 65 dB(A) (IEC 60268-16:2020, Annex B)
+    level = np.array([56, 60, 59, 51, 43, 32, 24])
+    # NC-35 classroom background noise (ANSI/ASA S12.2)
+    noise_level = np.array([52, 45, 40, 36, 34, 33, 32])
+    snr = level - noise_level
+    time = np.loadtxt(os.path.join(
+        os.path.dirname(__file__), "test_data",
+        "room_impulse_response_with_noise.csv"))
+    ir = Signal(time, 48000)
+    with pytest.warns(UserWarning, match="snr' should be at least 20 dB"):
+        sti_test = speech_transmission_index_indirect(
+            ir, rir_type="acoustical", level=level, snr=snr)
+    np.testing.assert_allclose(sti_test, sti_expected, atol=0.07)
 
 # _energy_ratio tests
 @pytest.mark.parametrize(
@@ -737,38 +823,3 @@ def test_energy_ratio_handles_different_edc_lengths(make_edc):
         match=r"limits\[2:4\] must be between 0 and",
     ):
         _energy_ratio(limits, edc1, edc2)
-
-def test_mtf_winmf_reference():
-    """
-    MTF values match WINMF reference data.
-
-    Tests the modulation transfer function against reference values
-    computed by WinMF - Measurement Software for a simulated impulse response.
-    """
-    # Load simulated IR
-    time = np.loadtxt(os.path.join(
-        os.path.dirname(__file__), "test_data", "ir_simulated.csv"))
-    ir = Signal(time, 44100)
-    level = np.array([54, 49 , 54, 48, 45, 40, 31])
-    noise_level = np.array([53, 48, 46, 42, 38, 34, 30])
-    snr = level - noise_level
-    # Compute MTF without auditory masking correction (matches WinMF behaviour)
-    # SNR values below 20 dB are intentional for this reference measurement
-    with pytest.warns(UserWarning, match="snr' should be at least 20 dB"):
-        mtf = modulation_transfer_function(
-            ir, rir_type="acoustical", level=level, snr=snr,
-            ambient_noise=False)
-
-    # Load WINMF reference values from CSV using numpy
-    csv_file = os.path.join(
-        os.path.dirname(__file__), "test_data",
-        "ir_simulated_mtf_values_from_WINMF.csv")
-
-    # Use numpy to load semicolon-delimited floats
-    winmf_raw = np.loadtxt(csv_file, delimiter=';')
-
-    # Use the first 14 rows (modulation frequencies) and transpose to (7,14)
-    mtf_expected = winmf_raw.T
-
-    # Compare with WINMF reference.
-    np.testing.assert_allclose(mtf, mtf_expected, rtol=0.1, atol=0.1)

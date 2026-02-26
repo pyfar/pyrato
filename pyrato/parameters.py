@@ -474,7 +474,7 @@ def modulation_transfer_function(
     if level is not None and ambient_noise:
         # Total intensity per octave band: signal + noise
         # (IEC 60268-16:2020, Annex A.2.4)
-        Ik_lin = 10 ** (level / 10) + 10 ** ((level - snr) / 10)
+        Ik = 10 ** (level / 10) + 10 ** ((level - snr) / 10)
         if rir_type == "acoustical":
             # Compute level-dependent auditory masking factor I_amk
             # (IEC 60268-16:2020, Annex A.4.2)
@@ -487,17 +487,17 @@ def modulation_transfer_function(
             amdb[100 <= amdb] = amdb[100 <= amdb] - 10
             a = 10**(amdb/10)
             # Masking intensity (IEC 60268-16:2020, Eq. A.12)
-            I_k1_lin = np.roll(Ik_lin, 1)
-            I_amk_lin = I_k1_lin * a
-            I_amk_lin[0] = 0  # No masking for lowest band (125 Hz)
+            I_k1 = np.roll(Ik, 1)
+            I_amk = I_k1 * a
+            I_amk[0] = 0  # No masking for lowest band (125 Hz)
             # Absolute speech reception threshold
             # (IEC 60268-16:2020, Annex A.4.3)
             A_k = np.array([[46, 27, 12, 6.5, 7.5, 8, 12]]).T
             I_rt = 10 ** (A_k / 10)
             # Auditory masking + threshold correction
             # (IEC 60268-16:2020, Eq. A.11)
-            mtf = (mtf * Ik_lin[:, None]
-                   / (Ik_lin[:, None] + I_amk_lin[:, None] + I_rt))
+            mtf = (mtf * Ik[:, None]
+                   / (Ik[:, None] + I_amk[:, None] + I_rt))
     # Clip MTF to valid range [0, 1] (IEC 60268-16:2020, Section A.2.4)
     return np.clip(mtf, 0, 1)
 
