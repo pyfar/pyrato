@@ -88,8 +88,8 @@ def reverberation_time_linear_regression(
 
     for ch in np.ndindex(energy_decay_curve.cshape):
         edc_db = edcs_db[ch]
-        idx_upper = np.nanargmin(np.abs(upper - edc_db))
-        idx_lower = np.nanargmin(np.abs(lower - edc_db))
+        idx_upper = np.nanargmin(np.abs(upper - (edc_db-edc_db[0])))
+        idx_lower = np.nanargmin(np.abs(lower - (edc_db-edc_db[0])))
 
         A = np.vstack(
             [times[idx_upper:idx_lower], np.ones(idx_lower - idx_upper)]).T
