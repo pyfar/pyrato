@@ -483,7 +483,7 @@ def test_JLF_is_within_ISO3382_range(make_edc):
     edc_lateral = ra.edc.schroeder_integration(energy_lateral, is_energy=True)
     edc_omni = ra.edc.schroeder_integration(energy_omni, is_energy=True)
 
-    result = float(early_lateral_energy_fraction(edc_omni, edc_lateral))
+    result = early_lateral_energy_fraction(edc_omni, edc_lateral).item()
 
     # ISO 3382 typical range: 0.05–0.35 linear → -13.0 to -4.6 dB
     assert -13.0 <= result <= -4.6, (
