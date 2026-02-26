@@ -288,9 +288,9 @@ def test_mtf_winmf_reference_no_correction():
     mtf_ref = np.loadtxt(
         os.path.join(os.path.dirname(__file__), "test_data",
                      "mtf_ir_WINMF.csv"),
-        delimiter=';').T  
+        delimiter=';').T
     # atol=0.07 accounts for octave-band filter differences between
-    # pyfar and WinMF 
+    # pyfar and WinMF
     np.testing.assert_allclose(mtf, mtf_ref, atol=0.07)
 
 def test_mtf_winmf_reference_snr_correction():
@@ -319,7 +319,6 @@ def test_mtf_winmf_reference_snr_correction():
                      "mtf_ir_level_snr_WINMF.csv"),
         delimiter=';').T
     np.testing.assert_allclose(mtf, mtf_ref, atol=0.07)
-    
 def test_mtf_winmf_reference_masking():
     """
     Verifies MTF against WinMF reference (level + SNR correction + masking).
@@ -611,8 +610,6 @@ def test_sti_calc_mtf_one_clipping():
 
     # With SNR clipped to 15 dB, TI = (15 + 15)/30 = 1, STI should be 1
     assert sti == 1.0
-    
-    
 def test_sti_ir():
     """
     STI value for a simulated IR.
