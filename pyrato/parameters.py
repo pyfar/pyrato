@@ -345,7 +345,7 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
 
         energy_decay_curve2_values[..., finite_limits_numerator] = \
             energy_decay_curve2.time[..., limits_energy_decay_curve2_idx]
-
+# using 'minus' because np.diff yields negative result
     numerator = np.diff(energy_decay_curve2_values, axis=-1)[..., 0]
 numerator = -np.diff(energy_decay_curve2_values, axis=-1)[..., 0]
 denominator = -np.diff(energy_decay_curve1_values, axis=-1)[..., 0]
