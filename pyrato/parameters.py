@@ -222,18 +222,18 @@ def early_lateral_energy_fraction(energy_decay_curve_omni,
         J_\mathrm{LF} =
         10 \log_{10}
         \frac{
-            \displaystyle \int_{0.005}^{0.08} p_L^2(t)\,\mathrm{d}t
+            \displaystyle \int_{0.005}^{0.08} p_\mathrm{L}^2(t)\,\mathrm{d}t
         }{
             \displaystyle \int_{0}^{0.08} p^2(t)\,\mathrm{d}t
         }
 
-    where :math:`p_L(t)` is the lateral sound pressure measured with a
+    where :math:`p_\mathrm{L}(t)` is the lateral sound pressure measured with a
     figure-eight microphone whose zero axis is oriented towards the source,
     and :math:`p(t)` is the sound pressure measured at the same position
     with an omnidirectional microphone.
 
     Using the energy decay curves of the omnidirectional response
-    :math:`e(t)` and the lateral response :math:`e_L(t)`, the parameter can
+    :math:`e(t)` and the lateral response :math:`e_\mathrm{L}(t)`, the parameter can
     be computed efficiently as
 
     .. math::
@@ -241,7 +241,7 @@ def early_lateral_energy_fraction(energy_decay_curve_omni,
         J_\mathrm{LF} =
         10 \log_{10}
         \frac{
-            e_L(0.005) - e_L(0.08)
+            e_\mathrm{L}(0.005) - e_\mathrm{L}(0.08)
         }{
             e(0) - e(0.08)
         }.
@@ -264,8 +264,8 @@ def early_lateral_energy_fraction(energy_decay_curve_omni,
 
     Returns
     -------
-    J_LF : numpy.ndarray
-        Early lateral energy fraction in decibels. The output array follows
+    Early Lateral Energy Fraction: numpy.ndarray
+        Early lateral energy fraction (:math:`J_\mathrm{LF}`) in decibels. The output array follows
         the channel shape (``signal.cshape``) of the input EDCs.
 
     Examples
