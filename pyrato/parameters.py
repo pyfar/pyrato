@@ -161,10 +161,23 @@ def clarity(energy_decay_curve, early_time_limit=80):
 
     >>> import pyfar as pf
     >>> import pyrato as ra
+    ...
     >>> rir = pf.signals.files.room_impulse_response(sampling_rate=44100)
     >>> rir = pf.dsp.filter.fractional_octave_bands(rir, num_fractions=1)
     >>> edc = ra.edc.energy_decay_curve_lundeby(rir)
-    >>> C80 = clarity(edc, early_time_limit=80)
+    ...
+    >>> C80 = ra.parameters.clarity(edc, early_time_limit=80)
+    >>> C80
+    ...     [[-55.57140506]
+    ...     [-11.75657677]
+    ...     [ -3.21150787]
+    ...     [  2.76276817]
+    ...     [  4.70786211]
+    ...     [  5.98148157]
+    ...     [  9.66764094]
+    ...     [  9.08687417]
+    ...     [ 14.14550646]
+    ...     [ 21.60048332]]
     """
 
     if not isinstance(early_time_limit, (int, float)):
@@ -174,9 +187,9 @@ def clarity(energy_decay_curve, early_time_limit=80):
     early_time_limit_sec = early_time_limit / 1000
 
     limits = np.array([early_time_limit_sec,
-                        np.inf,
-                        0.0,
-                        early_time_limit_sec])
+                       np.inf,
+                       0.0,
+                       early_time_limit_sec])
 
     return 10*np.log10(_energy_ratio(limits,
                                      energy_decay_curve,
