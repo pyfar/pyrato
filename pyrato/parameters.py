@@ -206,14 +206,15 @@ def clarity(energy_decay_curve, early_time_limit=80):
 def early_lateral_energy_fraction(energy_decay_curve_omni,
                                   energy_decay_curve_lateral):
     r"""
-    Calculate the early lateral energy fraction :math:`J_\mathrm{LF}`
-    according to [#iso]_ from two energy decay curves (EDCs) measured
-    with an omnidirectional and a figure-eight microphone.
+    Calculate the early lateral energy fraction
 
-    The early lateral energy fraction is defined as the ratio
-    between the lateral sound energy arriving between 5 ms and 80 ms and
-    the total sound energy arriving within the first 80 ms after the direct
-    sound. It is a measure of the apparent source width [#iso]_.
+    The early lateral energy fraction :math:`J_\mathrm{LF}`
+    according to [#iso]_ is defined as the ratio between the
+    lateral sound energy captured with a figure of eight microphone
+    arriving between 5 ms and 80 ms and the total sound energy
+    captured with an omnidirectional microphone arriving within
+    the first 80 ms after the direct sound. It is a measure of the
+    apparent source width.
 
     The parameter is defined as
 
