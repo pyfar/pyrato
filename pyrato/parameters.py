@@ -251,8 +251,7 @@ def early_lateral_energy_fraction(energy_decay_curve_omni,
     ----------
     energy_decay_curve_omni : pyfar.TimeData
         Energy decay curve of the room impulse response measured with an
-        omnidirectional microphone. The EDC must start at time zero and
-        represent the squared and backward-integrated impulse response.
+        omnidirectional microphone. The EDC must start at time zero.
 
     energy_decay_curve_lateral : pyfar.TimeData
         Energy decay curve of the room impulse response measured with a
