@@ -206,7 +206,7 @@ def clarity(energy_decay_curve, early_time_limit=80):
 def early_lateral_energy_fraction(energy_decay_curve_omni,
                                   energy_decay_curve_lateral):
     r"""
-    Calculate the early lateral energy fraction
+    Calculate the early lateral energy fraction.
 
     The early lateral energy fraction :math:`J_\mathrm{LF}`
     according to [#iso]_ is defined as the ratio between the
@@ -267,21 +267,6 @@ def early_lateral_energy_fraction(energy_decay_curve_omni,
         Early lateral energy fraction (:math:`J_\mathrm{LF}`) in decibels.
         The output array follows the channel shape (``signal.cshape``) of
         the input EDCs.
-
-    Examples
-    --------
-    Estimate the early lateral energy fraction from a real room impulse
-    response filtered in octave bands:
-
-    >>> import numpy as np
-    >>> import pyfar as pf
-    >>> import pyrato as ra
-    >>> # rir omni and lateral need same cshape
-    >>> rir_omni = pf.signals.files.room_impulse_response("omni_rir.wav")
-    >>> rir_lateral = pf.io.read_audio("lateral_rir.wav")
-    >>> edc_omni = ra.edc.energy_decay_curve_lundeby(rir_omni)
-    >>> edc_lateral = ra.edc.energy_decay_curve_lundeby(rir_lateral)
-    >>> J_LF = early_lateral_energy_fraction(edc_omni, edc_lateral)
     """
 
     limits = np.array([0.0, 0.08, 0.005, 0.08])
