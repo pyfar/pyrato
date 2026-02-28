@@ -579,8 +579,8 @@ def late_lateral_level(energy_decay_curve_ref_10m,
     References
     ----------
     .. [#isoLLJ] ISO 3382-1, ISO 3382, Acoustics — Measurement of the
-    reverberation time of rooms with reference to other acoustical parameters.
-
+        reverberation time of rooms with reference to other acoustical
+        parameters.
     """
 
     limits = np.array([0.0, np.inf, 0.08, np.inf])
