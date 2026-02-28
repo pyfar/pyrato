@@ -509,59 +509,60 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
 
     return energy_ratio
 
-def lateral_level(energy_decay_curve_omni,
-                                  energy_decay_curve_lateral):
+def late_lateral_level(energy_decay_curve_ref_10m,
+                       energy_decay_curve_lateral):
     r"""
-    Calculate the lateral level.
+    Calculate the late lateral level.
 
-    The early lateral energy fraction :math:`G`
-    according to [#isoStrength]_ is defined as the ratio between the
+    The late lateral level :math:`LJ`
+    according to [#isoLLJ]_ is defined as the ratio between the
     lateral sound energy captured with a figure of eight microphone
-    arriving between 5 ms and 80 ms and the total sound energy
-    captured with an omnidirectional microphone arriving within
-    the first 80 ms after the direct sound. It is a measure of the
-    apparent source width.
+    arriving after 80 ms and the total sound energy of a reference
+    impulse response measured with an omnidirectional microphone
+    at a distance of 10 m in the free field.
 
     The parameter is defined as
 
     .. math::
 
-        J_\mathrm{LF} =
+        LJ =
         10 \log_{10}
         \frac{
-            \displaystyle \int_{0.005}^{0.08} p_\mathrm{L}^2(t)\,\mathrm{d}t
+            \displaystyle \int_{0.08}^{\infty} p_\mathrm{L}^2(t)\,\mathrm{d}t
         }{
-            \displaystyle \int_{0}^{0.08} p^2(t)\,\mathrm{d}t
+            \displaystyle \int_{0}^{\infty} p_{10}^2(t)\,\mathrm{d}t
         }
 
     where :math:`p_\mathrm{L}(t)` is the lateral sound pressure measured with a
     figure-eight microphone whose zero axis is oriented towards the source,
-    and :math:`p(t)` is the sound pressure measured at the same position
-    with an omnidirectional microphone.
+    and :math:`p_{10}(t)` is the instantaneous sound pressure of the
+    impulse response measured with an omnidirectional microphone
+    at 10 m distance in the free field.
 
-    Using the energy decay curves of the omnidirectional response
-    :math:`e(t)` and the lateral response :math:`e_\mathrm{L}(t)`, the
-    parameter can be computed efficiently as
+    Using the energy decay curves of the reference response
+    :math:`e_{10}(t)` and the lateral response :math:`e_\mathrm{L}(t)`,
+    the parameter can be computed efficiently as
 
     .. math::
 
-        J_\mathrm{LF} =
+        LJ =
         10 \log_{10}
         \frac{
-            e_\mathrm{L}(0.005) - e_\mathrm{L}(0.08)
+            e_\mathrm{L}(0.08)
         }{
-            e(0) - e(0.08)
+            e_{10}(0)
         }.
 
     Parameters
     ----------
-    energy_decay_curve_omni : pyfar.TimeData
-        Energy decay curve of the room impulse response measured with an
-        omnidirectional microphone. The EDC must start at time zero.
+    energy_decay_curve_ref_10m : pyfar.TimeData
+        Energy decay curve of the reference impulse response measured
+        with an omnidirectional microphone at 10 m distance in the
+        free field. The EDC must start at time zero.
 
     energy_decay_curve_lateral : pyfar.TimeData
         Energy decay curve of the room impulse response measured with a
-        figure-eight microphone oriented according to [#isoStrength]_
+        figure-eight microphone oriented according to [#isoLLJ]_
         (zero axis pointing towards the source). The EDC must start at
         time zero.
 
@@ -569,22 +570,22 @@ def lateral_level(energy_decay_curve_omni,
 
     Returns
     -------
-    Strength: numpy.ndarray
-        Strength (:math:`G`) in decibels.
+    Late Lateral Level : numpy.ndarray
+        Late lateral level (:math:`LJ`) in decibels.
         The output array follows the channel shape (``signal.cshape``) of
         the input EDCs.
 
     References
     ----------
-    .. [#isoStrength] ISO 3382, Acoustics — Measurement of the reverberation
-        time of rooms with reference to other acoustical parameters.
+    .. [#isoLLJ] ISO 3382-1, ISO 3382, Acoustics — Measurement of the
+    reverberation time of rooms with reference to other acoustical parameters.
     """
 
-    limits = np.array([0.0, 0.08, 0.005, 0.08])
+    limits = np.array([0.0, np.inf, 0.08, np.inf])
 
-    return 10*np.log10(_energy_ratio(limits,
-                                     energy_decay_curve_omni,
-                                     energy_decay_curve_lateral))
+    return 10 * np.log10(_energy_ratio(limits,
+                                       energy_decay_curve_ref_10m,
+                                       energy_decay_curve_lateral))
 
 def sound_strength(energy_decay_curve_room,
              energy_decay_curve_free_field):
