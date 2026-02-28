@@ -212,7 +212,7 @@ def definition(energy_decay_curve, early_time_limit=50):
     The definition parameter (D50) is defined as the ratio of early-to-total
     arriving energy in an impulse response and is a measure for how defined
     speech or music can be perceived in a room. The early-to-total boundary is
-    typically set at 50 ms (D50) [#iso]_.
+    typically set at 50 ms (D50) [#isoDEF]_.
 
     Definition is calculated as:
 
@@ -226,8 +226,7 @@ def definition(energy_decay_curve, early_time_limit=50):
 
     where :math:`t_e` is the early time limit and :math:`p(t)` is the pressure
     of a room impulse response. Here, the definition is efficiently computed
-    from the EDC :math:`e(t)` directly via :func:`_energy_ratio` with
-    ``limits = [0, t_e, 0, np.inf]``:
+    from the EDC :math:`e(t)` directly by:
 
     .. math::
 
@@ -243,7 +242,7 @@ def definition(energy_decay_curve, early_time_limit=50):
         (time-domain signal). The EDC must start at time zero.
     early_time_limit : float, optional
         Early time limit (:math:`t_e`) in milliseconds. Defaults to typical
-        value 50 (D50) [#iso]_.
+        value 50 (D50) [#isoDEF]_.
 
     Returns
     -------
@@ -253,7 +252,7 @@ def definition(energy_decay_curve, early_time_limit=50):
 
     References
     ----------
-    .. [#iso] ISO 3382, Acoustics — Measurement of the reverberation
+    .. [#isoDEF] ISO 3382, Acoustics — Measurement of the reverberation
         time of rooms with reference to other acoustical parameters.
 
     Examples
