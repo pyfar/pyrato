@@ -145,11 +145,18 @@ def test_definition_rejects_non_numeric_early_time_limit(make_edc):
     with pytest.raises(TypeError, match=re.escape(expected_error_message)):
         definition(edc, invalid_time_limit)
 
-def test_definition_returns_nan_for_zero_signal(make_edc):
-    """Correct return of NaN for zero signal."""
-    edc = make_edc(energy=np.zeros((1, 128)), sampling_rate=1000)
+def test_definition_returns_zero_for_zero_signal(make_edc):
+    """
+    Definition must return 0.0 for a zero-energy signal.
+
+    The fixture clips all values to a small noise floor (min_energy),
+    so the EDC is flat. The denominator becomes min_energy - 0 (since
+    np.inf maps to zero in _energy_ratio), and the numerator becomes
+    min_energy - min_energy = 0. The result is therefore 0.0, not NaN.
+    """
+    edc = make_edc(energy=np.zeros(128), sampling_rate=1000)
     result = definition(edc)
-    assert np.isnan(result)
+    assert np.isclose(result, 0.0)
 
 def test_definition_calculates_known_reference_value(make_edc):
     """

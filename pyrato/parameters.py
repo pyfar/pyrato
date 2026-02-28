@@ -272,21 +272,14 @@ def definition(energy_decay_curve, early_time_limit=50):
     if not isinstance(early_time_limit, (int, float)):
         raise TypeError('early_time_limit must be a number.')
 
-    if not isinstance(energy_decay_curve, pf.TimeData):
-        raise TypeError(
-            "energy_decay_curve must be a pyfar.TimeData or derived object.")
-
     # Convert milliseconds to seconds
     early_time_limit_sec = early_time_limit / 1000
 
-    limits = np.array([0.0,
-                        np.inf,
-                        0.0,
-                        early_time_limit_sec])
+    limits = np.array([0.0, np.inf, 0.0, early_time_limit_sec])
 
     return _energy_ratio(limits,
-                        energy_decay_curve,
-                        energy_decay_curve)
+                         energy_decay_curve,
+                         energy_decay_curve)
 
 def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
     r"""
@@ -437,5 +430,4 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
 
     energy_ratio = numerator / denominator
 
-    return energy_ratio 
-  
+    return energy_ratio
