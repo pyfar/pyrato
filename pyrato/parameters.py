@@ -209,7 +209,7 @@ def early_lateral_energy_fraction(energy_decay_curve_omni,
     Calculate the early lateral energy fraction.
 
     The early lateral energy fraction :math:`J_\mathrm{LF}`
-    according to [#iso]_ is defined as the ratio between the
+    according to [#isoEarlyLat]_ is defined as the ratio between the
     lateral sound energy captured with a figure of eight microphone
     arriving between 5 ms and 80 ms and the total sound energy
     captured with an omnidirectional microphone arriving within
@@ -255,7 +255,7 @@ def early_lateral_energy_fraction(energy_decay_curve_omni,
 
     energy_decay_curve_lateral : pyfar.TimeData
         Energy decay curve of the room impulse response measured with a
-        figure-eight microphone oriented according to [#iso]_
+        figure-eight microphone oriented according to [#isoEarlyLat]_
         (zero axis pointing towards the source). The EDC must start at
         time zero.
 
@@ -267,6 +267,11 @@ def early_lateral_energy_fraction(energy_decay_curve_omni,
         Early lateral energy fraction (:math:`J_\mathrm{LF}`) in decibels.
         The output array follows the channel shape (``signal.cshape``) of
         the input EDCs.
+
+    References
+    ----------
+    .. [#isoEarlyLat] ISO 3382, Acoustics — Measurement of the reverberation
+        time of rooms with reference to other acoustical parameters.
     """
 
     limits = np.array([0.0, 0.08, 0.005, 0.08])
