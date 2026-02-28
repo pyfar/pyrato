@@ -10,6 +10,7 @@ from pyrato.parameters import sound_strength
 from pyrato.parameters import definition
 from pyrato.parameters import early_lateral_energy_fraction
 from pyrato.parameters import _energy_ratio
+from pyrato.parameters import late_lateral_level
 
 # parameter clarity tests
 @pytest.mark.parametrize(
@@ -723,4 +724,127 @@ def test_JLF_for_exponential_decay_analytical(make_edc):
     expected_lateral = np.exp(-a_lat * 0.005) - np.exp(-a_lat * 0.08)
 
     expected = expected_lateral / expected_omni
+    np.testing.assert_allclose(result, expected, atol=1e-5)
+
+
+# late_lateral_level tests
+@pytest.mark.parametrize(
+    ("energy", "expected_shape"),
+    [
+        (np.linspace(1, 0, 1000), (1,)),
+        (np.linspace((1, 0.5), (0, 0), 1000).T, (2,)),
+        (np.arange(2 * 3 * 1000).reshape(2, 3, 1000), (2, 3)),
+    ],
+)
+def test_LJ_accepts_timedata_and_returns_correct_shape(
+    energy, expected_shape, make_edc,
+):
+    """Return type and shape of pyfar.TimeData input for identical edcs."""
+    edc = make_edc(energy=energy, sampling_rate=1000)
+    result = late_lateral_level(edc, edc)
+
+    assert isinstance(result, (float, np.ndarray))
+    assert result.shape == expected_shape
+    assert result.shape == edc.cshape
+
+def test_LJ_returns_nan_for_zero_denominator_signal():
+    """Correct return of NaN for division by zero signal."""
+    edc_ref = pf.TimeData(np.zeros((1, 128)), np.arange(128) / 1000)
+    edc_lat = pf.TimeData(np.ones((1, 128)), np.arange(128) / 1000)
+
+    result = late_lateral_level(edc_ref, edc_lat)
+    assert np.isnan(result)
+
+def test_LJ_calculates_known_reference_value(make_edc):
+    """
+    Construct simple deterministic EDCs:
+    e_10(0)   = 1
+    e_L(0.08) = 0.5
+    Expected:
+    LJ = 10*log10(0.5) = -3.0103 dB.
+    """
+
+    pad = np.zeros(200)
+
+    edc_ref = np.concatenate(([1.0], pad))
+
+    # 80 ms at 1 kHz sampling rate -> index 80
+    edc_lateral = np.concatenate((
+        np.zeros(80),
+        np.array([0.5]),
+        pad,
+    ))
+
+    edc_ref = make_edc(energy=edc_ref, sampling_rate=1000)
+    edc_lateral = make_edc(energy=edc_lateral,
+                           sampling_rate=1000, normalize=False)
+
+    result = late_lateral_level(edc_ref, edc_lateral)
+
+    expected = 10 * np.log10(0.5)
+    np.testing.assert_allclose(result, expected, atol=1e-5)
+
+def test_LJ_is_within_ISO3382_range(make_edc):
+    """
+    Smoke test: LJ must fall within the empirically observed range
+    reported in ISO 3382-1 for concert halls:
+    approximately -14 dB to +1 dB.
+    """
+
+    sampling_rate = 44100
+    total_samples = 200000
+    onset_samples = int(0.003 * sampling_rate)
+
+    t = np.arange(total_samples - onset_samples) / sampling_rate
+
+    decay_ref = np.exp(-13.8155 / 2.0 * t)
+    decay_lat = 0.2 * np.exp(-13.8155 / 2.2 * t)
+
+    zeros = np.zeros(onset_samples)
+
+    energy_ref = make_edc(
+        energy=np.concatenate([zeros, decay_ref]),
+        sampling_rate=sampling_rate,
+        normalize=False,
+    )
+    energy_lat = make_edc(
+        energy=np.concatenate([zeros, decay_lat]),
+        sampling_rate=sampling_rate,
+        normalize=False,
+    )
+
+    edc_ref = ra.edc.schroeder_integration(energy_ref, is_energy=True)
+    edc_lat = ra.edc.schroeder_integration(energy_lat, is_energy=True)
+
+    result = late_lateral_level(edc_ref, edc_lat).item()
+
+    assert -14 <= result <= 1, (
+        f"LJ = {result:.2f} dB is outside the ISO 3382-1 typical range "
+        f"[-14 dB, +1 dB]"
+    )
+
+def test_LJ_for_exponential_decay_analytical(make_edc):
+    """
+    LJ validation for analytical exponential decay:
+    e(t) = exp(-a*t)
+    LJ = 10*log10(e_L(0.08) / e_10(0)).
+    """
+
+    sampling_rate = 1000
+    total_samples = 2000
+
+    edc_ref = make_edc(rt=2.0,
+                       sampling_rate=sampling_rate,
+                       total_samples=total_samples)
+
+    edc_lat = make_edc(rt=2.2,
+                       sampling_rate=sampling_rate,
+                       total_samples=total_samples)
+
+    result = late_lateral_level(edc_ref, edc_lat)
+
+    a_lat = 13.8155 / 2.2
+
+    expected = 10 * np.log10(np.exp(-a_lat * 0.08))
+
     np.testing.assert_allclose(result, expected, atol=1e-5)
