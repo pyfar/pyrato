@@ -464,7 +464,7 @@ def test_JLF_calculates_known_reference_value(make_edc):
     e_L(0.005) = 0.5
     e_L(0.08) = 0
     Expected:
-    JLF = 10 log10(0.5 / 1) = 10 log10(0.5).
+    JLF = (0.5 / 1) = 0.5.
     """
     pad = np.zeros(100)
     edc_omni = np.concatenate((
@@ -481,13 +481,12 @@ def test_JLF_calculates_known_reference_value(make_edc):
                            sampling_rate=1000, normalize=False)
 
     result = early_lateral_energy_fraction(edc_omni, edc_lateral)
-    np.testing.assert_allclose(result, 10*np.log10(0.5), atol=1e-5)
+    np.testing.assert_allclose(result, 0.5, atol=1e-5)
 
 def test_JLF_is_within_ISO3382_range(make_edc):
     """
     Smoke test: J_LF must fall within the empirically observed range
-    reported in ISO 3382 for concert halls: 0.05 to 0.35 (linear),
-    equivalent to roughly -13 to -4.6 dB.
+    reported in ISO 3382 for concert halls: 0.05 to 0.35 (linear).
 
     Signal design:
     - Onset delay of 3 ms applied manually to both EDCs (co-located mics).
@@ -516,10 +515,10 @@ def test_JLF_is_within_ISO3382_range(make_edc):
 
     result = early_lateral_energy_fraction(edc_omni, edc_lateral).item()
 
-    # ISO 3382 typical range: 0.05–0.35 linear → -13.0 to -4.6 dB
-    assert -13.0 <= result <= -4.6, (
-        f"J_LF = {result:.2f} dB is outside the ISO 3382 typical range "
-        f"[-13.0, -4.6] dB"
+    # ISO 3382 typical range: 0.05–0.35
+    assert 0.05 <= result <= 0.35, (
+        f"J_LF = {result:.2f} is outside the ISO 3382 typical range "
+        f"[0.05, 0.35]"
     )
 
 def test_JLF_for_exponential_decay_analytical(make_edc):
@@ -528,7 +527,7 @@ def test_JLF_for_exponential_decay_analytical(make_edc):
 
     For an exponential EDC: e(t) = exp(-a*t), where a = 13.8155 / RT
 
-    JLF = 10 * log10(
+    JLF = (
         (e_L(0.005) - e_L(0.08)) /   # lateral, 5ms to 80ms
         (e_omni(0)  - e_omni(0.08))   # omni,    0ms to 80ms
     )
@@ -552,5 +551,5 @@ def test_JLF_for_exponential_decay_analytical(make_edc):
     # Numerator: e_L(0.005) - e_L(0.08).
     expected_lateral = np.exp(-a_lat * 0.005) - np.exp(-a_lat * 0.08)
 
-    expected_dB = 10 * np.log10(expected_lateral / expected_omni)
-    np.testing.assert_allclose(result, expected_dB, atol=1e-5)
+    expected = expected_lateral / expected_omni
+    np.testing.assert_allclose(result, expected, atol=1e-5)

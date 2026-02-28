@@ -276,9 +276,9 @@ def early_lateral_energy_fraction(energy_decay_curve_omni,
 
     limits = np.array([0.0, 0.08, 0.005, 0.08])
 
-    return 10*np.log10(_energy_ratio(limits,
-                                     energy_decay_curve_omni,
-                                     energy_decay_curve_lateral))
+    return _energy_ratio(limits,
+                         energy_decay_curve_omni,
+                         energy_decay_curve_lateral)
 
 def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
     r"""
