@@ -212,7 +212,7 @@ def definition(energy_decay_curve, early_time_limit=50):
     The definition parameter (D50) is defined as the ratio of early-to-total
     arriving energy in an impulse response and is a measure for how defined
     speech or music can be perceived in a room. The early-to-total boundary is
-    typically set at 50 ms (D50) [#isoDEF]_.
+    typically set at 50 ms (D50) [#isoDefinition]_.
 
     Definition is calculated as:
 
@@ -242,7 +242,7 @@ def definition(energy_decay_curve, early_time_limit=50):
         (time-domain signal). The EDC must start at time zero.
     early_time_limit : float, optional
         Early time limit (:math:`t_e`) in milliseconds. Defaults to typical
-        value 50 (D50) [#isoDEF]_.
+        value 50 (D50) [#isoDefinition]_.
 
     Returns
     -------
@@ -252,20 +252,33 @@ def definition(energy_decay_curve, early_time_limit=50):
 
     References
     ----------
-    .. [#isoDEF] ISO 3382, Acoustics — Measurement of the reverberation
+    .. [#isoDefinition] ISO 3382, Acoustics — Measurement of the reverberation
         time of rooms with reference to other acoustical parameters.
 
     Examples
     --------
-    Estimate the definition from a real room impulse response filtered in
+    Estimate the defintion from a real room impulse response filtered in
     octave bands:
 
     >>> import pyfar as pf
     >>> import pyrato as ra
+    ...
     >>> rir = pf.signals.files.room_impulse_response(sampling_rate=44100)
     >>> rir = pf.dsp.filter.fractional_octave_bands(rir, num_fractions=1)
     >>> edc = ra.edc.energy_decay_curve_lundeby(rir)
-    >>> D50 = definition(edc, early_time_limit=50)
+    ...
+    >>> D50 = ra.parameters.definition(edc, early_time_limit=50)
+    >>> D50
+    ...     [[3.14084163e-08]
+    ...     [6.41088093e-05]
+    ...     [2.59848518e-01]
+    ...     [5.02087416e-01]
+    ...     [6.67223594e-01]
+    ...     [7.35285317e-01]
+    ...     [8.78014545e-01]
+    ...     [8.27575943e-01]
+    ...     [8.65361425e-01]
+    ...     [8.73749876e-01]]
     """
 
     if not isinstance(early_time_limit, (int, float)):
