@@ -514,7 +514,8 @@ def late_lateral_level(energy_decay_curve_ref_10m,
     r"""
     Calculate the late lateral level.
 
-    The late lateral level :math:`LJ`
+    The late lateral level :math:`L_\mathrm{J}` is a measure of the strength
+    of late-arriving lateral sound
     according to [#isoLLJ]_ is defined as the ratio between the
     lateral sound energy captured with a figure of eight microphone
     arriving after 80 ms and the total sound energy of a reference
@@ -525,7 +526,7 @@ def late_lateral_level(energy_decay_curve_ref_10m,
 
     .. math::
 
-        LJ =
+        L_\mathrm{J} =
         10 \log_{10}
         \frac{
             \displaystyle \int_{0.08}^{\infty} p_\mathrm{L}^2(t)\,\mathrm{d}t
@@ -545,7 +546,7 @@ def late_lateral_level(energy_decay_curve_ref_10m,
 
     .. math::
 
-        LJ =
+        L_\mathrm{J} =
         10 \log_{10}
         \frac{
             e_\mathrm{L}(0.08)
@@ -571,7 +572,7 @@ def late_lateral_level(energy_decay_curve_ref_10m,
     Returns
     -------
     Late Lateral Level : numpy.ndarray
-        Late lateral level (:math:`LJ`) in decibels.
+        Late lateral level (:math:`L_\mathrm{J}`) in decibels.
         The output array follows the channel shape (``signal.cshape``) of
         the input EDCs.
 
