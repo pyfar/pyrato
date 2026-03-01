@@ -212,8 +212,8 @@ def speech_transmission_index_indirect(
 
     The STI is a scalar measure between 0 (bad) and 1 (excellent)
     describing speech intelligibility. It is computed from the
-    :py:func:`~modulation_transfer_function`, optionally including auditory masking
-    and ambient noise effects.
+    :py:func:`~modulation_transfer_function`, optionally including auditory
+    masking and ambient noise effects.
 
     STI considers 7 octave bands from 125 Hz to 8 kHz
     and 14 modulation frequencies between 0.63 Hz and
@@ -232,15 +232,15 @@ def speech_transmission_index_indirect(
         signals [#iec]_, section A.3.1.
     level : numpy.ndarray or None, optional
         Test signal level without noise in dB SPL, given per octave band
-        (125 Hz–8 kHz). Shape can be ``(7,)`` (7 octave bands: 125 Hz–8 kHz) 
-        to use the same values for all channels, or ``(rir.cshape, 7)`` 
+        (125 Hz–8 kHz). Shape can be ``(7,)`` (7 octave bands: 125 Hz–8 kHz)
+        to use the same values for all channels, or ``(rir.cshape, 7)``
         for channel-specific values.
         If ``None`` is provided, auditory and ambient noise corrections are
         omitted. See [#iec]_, section A.3.2.
     snr : numpy.ndarray or None, optional
         Signal-to-noise ratio in dB per octave band (125 Hz–8 kHz).
-        Shape can be ``(7,)`` (7 octave bands: 125 Hz–8 kHz) 
-        to use the same values for all channels, or ``(rir.cshape, 7)`` 
+        Shape can be ``(7,)`` (7 octave bands: 125 Hz–8 kHz)
+        to use the same values for all channels, or ``(rir.cshape, 7)``
         for channel-specific values.
         If ``None`` is provided, infinite SNR is assumed.
         See [#iec]_, section 3.
@@ -377,8 +377,8 @@ def modulation_transfer_function(
     snr : numpy.ndarray or None, optional
         Signal-to-noise ratio when the test source is turned off, in
         dB per octave band (125 Hz–8 kHz).
-        Shape must be ``(7,)`` (7 octave bands: 125 Hz–8 kHz). 
-        If ``None`` is provided, an infinite SNR is assumed. 
+        Shape must be ``(7,)`` (7 octave bands: 125 Hz–8 kHz).
+        If ``None`` is provided, an infinite SNR is assumed.
         Default is ``None``. See [#iecMTF]_, section 3.
     ambient_noise : bool, optional
         Apply ambient noise correction according to [#iecMTF]_,
