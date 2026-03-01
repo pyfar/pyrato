@@ -415,9 +415,8 @@ def strength(energy_decay_curve_omni,
     Returns
     -------
     Strength: numpy.ndarray
-        Strength (:math:`G`) in decibels.
-        The output array follows the channel shape (``signal.cshape``) of
-        the input EDCs.
+        Strength (:math:`G`) in decibels,
+        shaped according to the channel shape of the input EDC.
 
     References
     ----------
