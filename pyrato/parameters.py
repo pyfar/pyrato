@@ -572,9 +572,8 @@ def late_lateral_level(energy_decay_curve_ref_10m,
     Returns
     -------
     Late Lateral Level : numpy.ndarray
-        Late lateral level (:math:`L_\mathrm{J}`) in decibels.
-        The output array follows the channel shape (``signal.cshape``) of
-        the input EDCs.
+        Late lateral level (:math:`L_\mathrm{J}`) in decibels,
+        shaped according to the channel shape of the input EDCs.
 
     References
     ----------
