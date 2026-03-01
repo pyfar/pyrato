@@ -251,6 +251,16 @@ def speech_transmission_index_indirect(
     sti : np.ndarray
         Channel-wise Speech Transmission Index with shape ``rir.cshape``.
 
+    Notes
+    -----
+    The filter order of the octave-band filters influences the MTF.
+    Higher filter orders produce steeper roll-off and a more ideal band
+    separation, which affects the energy distribution within each octave
+    band and thus the computed modulation depth. However, the resulting STI
+    is not meaningfully affected, since individual deviations in the MTF
+    tend to cancel out in the weighted sum over octave bands and modulation
+    frequencies.
+
     References
     ----------
     .. [#iec] IEC 60268-16:2020
@@ -375,6 +385,16 @@ def modulation_transfer_function(
     -------
     mtf : numpy.ndarray
         Modulation transfer function with shape ``(7, 14)``.
+
+    Notes
+    -----
+    The filter order of the octave-band filters influences the MTF.
+    Higher filter orders produce steeper roll-off and a more ideal band
+    separation, which affects the energy distribution within each octave
+    band and thus the computed modulation depth. However, the resulting STI
+    is not meaningfully affected, since individual deviations in the MTF
+    tend to cancel out in the weighted sum over octave bands and modulation
+    frequencies.
 
     References
     ----------
