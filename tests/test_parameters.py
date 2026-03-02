@@ -179,8 +179,8 @@ def test_definition_for_exponential_decay(make_edc):
 
     # Generate EDC
     edc = make_edc(rt=rt60,
-                               sampling_rate=sampling_rate,
-                               total_samples=total_samples)
+                   sampling_rate=sampling_rate,
+                   total_samples=total_samples)
     result = definition(edc, early_time_limit=early_cutoff)
 
     # Analytical expected value
