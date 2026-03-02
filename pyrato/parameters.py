@@ -256,7 +256,6 @@ def early_lateral_energy_fraction(energy_decay_curve_omni,
         figure-eight microphone oriented according to [#isoEarlyLat]_
         (zero axis pointing towards the source). The EDC must start at
         time zero.
-
         Both EDCs must have identical ``signal.cshape``.
 
     Returns
