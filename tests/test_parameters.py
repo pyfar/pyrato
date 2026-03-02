@@ -143,7 +143,8 @@ def test_strength_matches_known_reference_ratio(make_edc):
 
 def test_strength_preserves_multichannel_shape(make_edc):
     """Preserve multichannel shape and compute strength per channel
-    independently."""
+    independently.
+    """
     energy_room = np.stack([
         np.array([1.0, 0.8, 0.4, 0.2]),
         np.array([2.0, 1.6, 0.8, 0.4]),
@@ -175,7 +176,8 @@ def test_strength_handles_very_short_edcs(make_edc):
 
 def test_strength_is_invariant_to_common_scaling(make_edc):
     """Keep G unchanged if both room and reference EDCs share one gain
-    factor."""
+    factor.
+    """
     room = np.array([2.0, 1.0, 0.4, 0.2])
     ref = np.array([1.0, 0.5, 0.2, 0.1])
     factor = 7.5
