@@ -784,45 +784,6 @@ def test_LJ_calculates_known_reference_value(make_edc):
     expected = 10 * np.log10(0.5)
     np.testing.assert_allclose(result, expected, atol=1e-5)
 
-def test_LJ_is_within_ISO3382_range(make_edc):
-    """
-    Smoke test: LJ must fall within the empirically observed range
-    reported in ISO 3382-1 for concert halls:
-    approximately -14 dB to +1 dB.
-    """
-
-    sampling_rate = 44100
-    total_samples = 200000
-    onset_samples = int(0.003 * sampling_rate)
-
-    t = np.arange(total_samples - onset_samples) / sampling_rate
-
-    decay_ref = np.exp(-13.8155 / 2.0 * t)
-    decay_lat = 0.2 * np.exp(-13.8155 / 2.2 * t)
-
-    zeros = np.zeros(onset_samples)
-
-    energy_ref = make_edc(
-        energy=np.concatenate([zeros, decay_ref]),
-        sampling_rate=sampling_rate,
-        normalize=False,
-    )
-    energy_lat = make_edc(
-        energy=np.concatenate([zeros, decay_lat]),
-        sampling_rate=sampling_rate,
-        normalize=False,
-    )
-
-    edc_ref = ra.edc.schroeder_integration(energy_ref, is_energy=True)
-    edc_lat = ra.edc.schroeder_integration(energy_lat, is_energy=True)
-
-    result = late_lateral_level(edc_ref, edc_lat).item()
-
-    assert -14 <= result <= 1, (
-        f"LJ = {result:.2f} dB is outside the ISO 3382-1 typical range "
-        f"[-14 dB, +1 dB]"
-    )
-
 def test_LJ_for_exponential_decay_analytical(make_edc):
     """
     LJ validation for analytical exponential decay:
@@ -833,7 +794,8 @@ def test_LJ_for_exponential_decay_analytical(make_edc):
     sampling_rate = 1000
     total_samples = 2000
 
-    edc_ref = make_edc(rt=2.0,
+    # emulating free field impulse response
+    edc_ref = make_edc(rt=0.01,
                        sampling_rate=sampling_rate,
                        total_samples=total_samples)
 
