@@ -354,68 +354,64 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
 
     return energy_ratio
 
-def strength(energy_decay_curve_omni,
-                                  energy_decay_curve_lateral):
+def strength(energy_decay_curve_room,
+             energy_decay_curve_reference):
     r"""
-    Calculate the strength.
+    Calculate the room-acoustic strength parameter (:math:`G`).
 
-    The early lateral energy fraction :math:`G`
-    according to [#isoStrength]_ is defined as the ratio between the
-    lateral sound energy captured with a figure of eight microphone
-    arriving between 5 ms and 80 ms and the total sound energy
-    captured with an omnidirectional microphone arriving within
-    the first 80 ms after the direct sound. It is a measure of the
-    apparent source width.
+    The strength parameter (:math:`G`) is defined as the ratio between the
+    total arriving sound energy in a room and the total arriving sound energy
+    of a reference free-field response measured at 10 m with the same
+    loudspeaker. It is a measure of the room-induced level amplification
+    at the receiver position [#isoStrength]_.
 
     The parameter is defined as
 
     .. math::
 
-        J_\mathrm{LF} =
+        G =
         10 \log_{10}
         \frac{
-            \displaystyle \int_{0.005}^{0.08} p_\mathrm{L}^2(t)\,\mathrm{d}t
+            \displaystyle \int_{0}^{\infty} p_\mathrm{room}^2(t)\,\mathrm{d}t
         }{
-            \displaystyle \int_{0}^{0.08} p^2(t)\,\mathrm{d}t
+            \displaystyle \int_{0}^{\infty} p_\mathrm{ref}^2(t)\,\mathrm{d}t
         }
 
-    where :math:`p_\mathrm{L}(t)` is the lateral sound pressure measured with a
-    figure-eight microphone whose zero axis is oriented towards the source,
-    and :math:`p(t)` is the sound pressure measured at the same position
-    with an omnidirectional microphone.
+    where :math:`p_\mathrm{room}(t)` is the room sound pressure and
+    :math:`p_\mathrm{ref}(t)` is the reference free-field sound pressure at 10 m
+    measured with the same loudspeaker.
 
-    Using the energy decay curves of the omnidirectional response
-    :math:`e(t)` and the lateral response :math:`e_\mathrm{L}(t)`, the
+    Using the energy decay curves of the room response
+    :math:`e_\mathrm{room}(t)` and the reference response
+    :math:`e_\mathrm{ref}(t)`, the
     parameter can be computed efficiently as
 
     .. math::
 
-        J_\mathrm{LF} =
+        G =
         10 \log_{10}
         \frac{
-            e_\mathrm{L}(0.005) - e_\mathrm{L}(0.08)
+            e_\mathrm{room}(0) - e_\mathrm{room}(\infty)
         }{
-            e(0) - e(0.08)
+            e_\mathrm{ref}(0) - e_\mathrm{ref}(\infty)
         }.
 
     Parameters
     ----------
-    energy_decay_curve_omni : pyfar.TimeData
-        Energy decay curve of the room impulse response measured with an
-        omnidirectional microphone. The EDC must start at time zero.
+    energy_decay_curve_room : pyfar.TimeData
+        Energy decay curve of the room impulse response. The EDC must
+        start at time zero.
 
-    energy_decay_curve_lateral : pyfar.TimeData
-        Energy decay curve of the room impulse response measured with a
-        figure-eight microphone oriented according to [#isoStrength]_
-        (zero axis pointing towards the source). The EDC must start at
-        time zero.
+    energy_decay_curve_reference : pyfar.TimeData
+        Energy decay curve of the reference free-field impulse response
+        at 10 m. The EDC must start at time zero.
 
         Both EDCs must have identical ``signal.cshape``.
 
     Returns
     -------
-    Strength: numpy.ndarray
-        Strength (:math:`G`) in decibels,
+    strength : numpy.ndarray
+        Strength parameter (:math:`G`) in decibels,
         shaped according to the channel shape of the input EDC.
 
     References
@@ -424,8 +420,8 @@ def strength(energy_decay_curve_omni,
         time of rooms with reference to other acoustical parameters.
     """
 
-    limits = np.array([0.0, 0.08, 0.005, 0.08])
+    limits = np.array([0.0, np.inf, 0.0, np.inf])
 
     return 10*np.log10(_energy_ratio(limits,
-                                     energy_decay_curve_omni,
-                                     energy_decay_curve_lateral))
+                                     energy_decay_curve_reference,
+                                     energy_decay_curve_room))

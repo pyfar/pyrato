@@ -6,6 +6,7 @@ import numpy.testing as npt
 import re
 
 from pyrato.parameters import clarity
+from pyrato.parameters import strength
 from pyrato.parameters import _energy_ratio
 
 # parameter clarity tests
@@ -111,6 +112,77 @@ def test_clarity_for_exponential_decay(make_edc):
     expected_ratio = np.exp(a * te) - 1
     expected_dB = 10 * np.log10(expected_ratio)
     np.testing.assert_allclose(result, expected_dB, atol=1e-6)
+
+def test_strength_returns_zero_db_for_identical_edcs(make_edc):
+    """Return 0 dB when room and reference EDCs are identical."""
+    energy = np.array([1.0, 0.8, 0.4, 0.2])
+    edc_room = make_edc(energy=energy, sampling_rate=1000, normalize=False)
+    edc_ref = make_edc(energy=energy, sampling_rate=1000, normalize=False)
+
+    result = strength(edc_room, edc_ref)
+    npt.assert_allclose(result, 0.0, atol=1e-12)
+
+def test_strength_matches_known_reference_ratio(make_edc):
+    """Calculate correct strength for a known energy ratio (2:1 → +3.01 dB)."""
+    edc_room = make_edc(
+        energy=np.array([2.0, 1.0, 0.0, 0.0]),
+        sampling_rate=1000,
+        normalize=False,
+        dynamic_range=200,
+    )
+    edc_ref = make_edc(
+        energy=np.array([1.0, 0.5, 0.0, 0.0]),
+        sampling_rate=1000,
+        normalize=False,
+        dynamic_range=200,
+    )
+
+    expected = 10 * np.log10(2.0)
+    result = strength(edc_room, edc_ref)
+    npt.assert_allclose(result, expected, atol=1e-8)
+
+def test_strength_preserves_multichannel_shape(make_edc):
+    """Preserve multichannel shape and compute strength per channel independently."""
+    energy_room = np.stack([
+        np.array([1.0, 0.8, 0.4, 0.2]),
+        np.array([2.0, 1.6, 0.8, 0.4]),
+    ])
+    energy_ref = np.stack([
+        np.array([1.0, 0.8, 0.4, 0.2]),
+        np.array([1.0, 0.8, 0.4, 0.2]),
+    ])
+    edc_room = make_edc(energy=energy_room, sampling_rate=1000, normalize=False)
+    edc_ref = make_edc(energy=energy_ref, sampling_rate=1000, normalize=False)
+
+    result = strength(edc_room, edc_ref)
+
+    assert result.shape == edc_room.cshape
+    npt.assert_allclose(result[0], 0.0, atol=1e-12)
+    npt.assert_allclose(result[1], 10*np.log10(2.0), atol=1e-8)
+
+def test_strength_handles_very_short_edcs(make_edc):
+    """Handle very short EDCs when integrating over [0, inf]."""
+    edc_room = make_edc(energy=np.array([2.0, 1.0]), sampling_rate=1000, normalize=False)
+    edc_ref = make_edc(energy=np.array([1.0, 0.5]), sampling_rate=1000, normalize=False)
+
+    result = strength(edc_room, edc_ref)
+    npt.assert_allclose(result, 10*np.log10(2.0), atol=1e-12)
+
+def test_strength_is_invariant_to_common_scaling(make_edc):
+    """Keep G unchanged if both room and reference EDCs share one gain factor."""
+    room = np.array([2.0, 1.0, 0.4, 0.2])
+    ref = np.array([1.0, 0.5, 0.2, 0.1])
+    factor = 7.5
+
+    edc_room = make_edc(energy=room, sampling_rate=1000, normalize=False)
+    edc_ref = make_edc(energy=ref, sampling_rate=1000, normalize=False)
+    edc_room_scaled = make_edc(energy=factor * room, sampling_rate=1000, normalize=False)
+    edc_ref_scaled = make_edc(energy=factor * ref, sampling_rate=1000, normalize=False)
+
+    result = strength(edc_room, edc_ref)
+    result_scaled = strength(edc_room_scaled, edc_ref_scaled)
+
+    npt.assert_allclose(result_scaled, result, atol=1e-12)
 
 # _energy_ratio tests
 @pytest.mark.parametrize(
