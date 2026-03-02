@@ -378,8 +378,8 @@ def strength(energy_decay_curve_room,
         }
 
     where :math:`p_\mathrm{room}(t)` is the room sound pressure and
-    :math:`p_\mathrm{ref}(t)` is the reference free-field sound pressure at 10 m
-    measured with the same loudspeaker.
+    :math:`p_\mathrm{ref}(t)` is the reference free-field sound pressure
+    at 10 m measured with the same loudspeaker.
 
     Using the energy decay curves of the room response
     :math:`e_\mathrm{room}(t)` and the reference response

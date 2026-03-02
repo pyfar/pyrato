@@ -142,7 +142,8 @@ def test_strength_matches_known_reference_ratio(make_edc):
     npt.assert_allclose(result, expected, atol=1e-8)
 
 def test_strength_preserves_multichannel_shape(make_edc):
-    """Preserve multichannel shape and compute strength per channel independently."""
+    """Preserve multichannel shape and compute strength per channel
+    independently."""
     energy_room = np.stack([
         np.array([1.0, 0.8, 0.4, 0.2]),
         np.array([2.0, 1.6, 0.8, 0.4]),
@@ -151,8 +152,10 @@ def test_strength_preserves_multichannel_shape(make_edc):
         np.array([1.0, 0.8, 0.4, 0.2]),
         np.array([1.0, 0.8, 0.4, 0.2]),
     ])
-    edc_room = make_edc(energy=energy_room, sampling_rate=1000, normalize=False)
-    edc_ref = make_edc(energy=energy_ref, sampling_rate=1000, normalize=False)
+    edc_room = make_edc(
+        energy=energy_room, sampling_rate=1000, normalize=False)
+    edc_ref = make_edc(
+        energy=energy_ref, sampling_rate=1000, normalize=False)
 
     result = strength(edc_room, edc_ref)
 
@@ -162,22 +165,27 @@ def test_strength_preserves_multichannel_shape(make_edc):
 
 def test_strength_handles_very_short_edcs(make_edc):
     """Handle very short EDCs when integrating over [0, inf]."""
-    edc_room = make_edc(energy=np.array([2.0, 1.0]), sampling_rate=1000, normalize=False)
-    edc_ref = make_edc(energy=np.array([1.0, 0.5]), sampling_rate=1000, normalize=False)
+    edc_room = make_edc(
+        energy=np.array([2.0, 1.0]), sampling_rate=1000, normalize=False)
+    edc_ref = make_edc(
+        energy=np.array([1.0, 0.5]), sampling_rate=1000, normalize=False)
 
     result = strength(edc_room, edc_ref)
     npt.assert_allclose(result, 10*np.log10(2.0), atol=1e-12)
 
 def test_strength_is_invariant_to_common_scaling(make_edc):
-    """Keep G unchanged if both room and reference EDCs share one gain factor."""
+    """Keep G unchanged if both room and reference EDCs share one gain
+    factor."""
     room = np.array([2.0, 1.0, 0.4, 0.2])
     ref = np.array([1.0, 0.5, 0.2, 0.1])
     factor = 7.5
 
     edc_room = make_edc(energy=room, sampling_rate=1000, normalize=False)
     edc_ref = make_edc(energy=ref, sampling_rate=1000, normalize=False)
-    edc_room_scaled = make_edc(energy=factor * room, sampling_rate=1000, normalize=False)
-    edc_ref_scaled = make_edc(energy=factor * ref, sampling_rate=1000, normalize=False)
+    edc_room_scaled = make_edc(
+        energy=factor * room, sampling_rate=1000, normalize=False)
+    edc_ref_scaled = make_edc(
+        energy=factor * ref, sampling_rate=1000, normalize=False)
 
     result = strength(edc_room, edc_ref)
     result_scaled = strength(edc_room_scaled, edc_ref_scaled)
