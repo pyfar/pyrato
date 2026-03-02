@@ -221,7 +221,6 @@ def early_lateral_energy_fraction(energy_decay_curve_omni,
     .. math::
 
         J_\mathrm{LF} =
-        10 \log_{10}
         \frac{
             \displaystyle \int_{0.005}^{0.08} p_\mathrm{L}^2(t)\,\mathrm{d}t
         }{
@@ -240,7 +239,6 @@ def early_lateral_energy_fraction(energy_decay_curve_omni,
     .. math::
 
         J_\mathrm{LF} =
-        10 \log_{10}
         \frac{
             e_\mathrm{L}(0.005) - e_\mathrm{L}(0.08)
         }{
