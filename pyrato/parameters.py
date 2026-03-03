@@ -515,8 +515,8 @@ def late_lateral_level(energy_decay_curve_ref_10m,
     Calculate the late lateral level.
 
     The late lateral level :math:`L_\mathrm{J}` is a measure of the strength
-    of late-arriving lateral sound
-    according to [#isoLLJ]_ is defined as the ratio between the
+    of late-arriving lateral sound.
+    According to [#isoLLJ]_, it is defined as the ratio between the
     lateral sound energy captured with a figure of eight microphone
     arriving after 80 ms and the total sound energy of a reference
     impulse response measured with an omnidirectional microphone
