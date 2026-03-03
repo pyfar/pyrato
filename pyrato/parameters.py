@@ -269,6 +269,95 @@ def early_lateral_energy_fraction(energy_decay_curve_omni,
                          energy_decay_curve_omni,
                          energy_decay_curve_lateral)
 
+
+
+def definition(energy_decay_curve, early_time_limit=50):
+    r"""
+    Calculate the definition from the energy decay curve (EDC).
+
+    The definition parameter (D50) is defined as the ratio of early-to-total
+    arriving energy in an impulse response and is a measure for how defined
+    speech or music can be perceived in a room. The early-to-total boundary is
+    typically set at 50 ms (D50) [#isoDefinition]_.
+
+    Definition is calculated as:
+
+    .. math::
+
+        D_{t_\mathrm{e}} = \frac{
+            \displaystyle \int_0^{t_\mathrm{e}} p^2(t) \, dt
+        }{
+            \displaystyle \int_{0}^{\infty} p^2(t) \, dt
+        }
+
+    where :math:`t_e` is the early time limit and :math:`p(t)` is the pressure
+    of a room impulse response. Here, the definition is efficiently computed
+    from the EDC :math:`e(t)` directly by:
+
+    .. math::
+
+        D_{t_\mathrm{e}} = \frac{e(0) - e(t_\mathrm{e})}{e(0) - e(\infty)}
+                = 1 - \left( \frac{e(t_\mathrm{e})}{e(0)} \right),
+
+    where :math:`e(\infty) = 0` by definition of the EDC.
+
+    Parameters
+    ----------
+    energy_decay_curve : pyfar.TimeData
+        Energy decay curve (EDC) of the room impulse response
+        (time-domain signal). The EDC must start at time zero.
+    early_time_limit : float, optional
+        Early time limit (:math:`t_\mathrm{e}`) in milliseconds. Defaults to
+        typical value 50 (D50) [#isoDefinition]_.
+
+    Returns
+    -------
+    definition : numpy.ndarray[float]
+        Definition index (early-to-total energy ratio),
+        shaped according to the channel shape of the input EDC.
+
+    References
+    ----------
+    .. [#isoDefinition] ISO 3382, Acoustics — Measurement of the reverberation
+        time of rooms with reference to other acoustical parameters.
+
+    Examples
+    --------
+    Estimate the defintion from a real room impulse response filtered in
+    octave bands:
+
+    >>> import pyfar as pf
+    >>> import pyrato
+    ...
+    >>> rir = pf.signals.files.room_impulse_response(sampling_rate=44100)
+    >>> rir = pf.dsp.filter.fractional_octave_bands(
+    >>>     rir, num_fractions=1, frequency_range=(125, 20e3))
+    >>> edc = pyrato.edc.energy_decay_curve_lundeby(rir)
+    ...
+    >>> D50 = pyrato.parameters.definition(edc, early_time_limit=50)
+    >>> D50
+    ...     [[0.25984852]
+    ...     [0.50208742]
+    ...     [0.66722359]
+    ...     [0.73528532]
+    ...     [0.87801455]
+    ...     [0.82757594]
+    ...     [0.86536142]
+    ...     [0.87374988]]
+    """
+
+    if not isinstance(early_time_limit, (int, float)):
+        raise TypeError('early_time_limit must be a number.')
+
+    # Convert milliseconds to seconds
+    early_time_limit_sec = early_time_limit / 1000
+
+    limits = np.array([0.0, np.inf, 0.0, early_time_limit_sec])
+
+    return _energy_ratio(limits,
+                         energy_decay_curve,
+                         energy_decay_curve)
+
 def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
     r"""
     Calculate the energy ratio for the time limits from two energy
