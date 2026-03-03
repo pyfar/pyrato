@@ -218,8 +218,8 @@ def definition(energy_decay_curve, early_time_limit=50):
 
     .. math::
 
-        D_{t_e} = \frac{
-            \displaystyle \int_0^{t_e} p^2(t) \, dt
+        D_{t_\mathrm{e}} = \frac{
+            \displaystyle \int_0^{t_\mathrm{e}} p^2(t) \, dt
         }{
             \displaystyle \int_{0}^{\infty} p^2(t) \, dt
         }
@@ -230,8 +230,8 @@ def definition(energy_decay_curve, early_time_limit=50):
 
     .. math::
 
-        D_{t_e} = \frac{e(0) - e(t_e)}{e(0) - e(\infty)}
-                = 1 - \left( \frac{e(t_e)}{e(0)} \right),
+        D_{t_\mathrm{e}} = \frac{e(0) - e(t_\mathrm{e})}{e(0) - e(\infty)}
+                = 1 - \left( \frac{e(t_\mathrm{e})}{e(0)} \right),
 
     where :math:`e(\infty) = 0` by definition of the EDC.
 
@@ -241,8 +241,8 @@ def definition(energy_decay_curve, early_time_limit=50):
         Energy decay curve (EDC) of the room impulse response
         (time-domain signal). The EDC must start at time zero.
     early_time_limit : float, optional
-        Early time limit (:math:`t_e`) in milliseconds. Defaults to typical
-        value 50 (D50) [#isoDefinition]_.
+        Early time limit (:math:`t_\mathrm{e}`) in milliseconds. Defaults to
+        typical value 50 (D50) [#isoDefinition]_.
 
     Returns
     -------
