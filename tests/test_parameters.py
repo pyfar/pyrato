@@ -10,7 +10,7 @@ from pyrato.parameters import sound_strength
 from pyrato.parameters import definition
 from pyrato.parameters import early_lateral_energy_fraction
 from pyrato.parameters import _energy_ratio
-from pyrato.parameters import late_lateral_level
+from pyrato.parameters import late_lateral_sound_level
 
 # parameter clarity tests
 @pytest.mark.parametrize(
@@ -741,7 +741,7 @@ def test_LJ_accepts_timedata_and_returns_correct_shape(
 ):
     """Return type and shape of pyfar.TimeData input for identical edcs."""
     edc = make_edc(energy=energy, sampling_rate=1000)
-    result = late_lateral_level(edc, edc)
+    result = late_lateral_sound_level(edc, edc)
 
     assert isinstance(result, (float, np.ndarray))
     assert result.shape == expected_shape
@@ -752,7 +752,7 @@ def test_LJ_returns_nan_for_zero_denominator_signal():
     edc_ref = pf.TimeData(np.zeros((1, 128)), np.arange(128) / 1000)
     edc_lat = pf.TimeData(np.ones((1, 128)), np.arange(128) / 1000)
 
-    result = late_lateral_level(edc_ref, edc_lat)
+    result = late_lateral_sound_level(edc_ref, edc_lat)
     assert np.isnan(result)
 
 def test_LJ_calculates_known_reference_value(make_edc):
@@ -779,7 +779,7 @@ def test_LJ_calculates_known_reference_value(make_edc):
     edc_lateral = make_edc(energy=edc_lateral,
                            sampling_rate=1000, normalize=False)
 
-    result = late_lateral_level(edc_ref, edc_lateral)
+    result = late_lateral_sound_level(edc_ref, edc_lateral)
 
     expected = 10 * np.log10(0.5)
     np.testing.assert_allclose(result, expected, atol=1e-5)
@@ -803,7 +803,7 @@ def test_LJ_for_exponential_decay_analytical(make_edc):
                        sampling_rate=sampling_rate,
                        total_samples=total_samples)
 
-    result = late_lateral_level(edc_ref, edc_lat)
+    result = late_lateral_sound_level(edc_ref, edc_lat)
 
     a_lat = 13.8155 / 2.2
 
