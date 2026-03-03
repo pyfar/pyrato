@@ -261,24 +261,23 @@ def definition(energy_decay_curve, early_time_limit=50):
     octave bands:
 
     >>> import pyfar as pf
-    >>> import pyrato as ra
+    >>> import pyrato
     ...
     >>> rir = pf.signals.files.room_impulse_response(sampling_rate=44100)
-    >>> rir = pf.dsp.filter.fractional_octave_bands(rir, num_fractions=1)
-    >>> edc = ra.edc.energy_decay_curve_lundeby(rir)
+    >>> rir = pf.dsp.filter.fractional_octave_bands(
+    >>>     rir, num_fractions=1, frequency_range=(125, 20e3))
+    >>> edc = pyrato.edc.energy_decay_curve_lundeby(rir)
     ...
-    >>> D50 = ra.parameters.definition(edc, early_time_limit=50)
+    >>> D50 = pyrato.parameters.definition(edc, early_time_limit=50)
     >>> D50
-    ...     [[3.14084163e-08]
-    ...     [6.41088093e-05]
-    ...     [2.59848518e-01]
-    ...     [5.02087416e-01]
-    ...     [6.67223594e-01]
-    ...     [7.35285317e-01]
-    ...     [8.78014545e-01]
-    ...     [8.27575943e-01]
-    ...     [8.65361425e-01]
-    ...     [8.73749876e-01]]
+    ...     [[0.25984852]
+    ...     [0.50208742]
+    ...     [0.66722359]
+    ...     [0.73528532]
+    ...     [0.87801455]
+    ...     [0.82757594]
+    ...     [0.86536142]
+    ...     [0.87374988]]
     """
 
     if not isinstance(early_time_limit, (int, float)):
