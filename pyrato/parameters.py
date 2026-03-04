@@ -354,15 +354,15 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
 
     return energy_ratio
 
-def strength(energy_decay_curve_room,
-             energy_decay_curve_reference):
+def sound_strength(energy_decay_curve_omni,
+             energy_decay_curve_free_field):
     r"""
     Calculate the room-acoustic strength parameter (:math:`G`).
 
     The strength parameter (:math:`G`) is defined as the ratio between the
-    total arriving sound energy in a room and the total arriving sound energy
+    total arriving sound energy and the total arriving sound energy
     of a reference free-field response measured at 10 m with the same
-    loudspeaker. It is a measure of the room-induced level amplification
+    source. It is a measure of the room-induced level amplification
     at the receiver position [#isoStrength]_.
 
     The parameter is defined as
@@ -372,18 +372,18 @@ def strength(energy_decay_curve_room,
         G =
         10 \log_{10}
         \frac{
-            \displaystyle \int_{0}^{\infty} p_\mathrm{room}^2(t)\,\mathrm{d}t
+            \displaystyle \int_{0}^{\infty} p^2(t)\,dt
         }{
-            \displaystyle \int_{0}^{\infty} p_\mathrm{ref}^2(t)\,\mathrm{d}t
+            \displaystyle \int_{0}^{\infty} p_\mathrm{10}^2(t)\,dt
         }
-
-    where :math:`p_\mathrm{room}(t)` is the room sound pressure and
-    :math:`p_\mathrm{ref}(t)` is the reference free-field sound pressure
+        
+    where :math:`p(t)` is the room sound pressure and
+    :math:`p_\mathrm{10}(t)` is the reference free-field sound pressure
     at 10 m measured with the same loudspeaker.
-
+    
     Using the energy decay curves of the room response
-    :math:`e_\mathrm{room}(t)` and the reference response
-    :math:`e_\mathrm{ref}(t)`, the
+    :math:`e(t)` and the reference response
+    :math:`e_\mathrm{10}(t)`, the
     parameter can be computed efficiently as
 
     .. math::
@@ -391,21 +391,20 @@ def strength(energy_decay_curve_room,
         G =
         10 \log_{10}
         \frac{
-            e_\mathrm{room}(0) - e_\mathrm{room}(\infty)
+            e(0) - e(\infty)
         }{
-            e_\mathrm{ref}(0) - e_\mathrm{ref}(\infty)
+            e_\mathrm{10}(0) - e_\mathrm{10}(\infty)
         }.
 
     Parameters
     ----------
-    energy_decay_curve_room : pyfar.TimeData
+    energy_decay_curve_omni : pyfar.TimeData
         Energy decay curve of the room impulse response. The EDC must
         start at time zero.
 
-    energy_decay_curve_reference : pyfar.TimeData
+    energy_decay_curve_free_field : pyfar.TimeData
         Energy decay curve of the reference free-field impulse response
         at 10 m. The EDC must start at time zero.
-
         Both EDCs must have identical ``signal.cshape``.
 
     Returns
@@ -423,5 +422,5 @@ def strength(energy_decay_curve_room,
     limits = np.array([0.0, np.inf, 0.0, np.inf])
 
     return 10*np.log10(_energy_ratio(limits,
-                                     energy_decay_curve_reference,
-                                     energy_decay_curve_room))
+                                     energy_decay_curve_free_field,
+                                     energy_decay_curve_omni))
