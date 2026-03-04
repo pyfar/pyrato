@@ -376,11 +376,11 @@ def sound_strength(energy_decay_curve_omni,
         }{
             \displaystyle \int_{0}^{\infty} p_\mathrm{10}^2(t)\,dt
         }
-        
+
     where :math:`p(t)` is the room sound pressure and
     :math:`p_\mathrm{10}(t)` is the reference free-field sound pressure
     at 10 m measured with the same loudspeaker.
-    
+
     Using the energy decay curves of the room response
     :math:`e(t)` and the reference response
     :math:`e_\mathrm{10}(t)`, the

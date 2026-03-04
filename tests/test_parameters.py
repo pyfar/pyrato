@@ -117,7 +117,8 @@ def test_strength_returns_zero_db_for_identical_edcs(make_edc):
     """Return 0 dB when room and reference EDCs are identical."""
     energy = np.array([1.0, 0.8, 0.4, 0.2])
     edc_omni = make_edc(energy=energy, sampling_rate=1000, normalize=False)
-    edc_free_field = make_edc(energy=energy, sampling_rate=1000, normalize=False)
+    edc_free_field = make_edc(
+        energy=energy, sampling_rate=1000, normalize=False)
 
     result = sound_strength(edc_omni, edc_free_field)
     npt.assert_allclose(result, 0.0, atol=1e-12)
@@ -204,7 +205,7 @@ def test_sound_strength_scales_correctly_with_single_edc_scaling(make_edc):
     npt.assert_allclose(result_ref_scaled, baseline - expected_offset,
                         atol=1e-8)
 
-def test_sound_strength_returns_nan_for_zero_denominator_signal(make_edc):
+def test_sound_strength_returns_nan_for_zero_denominator_signal():
     """Correct return of NaN for division by zero signal."""
     edc_omni = pf.TimeData(np.ones((1, 128)), np.arange(128) / 1000)
     edc_free_field = pf.TimeData(np.zeros((1, 128)), np.arange(128) / 1000)
