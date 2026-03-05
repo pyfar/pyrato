@@ -104,7 +104,6 @@ def reverberation_time_linear_regression(
     else:
         return reverberation_times
 
-
 def clarity(energy_decay_curve, early_time_limit=80):
     r"""
     Calculate the clarity from the energy decay curve (EDC).
@@ -112,7 +111,7 @@ def clarity(energy_decay_curve, early_time_limit=80):
     The clarity parameter (C50 or C80) is defined as the ratio of early-to-late
     arriving energy in an impulse response and is a measure for how clearly
     speech or music can be perceived in a room. The early-to-late boundary is
-    typically set at 50 ms (C50) or 80 ms (C80) [#iso]_.
+    typically set at 50 ms (C50) or 80 ms (C80) [#isoClarity]_.
 
     Clarity is calculated as:
 
@@ -126,11 +125,14 @@ def clarity(energy_decay_curve, early_time_limit=80):
 
     where :math:`t_e` is the early time limit and :math:`p(t)` is the pressure
     of a room impulse response. Here, the clarity is efficiently computed
-    from the EDC :math:`e(t)` directly by:
+    from the EDC :math:`e(t)`
 
     .. math::
 
-        C_{t_e} = 10 \log_{10} \left( \frac{e(0)}{e(t_e)} - 1 \right).
+        C_{t_e} = 10 \log_{10} \frac{e(0) - e(t_e)}{e(t_e) - e(\infty)}
+                = 10 \log_{10} \left( \frac{e(0)}{e(t_e)} - 1 \right),
+
+    where :math:`e(\infty) = 0` by definition of the EDC.
 
     Parameters
     ----------
@@ -139,7 +141,7 @@ def clarity(energy_decay_curve, early_time_limit=80):
         (time-domain signal). The EDC must start at time zero.
     early_time_limit : float, optional
         Early time limit (:math:`t_e`) in milliseconds. Defaults to 80 (C80).
-        Typical values are 50 ms (C50) or 80 ms (C80) [#iso]_.
+        Typical values are 50 ms (C50) or 80 ms (C80) [#isoClarity]_.
 
     Returns
     -------
@@ -149,59 +151,212 @@ def clarity(energy_decay_curve, early_time_limit=80):
 
     References
     ----------
-    .. [#iso] ISO 3382, Acoustics — Measurement of the reverberation time of
-        rooms with reference to other acoustical parameters.
+    .. [#isoClarity] ISO 3382, Acoustics — Measurement of the reverberation
+        time of rooms with reference to other acoustical parameters.
 
     Examples
     --------
     Estimate the clarity from a real room impulse response filtered in
     octave bands:
 
-    >>> import numpy as np
     >>> import pyfar as pf
     >>> import pyrato as ra
+    ...
     >>> rir = pf.signals.files.room_impulse_response(sampling_rate=44100)
-    >>> rir = pf.dsp.filter.fractional_octave_bands(rir)
+    >>> rir = pf.dsp.filter.fractional_octave_bands(rir, num_fractions=1)
     >>> edc = ra.edc.energy_decay_curve_lundeby(rir)
-    >>> C80 = clarity(edc, early_time_limit=80)
+    ...
+    >>> C80 = ra.parameters.clarity(edc, early_time_limit=80)
+    >>> C80
+    ...     [[-55.57140506]
+    ...     [-11.75657677]
+    ...     [ -3.21150787]
+    ...     [  2.76276817]
+    ...     [  4.70786211]
+    ...     [  5.98148157]
+    ...     [  9.66764094]
+    ...     [  9.08687417]
+    ...     [ 14.14550646]
+    ...     [ 21.60048332]]
     """
 
-    # Check input type
-    if not isinstance(energy_decay_curve, pf.TimeData):
-        raise TypeError("Input must be a pyfar.TimeData object.")
     if not isinstance(early_time_limit, (int, float)):
         raise TypeError('early_time_limit must be a number.')
 
-    # Validate time range
-    if (early_time_limit > energy_decay_curve.signal_length * 1000) or (
-            early_time_limit <= 0):
-        raise ValueError(
-            "early_time_limit must be in the range of 0"
-            f"and {energy_decay_curve.signal_length * 1000}.",
-            )
+    # Convert milliseconds to seconds
+    early_time_limit_sec = early_time_limit / 1000
 
-    # Raise error if TimeData is complex
-    if energy_decay_curve.complex:
-        raise ValueError(
-            "Complex-valued input detected. Clarity is"
-            "only defined for real TimeData.",
-        )
+    limits = np.array([early_time_limit_sec,
+                       np.inf,
+                       0.0,
+                       early_time_limit_sec])
+
+    return 10*np.log10(_energy_ratio(limits,
+                                     energy_decay_curve,
+                                     energy_decay_curve))
+
+
+def early_lateral_energy_fraction(energy_decay_curve_omni,
+                                  energy_decay_curve_lateral):
+    r"""
+    Calculate the early lateral energy fraction.
+
+    The early lateral energy fraction :math:`J_\mathrm{LF}`
+    according to [#isoEarlyLat]_ is defined as the ratio between the
+    lateral sound energy captured with a figure of eight microphone
+    arriving between 5 ms and 80 ms and the total sound energy
+    captured with an omnidirectional microphone arriving within
+    the first 80 ms after the direct sound. It is a measure of the
+    apparent source width.
+
+    The parameter is defined as
+
+    .. math::
+
+        J_\mathrm{LF} =
+        \frac{
+            \displaystyle \int_{0.005}^{0.08} p_\mathrm{L}^2(t)\,\mathrm{d}t
+        }{
+            \displaystyle \int_{0}^{0.08} p^2(t)\,\mathrm{d}t
+        }
+
+    where :math:`p_\mathrm{L}(t)` is the lateral sound pressure measured with a
+    figure-eight microphone whose zero axis is oriented towards the source,
+    and :math:`p(t)` is the sound pressure measured at the same position
+    with an omnidirectional microphone.
+
+    Using the energy decay curves of the omnidirectional response
+    :math:`e(t)` and the lateral response :math:`e_\mathrm{L}(t)`, the
+    parameter can be computed efficiently as
+
+    .. math::
+
+        J_\mathrm{LF} =
+        \frac{
+            e_\mathrm{L}(0.005) - e_\mathrm{L}(0.08)
+        }{
+            e(0) - e(0.08)
+        }.
+
+    Parameters
+    ----------
+    energy_decay_curve_omni : pyfar.TimeData
+        Energy decay curve of the room impulse response measured with an
+        omnidirectional microphone. The EDC must start at time zero.
+
+    energy_decay_curve_lateral : pyfar.TimeData
+        Energy decay curve of the room impulse response measured with a
+        figure-eight microphone oriented according to [#isoEarlyLat]_
+        (zero axis pointing towards the source). The EDC must start at
+        time zero.
+        Both EDCs must have identical ``signal.cshape``.
+
+    Returns
+    -------
+    Early Lateral Energy Fraction: numpy.ndarray
+        Early lateral energy fraction (:math:`J_\mathrm{LF}`) in decibels,
+        shaped according to the channel shape of the input EDCs.
+
+    References
+    ----------
+    .. [#isoEarlyLat] ISO 3382, Acoustics — Measurement of the reverberation
+        time of rooms with reference to other acoustical parameters.
+    """
+
+    limits = np.array([0.0, 0.08, 0.005, 0.08])
+
+    return _energy_ratio(limits,
+                         energy_decay_curve_omni,
+                         energy_decay_curve_lateral)
+
+
+
+def definition(energy_decay_curve, early_time_limit=50):
+    r"""
+    Calculate the definition from the energy decay curve (EDC).
+
+    The definition parameter (D50) is defined as the ratio of early-to-total
+    arriving energy in an impulse response and is a measure for how defined
+    speech or music can be perceived in a room. The early-to-total boundary is
+    typically set at 50 ms (D50) [#isoDefinition]_.
+
+    Definition is calculated as:
+
+    .. math::
+
+        D_{t_\mathrm{e}} = \frac{
+            \displaystyle \int_0^{t_\mathrm{e}} p^2(t) \, dt
+        }{
+            \displaystyle \int_{0}^{\infty} p^2(t) \, dt
+        }
+
+    where :math:`t_e` is the early time limit and :math:`p(t)` is the pressure
+    of a room impulse response. Here, the definition is efficiently computed
+    from the EDC :math:`e(t)` directly by:
+
+    .. math::
+
+        D_{t_\mathrm{e}} = \frac{e(0) - e(t_\mathrm{e})}{e(0) - e(\infty)}
+                = 1 - \left( \frac{e(t_\mathrm{e})}{e(0)} \right),
+
+    where :math:`e(\infty) = 0` by definition of the EDC.
+
+    Parameters
+    ----------
+    energy_decay_curve : pyfar.TimeData
+        Energy decay curve (EDC) of the room impulse response
+        (time-domain signal). The EDC must start at time zero.
+    early_time_limit : float, optional
+        Early time limit (:math:`t_\mathrm{e}`) in milliseconds. Defaults to
+        typical value 50 (D50) [#isoDefinition]_.
+
+    Returns
+    -------
+    definition : numpy.ndarray[float]
+        Definition index (early-to-total energy ratio),
+        shaped according to the channel shape of the input EDC.
+
+    References
+    ----------
+    .. [#isoDefinition] ISO 3382, Acoustics — Measurement of the reverberation
+        time of rooms with reference to other acoustical parameters.
+
+    Examples
+    --------
+    Estimate the defintion from a real room impulse response filtered in
+    octave bands:
+
+    >>> import pyfar as pf
+    >>> import pyrato
+    ...
+    >>> rir = pf.signals.files.room_impulse_response(sampling_rate=44100)
+    >>> rir = pf.dsp.filter.fractional_octave_bands(
+    >>>     rir, num_fractions=1, frequency_range=(125, 20e3))
+    >>> edc = pyrato.edc.energy_decay_curve_lundeby(rir)
+    ...
+    >>> D50 = pyrato.parameters.definition(edc, early_time_limit=50)
+    >>> D50
+    ...     [[0.25984852]
+    ...     [0.50208742]
+    ...     [0.66722359]
+    ...     [0.73528532]
+    ...     [0.87801455]
+    ...     [0.82757594]
+    ...     [0.86536142]
+    ...     [0.87374988]]
+    """
+
+    if not isinstance(early_time_limit, (int, float)):
+        raise TypeError('early_time_limit must be a number.')
 
     # Convert milliseconds to seconds
-    early_time_limit_sec = early_time_limit / 1000.0
+    early_time_limit_sec = early_time_limit / 1000
 
-    start_vals_energy_decay_curve = energy_decay_curve.time[..., 0]
+    limits = np.array([0.0, np.inf, 0.0, early_time_limit_sec])
 
-    idx_early_time_limit = int(
-        energy_decay_curve.find_nearest_time(early_time_limit_sec))
-    vals_energy_decay_curve = \
-        energy_decay_curve.time[..., idx_early_time_limit]
-    vals_energy_decay_curve[vals_energy_decay_curve == 0] = np.nan
-
-    clarity = start_vals_energy_decay_curve / vals_energy_decay_curve - 1
-    clarity_db = 10 * np.log10(clarity)
-
-    return clarity_db
+    return _energy_ratio(limits,
+                         energy_decay_curve,
+                         energy_decay_curve)
 
 
 def speech_transmission_index_indirect(

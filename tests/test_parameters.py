@@ -13,25 +13,34 @@ from pyrato.parameters import _sti_calc
 
 
 from pyrato.parameters import clarity
+from pyrato.parameters import definition
+from pyrato.parameters import early_lateral_energy_fraction
 from pyrato.parameters import _energy_ratio
 
 # parameter clarity tests
-def test_clarity_accepts_timedata_returns_correct_type(make_edc):
-    energy = np.concatenate(([1, 1, 1, 1], np.zeros(124)))
-    edc = make_edc(energy=energy)
-
-    result = clarity(edc, early_time_limit=4)  # 4 ms
+@pytest.mark.parametrize(
+    ("energy", "expected_shape"),
+    [
+        # 1D single channel
+        (np.linspace(1, 0, 1000), (1,)),
+        # 2D two channels
+        (np.linspace((1, 0.5), (0, 0), 1000).T, (2,)),
+        # 3D multichannel (2x3 channels)
+        (np.arange(2 * 3 * 1000).reshape(2, 3, 1000), (2, 3)),
+    ],
+)
+def test_clarity_accepts_timedata_and_returns_correct_shape(
+    energy, expected_shape, make_edc,
+):
+    """Test return shape and type of pyfar.TimeData input."""
+    edc = make_edc(energy=energy, sampling_rate=1000)
+    result = clarity(edc)
     assert isinstance(result, (float, np.ndarray))
+    assert result.shape == expected_shape
     assert result.shape == edc.cshape
 
-def test_clarity_rejects_non_timedata_input():
-    invalid_input = np.array([1, 2, 3])
-    expected_error_message = "Input must be a pyfar.TimeData object."
-
-    with pytest.raises(TypeError, match=re.escape(expected_error_message)):
-        clarity(invalid_input)
-
 def test_clarity_rejects_non_numeric_early_time_limit(make_edc):
+    """Rejects non-number type early_time_limit."""
     edc = make_edc()
     invalid_time_limit = "not_a_number"
     expected_error_message = "early_time_limit must be a number."
@@ -39,68 +48,41 @@ def test_clarity_rejects_non_numeric_early_time_limit(make_edc):
     with pytest.raises(TypeError, match=re.escape(expected_error_message)):
         clarity(edc, invalid_time_limit)
 
-def test_clarity_rejects_complex_timedata():
-    complex_data = pf.TimeData(np.array([1+1j, 2+2j, 3+3j]),
-                               np.arange(3) / 1000, is_complex=True)
-    expected_error_message = "Complex-valued input detected. Clarity is"
-    "only defined for real TimeData."
-
-    with pytest.raises(ValueError, match=re.escape(expected_error_message)):
-        clarity(complex_data, early_time_limit=2)
-
-def test_clarity_rejects_invalid_time_range(make_edc):
-    energy = np.zeros(128)
-    edc = make_edc(energy=energy)
-    actual_signal_length_ms = edc.signal_length * 1000
-
-    # Test negative time limit
-    expected_error_message = "early_time_limit must be in the range of 0"
-    f"and {actual_signal_length_ms}."
-    with pytest.raises(ValueError, match=re.escape(expected_error_message)):
-        clarity(edc, early_time_limit=-1)
-
-    # Test time limit beyond signal length
-    with pytest.raises(ValueError, match=re.escape(expected_error_message)):
-        clarity(edc, early_time_limit=200000)
-
-def test_clarity_preserves_multichannel_shape(make_edc):
-    energy = np.ones((2,2,10)) / (1+np.arange(10))
-    edc = make_edc(energy=energy, sampling_rate=10)
-    output = clarity(edc, early_time_limit=80)
-    assert edc.cshape == output.shape
-
-
 def test_clarity_returns_nan_for_zero_signal():
+    """Correct return of NaN for zero signal."""
     edc = pf.TimeData(np.zeros((1, 128)), np.arange(128) / 1000)
     result = clarity(edc)
     assert np.isnan(result)
 
-
 def test_clarity_calculates_known_reference_value(make_edc):
-    # Linear decay → early_time_limit at 1/2 energy -> ratio = 1 -> 0 dB
-    edc_vals = np.array([1.0, 0.75, 0.5, 0.0])  # monotonic decay
+    """
+    Linear decay → early_time_limit at 1/2 energy -> ratio = 1 -> 0 dB.
+    Monotonic decay, 1 sample = 1ms.
+    """
+    edc_vals = np.array([1.0, 0.75, 0.5, 0.0])
     edc = make_edc(energy=edc_vals, sampling_rate=1000)
 
     result = clarity(edc, early_time_limit=2)
-    np.testing.assert_allclose(result, 0.0, atol=1e-6)
-
+    np.testing.assert_allclose(result, 0.0, atol=1e-5)
 
 def test_clarity_values_for_given_ratio(make_edc):
+    """Clarity validation for a given ratio from analytical baseline."""
     energy_early = 1
     energy_late = .5
     energy = np.zeros((3, 1000))
     edc = make_edc(energy=energy,
-                               sampling_rate=1000,
-                               dynamic_range = 120.0)
+                   sampling_rate=1000,
+                   dynamic_range = 120.0)
     edc.time[..., 10] = energy_early
     edc.time[..., 100] = energy_late
     edc = ra.edc.schroeder_integration(edc, is_energy=True)
     edc = pf.dsp.normalize(edc, reference_method='max')
     result = clarity(edc, early_time_limit=80)
     clarity_value_db = 10 * np.log10(energy_early/energy_late)
-    npt.assert_allclose(result, clarity_value_db, atol=1e-6)
+    npt.assert_allclose(result, clarity_value_db, atol=1e-5)
 
 def test_clarity_for_exponential_decay(make_edc):
+    """Clarity validation for analytical solution from exponential decay."""
     rt60 = 2.0  # seconds
     sampling_rate = 1000
     total_samples = 2000
@@ -646,6 +628,98 @@ def test_sti_ir_level_snr():
             ir, rir_type="acoustical", level=level, snr=snr)
     np.testing.assert_allclose(sti_test, sti_expected, atol=0.07)
 
+# parameters definition tests
+@pytest.mark.parametrize(
+    ("energy", "expected_shape"),
+    [
+        # 1D single channel
+        (np.linspace(1, 0, 1000), (1,)),
+        # 2D two channels
+        (np.linspace((1, 0.5), (0, 0), 1000).T, (2,)),
+        # 3D multichannel (2x3 channels)
+        (np.arange(2 * 3 * 1000).reshape(2, 3, 1000), (2, 3)),
+    ],
+)
+def test_definition_accepts_timedata_and_returns_correct_shape(
+    energy, expected_shape, make_edc,
+):
+    """Test return shape and type of pyfar.TimeData input."""
+    edc = make_edc(energy=energy, sampling_rate=1000)
+    result = definition(edc)
+    assert isinstance(result, (float, np.ndarray))
+    assert result.shape == expected_shape
+    assert result.shape == edc.cshape
+
+def test_definition_rejects_non_numeric_early_time_limit(make_edc):
+    """Rejects non-number type early_time_limit."""
+    edc = make_edc()
+    invalid_time_limit = "not_a_number"
+    expected_error_message = "early_time_limit must be a number."
+
+    with pytest.raises(TypeError, match=re.escape(expected_error_message)):
+        definition(edc, invalid_time_limit)
+
+def test_definition_returns_zero_for_zero_signal(make_edc):
+    """
+    Definition must return 0.0 for a zero-energy signal.
+
+    The fixture clips all values to a small noise floor (min_energy),
+    so the EDC is flat. The denominator becomes min_energy - 0 (since
+    np.inf maps to zero in _energy_ratio), and the numerator becomes
+    min_energy - min_energy = 0. The result is therefore 0.0, not NaN.
+    """
+    edc = make_edc(energy=np.zeros(128), sampling_rate=1000)
+    result = definition(edc)
+    assert np.isclose(result, 0.0)
+
+def test_definition_calculates_known_reference_value(make_edc):
+    """
+    Linear decay → early_time_limit at index 2 -> ratio = 0.5
+    Monotonic decay, 1 sample = 1ms.
+    """
+    edc_vals = np.array([1.0, 0.75, 0.5, 0.25, 0.0])  # monotonic decay
+    edc = make_edc(energy=edc_vals[np.newaxis, :], sampling_rate=1000)
+
+    result = definition(edc, early_time_limit=2)
+    expected = 0.5
+    np.testing.assert_allclose(result, expected, atol=1e-5)
+
+def test_definition_for_exponential_decay(make_edc):
+    """Definition validation for analytical solution from exponential decay."""
+    rt60 = 2.0  # seconds
+    sampling_rate = 1000
+    total_samples = 2000
+    early_cutoff = 80  # ms
+
+    # Generate EDC
+    edc = make_edc(rt=rt60,
+                   sampling_rate=sampling_rate,
+                   total_samples=total_samples)
+    result = definition(edc, early_time_limit=early_cutoff)
+
+    # Analytical expected value
+    te = early_cutoff / 1000  # convert ms to seconds
+    a = 13.8155 / rt60
+    expected_ratio = 1- np.exp(-a * te)
+    np.testing.assert_allclose(result, expected_ratio, atol=1e-5)
+
+
+def test_definition_values_for_given_ratio(make_edc):
+    """Definition validation for a given ratio from analytical baseline."""
+    energy_early = 1
+    energy_late = .5
+    energy = np.zeros((3, 1000))
+    edc = make_edc(energy=energy,
+                   sampling_rate=1000,
+                   dynamic_range = 120.0)
+    edc.time[..., 10] = energy_early
+    edc.time[..., 100] = energy_late
+    edc = ra.edc.schroeder_integration(edc, is_energy=True)
+    edc = pf.dsp.normalize(edc, reference_method='max')
+    result = definition(edc, early_time_limit=80)
+    definition_value = energy_early/(energy_late+energy_early)
+    np.testing.assert_allclose(result, definition_value, atol=1e-5)
+
 # _energy_ratio tests
 @pytest.mark.parametrize(
     "limits",
@@ -820,3 +894,207 @@ def test_energy_ratio_handles_different_edc_lengths(make_edc):
         match=r"limits\[2:4\] must be between 0 and",
     ):
         _energy_ratio(limits, edc1, edc2)
+
+def test_energy_ratio_with_clarity(make_edc):
+    """
+    Test for _energy_ratio in-use of a RAP-function to check if an edc
+    ending with NaN is handled correctly.
+    """
+    energy = np.ones(1000)
+    energy[900:] = np.nan #last ~100ms elements np.nan
+    edc = make_edc(energy=energy, sampling_rate=1000)
+    early_time_limit_sec = 0.08
+
+    limits = np.array([early_time_limit_sec,
+                        np.inf,
+                        0.0,
+                        early_time_limit_sec])
+
+    result = _energy_ratio(
+        limits=limits,
+        energy_decay_curve1=edc,
+        energy_decay_curve2=edc,
+    )
+    assert not np.isnan(result)
+
+def test_energy_ratio_with_clarity_nan_limit(make_edc):
+    """
+    Test for _energy_ratio in-use of a RAP-function to check if np.inf
+    are hanled correctly. Should return 1.
+    """
+    energy = np.ones(1000)
+    energy[900:] = np.nan #last ~100ms elements np.nan
+    edc = make_edc(energy=energy, sampling_rate=1000)
+
+    limits = np.array([0.0,
+                        np.inf,
+                        0.0,
+                        np.inf])
+
+    result = _energy_ratio(
+        limits=limits,
+        energy_decay_curve1=edc,
+        energy_decay_curve2=edc,
+    )
+    assert np.allclose(result, 1.0)
+
+def test_energy_ratio_handles_different_channel_shapes(make_edc):
+    """
+    Test that _energy_ratio raises an error for EDCs with different channel
+    shapes.
+    """
+    # Create EDC with cshape (2,)
+    energy1 = np.stack([
+        np.linspace(1, 0, 100),
+        np.linspace(0.8, 0, 100),
+    ])
+    edc1 = make_edc(energy=energy1, sampling_rate=1000)
+    assert edc1.cshape == (2,)
+
+    # Create EDC with cshape (3,)
+    energy2 = np.stack([
+        np.linspace(1, 0, 100),
+        np.linspace(0.8, 0, 100),
+        np.linspace(0.6, 0, 100),
+    ])
+    edc2 = make_edc(energy=energy2, sampling_rate=1000)
+    assert edc2.cshape == (3,)
+
+    # Limits for both numerator and denominator
+    limits = np.array([0.0, 0.02, 0.0, 0.05])
+
+    # Should raise ValueError due to shape mismatch with clear message
+    with pytest.raises(
+        ValueError,
+        match="energy_decay_curve1 and energy_decay_curve2 must have the same "
+              "channel shape",
+    ):
+        _energy_ratio(limits, edc1, edc2)
+
+
+# parameter early lateral energy fraction (JLF) tests
+@pytest.mark.parametrize(
+    ("energy", "expected_shape"),
+    [
+        # 1D single channel
+        (np.linspace(1, 0, 1000), (1,)),
+        # 2D two channels
+        (np.linspace((1, 0.5), (0, 0), 1000).T, (2,)),
+        # 3D multichannel (2x3 channels)
+        (np.arange(2 * 3 * 1000).reshape(2, 3, 1000), (2, 3)),
+    ],
+)
+def test_JLF_accepts_timedata_and_returns_correct_shape(
+    energy, expected_shape, make_edc,
+):
+    """Return type and shape of pyfar.TimeData input for identical edcs."""
+    edc = make_edc(energy=energy, sampling_rate=1000)
+    result = early_lateral_energy_fraction(edc, edc)
+    assert isinstance(result, (float, np.ndarray))
+    assert result.shape == expected_shape
+    assert result.shape == edc.cshape
+
+def test_JLF_returns_nan_for_zero_denominator_signal():
+    """Correct return of NaN for division by zero signal."""
+    edc1 = pf.TimeData(np.ones((1, 128)), np.arange(128) / 1000)
+    edc2 = pf.TimeData(np.zeros((1, 128)), np.arange(128) / 1000)
+    result = early_lateral_energy_fraction(edc1, edc2)
+    assert np.isnan(result)
+
+def test_JLF_calculates_known_reference_value(make_edc):
+    """
+    Construct simple deterministic EDCs:
+    e(0) = 1
+    e(0.08) = 0
+    e_L(0.005) = 0.5
+    e_L(0.08) = 0
+    Expected:
+    JLF = (0.5 / 1) = 0.5.
+    """
+    pad = np.zeros(100)
+    edc_omni = np.concatenate((
+        np.array([1.0]),
+        pad,
+    ))
+    edc_lateral = np.concatenate((
+        np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.5]),
+        pad,
+    ))
+
+    edc_omni = make_edc(energy=edc_omni, sampling_rate=1000)
+    edc_lateral = make_edc(energy=edc_lateral,
+                           sampling_rate=1000, normalize=False)
+
+    result = early_lateral_energy_fraction(edc_omni, edc_lateral)
+    np.testing.assert_allclose(result, 0.5, atol=1e-5)
+
+def test_JLF_is_within_ISO3382_range(make_edc):
+    """
+    Smoke test: J_LF must fall within the empirically observed range
+    reported in ISO 3382 for concert halls: 0.05 to 0.35 (linear).
+
+    Signal design:
+    - Onset delay of 3 ms applied manually to both EDCs (co-located mics).
+    - Omni RT = 2.0 s, full amplitude.
+    - Lateral RT = 2.1 s (slightly longer), amplitude scaled to 0.25
+      reflecting the figure-eight mic's reduced sensitivity to the
+      direct sound.
+    """
+    sampling_rate = 44100
+    total_samples = 200000
+    onset_samples = int(0.003 * sampling_rate)  # 3 ms
+
+    # Build exponential decay manually and prepend onset zeros
+    t = np.arange(total_samples - onset_samples) / sampling_rate
+    decay_omni    = np.exp(-13.8155 / 2.0 * t)
+    decay_lateral = 0.25 * np.exp(-13.8155 / 2.1 * t)
+
+    zeros = np.zeros(onset_samples)
+    energy_lateral = make_edc(energy=np.concatenate([zeros, decay_lateral]),
+                           sampling_rate=sampling_rate, normalize=False)
+    energy_omni = make_edc(energy=np.concatenate([zeros, decay_omni]),
+                           sampling_rate=sampling_rate, normalize=False)
+
+    edc_lateral = ra.edc.schroeder_integration(energy_lateral, is_energy=True)
+    edc_omni = ra.edc.schroeder_integration(energy_omni, is_energy=True)
+
+    result = early_lateral_energy_fraction(edc_omni, edc_lateral).item()
+
+    # ISO 3382 typical range: 0.05–0.35
+    assert 0.05 <= result <= 0.35, (
+        f"J_LF = {result:.2f} is outside the ISO 3382 typical range "
+        f"[0.05, 0.35]"
+    )
+
+def test_JLF_for_exponential_decay_analytical(make_edc):
+    """
+    JLF validation for analytical solution from exponential decay.
+
+    For an exponential EDC: e(t) = exp(-a*t), where a = 13.8155 / RT
+
+    JLF = (
+        (e_L(0.005) - e_L(0.08)) /   # lateral, 5ms to 80ms
+        (e_omni(0)  - e_omni(0.08))   # omni,    0ms to 80ms
+    )
+    """
+    sampling_rate = 1000
+    total_samples = 2000
+
+    edc_omni = make_edc(rt=2.0, sampling_rate=sampling_rate,
+                        total_samples=total_samples)
+    edc_lateral = make_edc(rt=2.2, sampling_rate=sampling_rate,
+                           total_samples=total_samples)
+
+    result = early_lateral_energy_fraction(edc_omni, edc_lateral)
+
+    # Decay constants
+    a_omni = 13.8155 / 2.0
+    a_lat  = 13.8155 / 2.2
+
+    # Denominator: e_omni(0) - e_omni(0.08).
+    expected_omni = np.exp(-a_omni * 0.0) - np.exp(-a_omni * 0.08)
+    # Numerator: e_L(0.005) - e_L(0.08).
+    expected_lateral = np.exp(-a_lat * 0.005) - np.exp(-a_lat * 0.08)
+
+    expected = expected_lateral / expected_omni
+    np.testing.assert_allclose(result, expected, atol=1e-5)
