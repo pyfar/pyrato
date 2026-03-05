@@ -255,12 +255,12 @@ def speech_transmission_index_indirect(
 
     Notes
     -----
-    pyfar uses octave-band filters of order 14 and the filter order 
-    influences the MTF. Higher filter orders produce steeper roll-off and 
-    a more ideal band separation, which affects the energy distribution 
-    within each octave band and thus the computed modulation depth. However, 
-    the resulting STI is not meaningfully affected, since individual 
-    deviations in the MTF tend to cancel out in the weighted sum over 
+    pyfar uses octave-band filters of order 14 and the filter order
+    influences the MTF. Higher filter orders produce steeper roll-off and
+    a more ideal band separation, which affects the energy distribution
+    within each octave band and thus the computed modulation depth. However,
+    the resulting STI is not meaningfully affected, since individual
+    deviations in the MTF tend to cancel out in the weighted sum over
     octave bands and modulation frequencies.
 
     References
@@ -391,12 +391,12 @@ def modulation_transfer_function(
 
     Notes
     -----
-    pyfar uses octave-band filters of order 14 and the filter order 
-    influences the MTF. Higher filter orders produce steeper roll-off and 
-    a more ideal band separation, which affects the energy distribution 
-    within each octave band and thus the computed modulation depth. However, 
-    the resulting STI is not meaningfully affected, since individual 
-    deviations in the MTF tend to cancel out in the weighted sum over 
+    pyfar uses octave-band filters of order 14 and the filter order
+    influences the MTF. Higher filter orders produce steeper roll-off and
+    a more ideal band separation, which affects the energy distribution
+    within each octave band and thus the computed modulation depth. However,
+    the resulting STI is not meaningfully affected, since individual
+    deviations in the MTF tend to cancel out in the weighted sum over
     octave bands and modulation frequencies.
 
     References
