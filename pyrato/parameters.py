@@ -354,7 +354,7 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
 
     return energy_ratio
 
-def sound_strength(energy_decay_curve_omni,
+def sound_strength(energy_decay_curve_room,
              energy_decay_curve_free_field):
     r"""
     Calculate the room-acoustic strength parameter (:math:`G`).
@@ -398,7 +398,7 @@ def sound_strength(energy_decay_curve_omni,
 
     Parameters
     ----------
-    energy_decay_curve_omni : pyfar.TimeData
+    energy_decay_curve_room : pyfar.TimeData
         Energy decay curve of the room impulse response. The EDC must
         start at time zero.
 
@@ -423,4 +423,4 @@ def sound_strength(energy_decay_curve_omni,
 
     return 10*np.log10(_energy_ratio(limits,
                                      energy_decay_curve_free_field,
-                                     energy_decay_curve_omni))
+                                     energy_decay_curve_room))
