@@ -509,18 +509,18 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
 
     return energy_ratio
 
-def late_lateral_sound_level(energy_decay_curve_ref_10m,
-                       energy_decay_curve_lateral):
+def late_lateral_sound_level(energy_decay_curve_free_field,
+                       energy_decay_curve_room_lateral):
     r"""
     Calculate the late lateral sound level.
 
-    The late lateral sound level :math:`L_\mathrm{J}` is a measure of the
-    strength of late-arriving lateral sound.
-    According to [#isoLLJ]_, it is defined as the level ratio between the
-    lateral sound energy captured with a figure of eight microphone
-    arriving after 80 ms and the total sound energy of a reference
-    impulse response measured with an omnidirectional microphone
-    at a distance of 10 m in the free field.
+    The late lateral sound level :math:`L_\mathrm{J}` quantifies the strength
+    of late-arriving lateral sound energy. According to ISO 3382-1 [#isoLLJ]_,
+    it is defined as the level ratio between the late lateral sound energy
+    captured with a figure-of-eight microphone and the total sound energy of a
+    reference impulse response measured with an omnidirectional microphone at
+    a distance of 10 m in the free field. It is a measure of listener
+    envelopment.
 
     The parameter is defined as
 
@@ -556,12 +556,12 @@ def late_lateral_sound_level(energy_decay_curve_ref_10m,
 
     Parameters
     ----------
-    energy_decay_curve_ref_10m : pyfar.TimeData
-        Energy decay curve of the reference impulse response measured
-        with an omnidirectional microphone at 10 m distance in the
+    energy_decay_curve_free_field : pyfar.TimeData
+        Energy decay curve of the reference free field impulse response
+        measured vwith an omnidirectional microphone at 10 m distance in the
         free field. The EDC must start at time zero.
 
-    energy_decay_curve_lateral : pyfar.TimeData
+    energy_decay_curve_room_lateral : pyfar.TimeData
         Energy decay curve of the room impulse response measured with a
         figure-eight microphone oriented according to [#isoLLJ]_
         (zero axis pointing towards the source). The EDC must start at
@@ -585,8 +585,8 @@ def late_lateral_sound_level(energy_decay_curve_ref_10m,
     limits = np.array([0.0, np.inf, 0.08, np.inf])
 
     return 10 * np.log10(_energy_ratio(limits,
-                                       energy_decay_curve_ref_10m,
-                                       energy_decay_curve_lateral))
+                                       energy_decay_curve_free_field,
+                                       energy_decay_curve_room_lateral))
 
 def sound_strength(energy_decay_curve_room,
              energy_decay_curve_free_field):
