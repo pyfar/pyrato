@@ -31,6 +31,7 @@ extensions = [
     'sphinx_favicon',
     'sphinx_reredirects',
     'sphinx_mdinclude',
+    'sphinx_copybutton',
 ]
 
 # show tocs for classes and functions of modules using the autodocsumm
