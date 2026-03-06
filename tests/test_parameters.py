@@ -99,10 +99,8 @@ def test_strength_returns_zero_db_for_identical_edcs(make_edc):
     """Return 0 dB when room and reference EDCs are identical."""
     energy = np.array([1.0, 0.8, 0.4, 0.2])
     edc_room= make_edc(energy=energy, sampling_rate=1000, normalize=False)
-    edc_free_field = make_edc(
-        energy=energy, sampling_rate=1000, normalize=False)
-
-    result = sound_strength(edc_room, edc_free_field)
+    
+    result = sound_strength(edc_room, edc_room)
     npt.assert_allclose(result, 0.0, atol=1e-12)
 
 def test_strength_matches_known_reference_ratio(make_edc):
