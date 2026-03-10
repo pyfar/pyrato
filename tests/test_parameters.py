@@ -13,6 +13,7 @@ from pyrato.parameters import _sti_calc
 
 
 from pyrato.parameters import clarity
+from pyrato.parameters import sound_strength
 from pyrato.parameters import definition
 from pyrato.parameters import early_lateral_energy_fraction
 from pyrato.parameters import _energy_ratio
@@ -627,6 +628,102 @@ def test_sti_ir_level_snr():
         sti_test = speech_transmission_index_indirect(
             ir, rir_type="acoustical", level=level, snr=snr)
     np.testing.assert_allclose(sti_test, sti_expected, atol=0.07)
+def test_strength_returns_zero_db_for_identical_edcs(make_edc):
+    """Return 0 dB when room and reference EDCs are identical."""
+    energy = np.array([1.0, 0.8, 0.4, 0.2])
+    edc_room= make_edc(energy=energy, sampling_rate=1000, normalize=False)
+    result = sound_strength(edc_room, edc_room)
+    npt.assert_allclose(result, 0.0, atol=1e-12)
+
+def test_strength_matches_known_reference_ratio(make_edc):
+    """Calculate correct strength for a known energy ratio (2:1 → +3.01 dB)."""
+    edc_room= make_edc(
+        energy=np.array([2.0, 1.0, 0.0, 0.0]),
+        sampling_rate=1000,
+        normalize=False,
+        dynamic_range=200,
+    )
+    edc_free_field = make_edc(
+        energy=np.array([1.0, 0.5, 0.0, 0.0]),
+        sampling_rate=1000,
+        normalize=False,
+        dynamic_range=200,
+    )
+
+    expected = 10 * np.log10(2.0)
+    result = sound_strength(edc_room, edc_free_field)
+    npt.assert_allclose(result, expected, atol=1e-8)
+
+def test_strength_preserves_multichannel_shape(make_edc):
+    """Preserve multichannel shape and compute strength per channel
+    independently.
+    """
+    energy_omni = np.stack([
+        np.array([1.0, 0.8, 0.4, 0.2]),
+        np.array([2.0, 1.6, 0.8, 0.4]),
+    ])
+    energy_free_field = np.stack([
+        np.array([1.0, 0.8, 0.4, 0.2]),
+        np.array([1.0, 0.8, 0.4, 0.2]),
+    ])
+    edc_room= make_edc(
+        energy=energy_omni, sampling_rate=1000, normalize=False)
+    edc_free_field = make_edc(
+        energy=energy_free_field, sampling_rate=1000, normalize=False)
+
+    result = sound_strength(edc_room, edc_free_field)
+
+    assert result.shape == edc_room.cshape
+    npt.assert_allclose(result[0], 0.0, atol=1e-12)
+    npt.assert_allclose(result[1], 10*np.log10(2.0), atol=1e-8)
+
+def test_strength_handles_very_short_edcs(make_edc):
+    """Handle very short EDCs when integrating over [0, inf]."""
+    edc_room= make_edc(
+        energy=np.array([2.0, 1.0]), sampling_rate=1000, normalize=False)
+    edc_free_field = make_edc(
+        energy=np.array([1.0, 0.5]), sampling_rate=1000, normalize=False)
+
+    result = sound_strength(edc_room, edc_free_field)
+    npt.assert_allclose(result, 10*np.log10(2.0), atol=1e-12)
+
+def test_sound_strength_scales_correctly_with_single_edc_scaling(make_edc):
+    """Scaling only one EDC changes G by the expected dB offset.
+
+    - Scaling edc_roomby factor k  →  G increases by 10*log10(k).
+    - Scaling edc_free_field by k   →  G decreases by 10*log10(k).
+    """
+    room = np.array([2.0, 1.0, 0.4, 0.0])
+    ref  = np.array([1.0, 0.5, 0.2, 0.0])
+    factor = 4.0
+    expected_offset = 10 * np.log10(factor)   # ≈ 6.02 dB
+
+    edc_room= make_edc(energy=room, sampling_rate=1000, normalize=False)
+    edc_ref  = make_edc(energy=ref,  sampling_rate=1000, normalize=False)
+
+    baseline = sound_strength(edc_room, edc_ref)
+
+    # Only omni scaled → G should rise by expected_offset
+    edc_room_scaled = make_edc(
+        energy=factor * room, sampling_rate=1000, normalize=False)
+    result_omni_scaled = sound_strength(edc_room_scaled, edc_ref)
+    npt.assert_allclose(result_omni_scaled, baseline + expected_offset,
+                        atol=1e-8)
+
+    # Only free_field scaled → G should drop by expected_offset
+    edc_ref_scaled = make_edc(
+        energy=factor * ref, sampling_rate=1000, normalize=False)
+    result_ref_scaled = sound_strength(edc_room, edc_ref_scaled)
+    npt.assert_allclose(result_ref_scaled, baseline - expected_offset,
+                        atol=1e-8)
+
+def test_sound_strength_returns_nan_for_zero_denominator_signal():
+    """Correct return of NaN for division by zero signal."""
+    edc_room= pf.TimeData(np.ones((1, 128)), np.arange(128) / 1000)
+    edc_free_field = pf.TimeData(np.zeros((1, 128)), np.arange(128) / 1000)
+    with pytest.warns(RuntimeWarning):
+        result = sound_strength(edc_room, edc_free_field)
+    assert np.isnan(result)
 
 # parameters definition tests
 @pytest.mark.parametrize(
