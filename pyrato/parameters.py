@@ -360,7 +360,8 @@ def definition(energy_decay_curve, early_time_limit=50):
 
 
 def speech_transmission_index_indirect(
-        rir, rir_type="acoustical", level=None, snr=np.inf, ambient_noise_correction=True):
+        rir, rir_type="acoustical", level=None, snr=np.inf,
+        ambient_noise_correction=True):
     """
     Computes the Speech Transmission Index (STI) according to
     IEC 60268-16:2020 using the indirect method.
@@ -412,11 +413,7 @@ def speech_transmission_index_indirect(
     -----
     pyfar uses octave-band filters of order 14 and the filter order
     influences the MTF. Higher filter orders produce steeper roll-off and
-    a more ideal band separation, which affects the energy distribution  
-    within each octave band and thus the computed modulation depth. However,
-    the resulting STI is not meaningfully affected, since individual
-    deviations in the MTF tend to cancel out in the weighted sum over
-    octave bands and modulation frequencies.
+    a more ideal band separation, which affects the energy distribution
     within each octave band and thus the computed modulation depth.
     The influence on the broadband STI is negligible, since individual
     deviations in the MTF tend to average out in the weighted sum over
@@ -539,10 +536,6 @@ def modulation_transfer_function(
     pyfar uses octave-band filters of order 14 and the filter order
     influences the MTF. Higher filter orders produce steeper roll-off and
     a more ideal band separation, which affects the energy distribution
-    within each octave band and thus the computed modulation depth. However,
-    the resulting STI is not meaningfully affected, since individual
-    deviations in the MTF tend to cancel out in the weighted sum over
-    octave bands and modulation frequencies.
     within each octave band and thus the computed modulation depth.
     The influence on the broadband STI is negligible, since individual
     deviations in the MTF tend to average out in the weighted sum over
@@ -648,7 +641,7 @@ def modulation_transfer_function(
 
 
 def _ambient_noise_correction(mtf, level, snr, rir_type):
-    """
+    r"""
     Weight the MTF by auditory masking, ambient noise, and hearing threshold.
 
     The basic MTF (after SNR correction) only accounts for reverberation and
@@ -657,7 +650,8 @@ def _ambient_noise_correction(mtf, level, snr, rir_type):
 
     .. math::
 
-        m''(f_m, k) = m'(f_m, k) \\cdot \\frac{I_k}{I_k + I_{\\mathrm{am},k} + I_{\\mathrm{rt},k}}
+        m''(f_m, k) = m'(f_m, k) \cdot
+        \frac{I_k}{I_k + I_{\mathrm{am},k} + I_{\mathrm{rt},k}}
 
     where :math:`f_m` is the modulation frequency, :math:`k` is the octave band
     index, :math:`m'(f_m, k)` is the MTF after the ambient noise correction
@@ -666,11 +660,11 @@ def _ambient_noise_correction(mtf, level, snr, rir_type):
     - :math:`I_k = I_{z,k} + I_{n,k}` — total acoustic intensity level
       for octave band :math:`k`, i.e. test signal (:math:`I_{z,k}`) plus
       background noise (:math:`I_{n,k}`).
-    - :math:`I_{\\mathrm{am},k}` — masking intensity due to the
+    - :math:`I_{\mathrm{am},k}` — masking intensity due to the
       level-dependent auditory masking effect acting on octave band :math:`k`
       from band :math:`k-1`, according to [#iecANC]_, Annex A.4.2
       (acoustical signals only).
-    - :math:`I_{\\mathrm{rt},k}` — acoustic intensity level of the
+    - :math:`I_{\mathrm{rt},k}` — acoustic intensity level of the
       reception threshold for octave band :math:`k`, according to
       [#iecANC]_, Annex A.4.3 (acoustical signals only).
 
@@ -709,7 +703,7 @@ def _ambient_noise_correction(mtf, level, snr, rir_type):
     # electrical signals (IEC 60268-16:2020, Annex A.4.2, A.4.3)
     I_amk = np.zeros(7)
     I_rt = np.zeros((7, 1))
-    
+
     if rir_type == "acoustical":
         # Level-dependent auditory masking factor
         # (IEC 60268-16:2020, Annex A.4.2)

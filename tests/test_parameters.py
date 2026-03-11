@@ -303,7 +303,7 @@ def test_mtf_winmf_reference_snr_correction():
                      "mtf_ir_level_snr_WINMF.csv"),
         delimiter=';').T
     np.testing.assert_allclose(mtf, mtf_ref, atol=0.07)
-    
+
 def test_mtf_winmf_reference_masking():
     """
     Verifies MTF against WinMF reference (level + SNR correction + masking).
@@ -358,9 +358,11 @@ def test_sti_ambient_noise_correction_effect():
     snr = np.ones(7) * 20
 
     sti_with_noise = speech_transmission_index_indirect(
-        sig, rir_type="acoustical", level=level, snr=snr, ambient_noise_correction=True)
+        sig, rir_type="acoustical", level=level, snr=snr,
+        ambient_noise_correction=True)
     sti_without_noise = speech_transmission_index_indirect(
-        sig, rir_type="acoustical", level=level, snr=snr, ambient_noise_correction=False)
+        sig, rir_type="acoustical", level=level, snr=snr,
+        ambient_noise_correction=False)
 
     # Ambient noise correction reduces STI
     assert sti_with_noise != sti_without_noise
@@ -472,7 +474,8 @@ def test_mtf_shape():
     snr = np.ones(7) * 30
 
     mtf = modulation_transfer_function(
-        sig, rir_type="acoustical", level=None, snr=snr, ambient_noise_correction=True)
+        sig, rir_type="acoustical", level=None, snr=snr,
+        ambient_noise_correction=True)
 
     assert mtf.shape == (7, 14)
 
@@ -510,7 +513,8 @@ def test_mtf_ambient_noise_correction_effect():
     snr = np.ones(7) * 20
 
     mtf_no_amb = modulation_transfer_function(
-        sig, "acoustical", level=level, snr=snr, ambient_noise_correction=False,
+        sig, "acoustical", level=level, snr=snr,
+        ambient_noise_correction=False,
     )
 
     mtf_amb = modulation_transfer_function(
@@ -573,8 +577,10 @@ def test_ambient_noise_correction_electrical_no_masking():
     mtf = np.ones((7, 14)) * 0.8
     level = np.ones(7) * 65
     snr = np.ones(7) * 20
-    mtf_acoustic = _ambient_noise_correction(mtf.copy(), level, snr, "acoustical")
-    mtf_electric = _ambient_noise_correction(mtf.copy(), level, snr, "electrical")
+    mtf_acoustic = _ambient_noise_correction(
+        mtf.copy(), level, snr, "acoustical")
+    mtf_electric = _ambient_noise_correction(
+        mtf.copy(), level, snr, "electrical")
     assert np.all(mtf_electric >= mtf_acoustic)
 
 
@@ -590,8 +596,10 @@ def test_ambient_noise_correction_no_masking_lowest_band():
     # Set the first band level very high to produce a large I_k1 masking term
     level_high_first = level.copy()
     level_high_first[0] = 100
-    mtf_normal = _ambient_noise_correction(mtf.copy(), level, snr, "acoustical")
-    mtf_high = _ambient_noise_correction(mtf.copy(), level_high_first, snr, "acoustical")
+    mtf_normal = _ambient_noise_correction(
+        mtf.copy(), level, snr, "acoustical")
+    mtf_high = _ambient_noise_correction(
+        mtf.copy(), level_high_first, snr, "acoustical")
     # The first band should differ only due to Ik/I_rt changes, not I_amk
     # (since I_amk[0] is always forced to 0)
     # The second band is the one that gets masked by the louder first band
@@ -651,7 +659,7 @@ def test_sti_calc_mtf_one_clipping():
 
     # With SNR clipped to 15 dB, TI = (15 + 15)/30 = 1, STI should be 1
     assert sti == 1.0
-    
+
 def test_sti_ir():
     """
     STI value for a simulated IR.
