@@ -10,6 +10,7 @@ from pyfar import Signal, signals
 from pyrato.parameters import speech_transmission_index_indirect
 from pyrato.parameters import modulation_transfer_function
 from pyrato.parameters import _sti_calc
+from pyrato.parameters import _ambient_noise_correction
 
 
 from pyrato.parameters import clarity
@@ -171,14 +172,14 @@ def test_sti_warn_data_type_unknown():
                        "be 'electrical' or 'acoustical'."):
         speech_transmission_index_indirect(sig, rir_type="generic")
 
-def test_sti_ambient_noise_type_error():
+def test_sti_ambient_noise_correction_type_error():
     """
-    TypeError is raised when ambient_noise is not a boolean.
+    TypeError is raised when ambient_noise_correction is not a boolean.
     """
     sig = Signal(np.zeros(70560), 44100)
-    match = "ambient_noise must be a boolean."
+    match = "ambient_noise_correction must be a boolean."
     with pytest.raises(TypeError, match=match):
-        speech_transmission_index_indirect(sig, ambient_noise="yes")
+        speech_transmission_index_indirect(sig, ambient_noise_correction="yes")
 
 def test_sti_1D_shape():
     """
@@ -266,8 +267,8 @@ def test_mtf_winmf_reference_no_correction():
         "room_impulse_response_with_noise.csv"))
     ir = Signal(time, 48000)
     mtf = modulation_transfer_function(
-        ir, rir_type="acoustical", level=None, snr=None,
-        ambient_noise=False)
+        ir, rir_type="acoustical", level=None, snr=np.inf,
+        ambient_noise_correction=False)
     mtf_ref = np.loadtxt(
         os.path.join(os.path.dirname(__file__), "test_data",
                      "mtf_ir_WINMF.csv"),
@@ -296,7 +297,7 @@ def test_mtf_winmf_reference_snr_correction():
     with pytest.warns(UserWarning, match="snr' should be at least 20 dB"):
         mtf = modulation_transfer_function(
             ir, rir_type="acoustical", level=level, snr=snr,
-            ambient_noise=False)
+            ambient_noise_correction=False)
     mtf_ref = np.loadtxt(
         os.path.join(os.path.dirname(__file__), "test_data",
                      "mtf_ir_level_snr_WINMF.csv"),
@@ -324,7 +325,7 @@ def test_mtf_winmf_reference_masking():
     with pytest.warns(UserWarning, match="snr' should be at least 20 dB"):
         mtf = modulation_transfer_function(
             ir, rir_type="acoustical", level=level, snr=snr,
-            ambient_noise=True)
+            ambient_noise_correction=True)
     mtf_ref = np.loadtxt(
         os.path.join(os.path.dirname(__file__), "test_data",
                      "mtf_ir_level_snr_masking_WINMF.csv"),
@@ -347,7 +348,7 @@ def test_sti_electrical_vs_acoustical():
     # Electrical should have higher STI (no masking)
     assert sti_electrical >= sti_acoustical
 
-def test_sti_ambient_noise_effect():
+def test_sti_ambient_noise_correction_effect():
     """
     Ambient noise correction affects STI values.
     """
@@ -356,9 +357,9 @@ def test_sti_ambient_noise_effect():
     snr = np.ones(7) * 20
 
     sti_with_noise = speech_transmission_index_indirect(
-        sig, rir_type="acoustical", level=level, snr=snr, ambient_noise=True)
+        sig, rir_type="acoustical", level=level, snr=snr, ambient_noise_correction=True)
     sti_without_noise = speech_transmission_index_indirect(
-        sig, rir_type="acoustical", level=level, snr=snr, ambient_noise=False)
+        sig, rir_type="acoustical", level=level, snr=snr, ambient_noise_correction=False)
 
     # Ambient noise correction reduces STI
     assert sti_with_noise != sti_without_noise
@@ -374,7 +375,7 @@ def test_mtf_data_input():
     with pytest.raises(TypeError, match=match):
         modulation_transfer_function(
             sig, rir_type="acoustical", level=None,
-            snr=snr, ambient_noise=True)
+            snr=snr, ambient_noise_correction=True)
 
 def test_mtf_multichannel_error():
     """
@@ -386,7 +387,7 @@ def test_mtf_multichannel_error():
     with pytest.raises(ValueError, match=match):
         modulation_transfer_function(
             sig, rir_type="acoustical", level=None,
-            snr=snr, ambient_noise=True)
+            snr=snr, ambient_noise_correction=True)
 
 def test_mtf_short_signal_error():
     """
@@ -398,7 +399,7 @@ def test_mtf_short_signal_error():
     with pytest.raises(ValueError, match=match):
         modulation_transfer_function(
             sig, rir_type="acoustical", level=None,
-            snr=snr, ambient_noise=True)
+            snr=snr, ambient_noise_correction=True)
 
 def test_mtf_snr_type_error():
     """
@@ -410,7 +411,7 @@ def test_mtf_snr_type_error():
     with pytest.raises(TypeError, match=match):
         modulation_transfer_function(
             sig, rir_type="acoustical", level=None,
-            snr=snr, ambient_noise=True)
+            snr=snr, ambient_noise_correction=True)
 
 def test_mtf_snr_shape_error():
     """
@@ -422,7 +423,7 @@ def test_mtf_snr_shape_error():
     with pytest.raises(ValueError, match=match):
         modulation_transfer_function(
             sig, rir_type="acoustical", level=None,
-            snr=snr, ambient_noise=True)
+            snr=snr, ambient_noise_correction=True)
 
 def test_mtf_level_type_error():
     """
@@ -435,7 +436,7 @@ def test_mtf_level_type_error():
     with pytest.raises(TypeError, match=match):
         modulation_transfer_function(
             sig, rir_type="acoustical", level=level,
-            snr=snr, ambient_noise=True)
+            snr=snr, ambient_noise_correction=True)
 
 def test_mtf_level_shape_error():
     """
@@ -448,19 +449,19 @@ def test_mtf_level_shape_error():
     with pytest.raises(ValueError, match=match):
         modulation_transfer_function(
             sig, rir_type="acoustical", level=level,
-            snr=snr, ambient_noise=True)
+            snr=snr, ambient_noise_correction=True)
 
-def test_mtf_ambient_noise_type_error():
+def test_mtf_ambient_noise_correction_type_error():
     """
-    TypeError is raised when ambient_noise is not a boolean.
+    TypeError is raised when ambient_noise_correction is not a boolean.
     """
     sig = signals.impulse(70560)
     snr = np.ones(7) * 30
-    match = "ambient_noise must be a boolean."
+    match = "ambient_noise_correction must be a boolean."
     with pytest.raises(TypeError, match=match):
         modulation_transfer_function(
             sig, rir_type="acoustical", level=None,
-            snr=snr, ambient_noise="yes")
+            snr=snr, ambient_noise_correction="yes")
 
 def test_mtf_shape():
     """
@@ -470,7 +471,7 @@ def test_mtf_shape():
     snr = np.ones(7) * 30
 
     mtf = modulation_transfer_function(
-        sig, rir_type="acoustical", level=None, snr=snr, ambient_noise=True)
+        sig, rir_type="acoustical", level=None, snr=snr, ambient_noise_correction=True)
 
     assert mtf.shape == (7, 14)
 
@@ -485,7 +486,7 @@ def test_mtf_snr_reduction():
         rir_type="acoustical",
         level=None,
         snr=np.ones(7) * 100,
-        ambient_noise=False,
+        ambient_noise_correction=False,
     )
 
     with pytest.warns(UserWarning, match="snr' should be at least 20 dB"):
@@ -494,12 +495,12 @@ def test_mtf_snr_reduction():
             rir_type="acoustical",
             level=None,
             snr=np.ones(7) * 10,
-            ambient_noise=False,
+            ambient_noise_correction=False,
         )
 
     assert np.all(mtf_low < mtf_high)
 
-def test_mtf_ambient_noise_effect():
+def test_mtf_ambient_noise_correction_effect():
     """
     Ambient noise correction reduces MTF values.
     """
@@ -508,11 +509,11 @@ def test_mtf_ambient_noise_effect():
     snr = np.ones(7) * 20
 
     mtf_no_amb = modulation_transfer_function(
-        sig, "acoustical", level=level, snr=snr, ambient_noise=False,
+        sig, "acoustical", level=level, snr=snr, ambient_noise_correction=False,
     )
 
     mtf_amb = modulation_transfer_function(
-        sig, "acoustical", level=level, snr=snr, ambient_noise=True,
+        sig, "acoustical", level=level, snr=snr, ambient_noise_correction=True,
     )
 
     assert np.all(mtf_amb <= mtf_no_amb)
@@ -526,11 +527,11 @@ def test_mtf_electrical_vs_acoustical():
     snr = np.ones(7) * 20
 
     mtf_ac = modulation_transfer_function(
-        sig, "acoustical", level=level, snr=snr, ambient_noise=True,
+        sig, "acoustical", level=level, snr=snr, ambient_noise_correction=True,
     )
 
     mtf_el = modulation_transfer_function(
-        sig, "electrical", level=level, snr=snr, ambient_noise=True,
+        sig, "electrical", level=level, snr=snr, ambient_noise_correction=True,
     )
 
     assert np.any(mtf_ac != mtf_el)
@@ -545,11 +546,67 @@ def test_mtf_bounds():
     with pytest.warns(UserWarning, match="snr' should be at least 20 dB"):
         mtf = modulation_transfer_function(
             sig, rir_type="acoustical", level=None, snr=snr,
-            ambient_noise=True,
+            ambient_noise_correction=True,
         )
 
     assert np.all(mtf >= 0.0)
     assert np.all(mtf <= 1.0)
+
+def test_ambient_noise_correction_reduces_mtf():
+    """
+    _ambient_noise_correction returns MTF values <= the input MTF.
+    """
+    mtf = np.ones((7, 14)) * 0.8
+    level = np.ones(7) * 60
+    snr = np.ones(7) * 20
+    mtf_corrected = _ambient_noise_correction(mtf, level, snr, "acoustical")
+    assert np.all(mtf_corrected <= mtf)
+
+
+def test_ambient_noise_correction_electrical_no_masking():
+    """
+    For electrical signals, only the ambient noise intensity (Ik) is applied;
+    auditory masking and absolute threshold terms are omitted. The corrected
+    MTF must therefore be higher than for acoustical signals.
+    """
+    mtf = np.ones((7, 14)) * 0.8
+    level = np.ones(7) * 65
+    snr = np.ones(7) * 20
+    mtf_acoustic = _ambient_noise_correction(mtf.copy(), level, snr, "acoustical")
+    mtf_electric = _ambient_noise_correction(mtf.copy(), level, snr, "electrical")
+    assert np.all(mtf_electric >= mtf_acoustic)
+
+
+def test_ambient_noise_correction_no_masking_lowest_band():
+    """
+    No auditory masking is applied for the lowest octave band (125 Hz),
+    i.e. I_amk[0] = 0. The correction for the first band depends only on
+    Ik and I_rt, not on the adjacent band.
+    """
+    mtf = np.ones((7, 14)) * 0.8
+    level = np.ones(7) * 60
+    snr = np.ones(7) * 20
+    # Set the first band level very high to produce a large I_k1 masking term
+    level_high_first = level.copy()
+    level_high_first[0] = 100
+    mtf_normal = _ambient_noise_correction(mtf.copy(), level, snr, "acoustical")
+    mtf_high = _ambient_noise_correction(mtf.copy(), level_high_first, snr, "acoustical")
+    # The first band should differ only due to Ik/I_rt changes, not I_amk
+    # (since I_amk[0] is always forced to 0)
+    # The second band is the one that gets masked by the louder first band
+    assert not np.allclose(mtf_normal[1], mtf_high[1])
+
+
+def test_ambient_noise_correction_output_shape():
+    """
+    _ambient_noise_correction preserves the MTF shape (7, 14).
+    """
+    mtf = np.ones((7, 14)) * 0.5
+    level = np.ones(7) * 60
+    snr = np.ones(7) * 25
+    mtf_corrected = _ambient_noise_correction(mtf, level, snr, "acoustical")
+    assert mtf_corrected.shape == (7, 14)
+
 
 def test_sti_calc_type_error():
     """

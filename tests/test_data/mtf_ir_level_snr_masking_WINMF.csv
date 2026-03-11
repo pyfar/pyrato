@@ -1,3 +1,15 @@
+# WinMF reference MTF -- level + SNR + auditory masking + reception threshold
+#
+# Reference MTF values exported from WinMF with full correction chain:
+# ambient noise (IEC 60268-16:2020 Annex A.2.3), auditory masking (Annex A.4.2),
+# and absolute speech reception threshold (Annex A.4.3) according to Annex A.2.4.
+#
+# Input:      room_impulse_response_with_noise.csv from test_data
+# Params:     ambient_noise_correction=True, rir_type='acoustical'
+# level       (male speech 65 dB(A), IEC 60268-16:2020 Annex B): [56, 60, 59, 51, 43, 32, 24] dB SPL
+# noise_level (NC-35 classroom, ANSI/ASA S12.2):                  [52, 45, 40, 36, 34, 33, 32] dB SPL
+# snr = level - noise_level
+# Shape:      (14 mod. freqs x 7 octave bands)
 0.6472;0.8736;0.8982;0.9028;0.8525;0.4250;0.1353
 0.6175;0.8301;0.8610;0.8756;0.8381;0.4172;0.1345
 0.5814;0.7797;0.8200;0.8451;0.8223;0.4080;0.1335
