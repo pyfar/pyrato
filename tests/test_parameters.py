@@ -1379,7 +1379,6 @@ def test_sti_ir_level_snr():
     Considered level and snr values.
     Compare with WinMF - Measurement Software.
     """
-
     sti_expected = 0.539
     # male speech spectrum at 65 dB(A) (IEC 60268-16:2020, Annex B)
     level = np.array([56, 60, 59, 51, 43, 32, 24])
@@ -1392,4 +1391,3 @@ def test_sti_ir_level_snr():
         sti_test = speech_transmission_index_indirect(
             ir, rir_type="acoustical", level=level, snr=snr)
     np.testing.assert_allclose(sti_test, sti_expected, atol=0.07)
-    
