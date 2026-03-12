@@ -1003,7 +1003,7 @@ def test_mtf_winmf_reference_snr_correction():
         mtf = modulation_transfer_function(
             ir, rir_type="acoustical", level=level, snr=snr,
             ambient_noise_correction=False)
-    mtf_ref = np.loadtxt('./tests/test_data/mtf_ir_level_snr_WINMF.csv', 
+    mtf_ref = np.loadtxt('./tests/test_data/mtf_ir_level_snr_WINMF.csv',
                          delimiter=';').T
     np.testing.assert_allclose(mtf, mtf_ref, atol=0.07)
 
