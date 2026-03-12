@@ -5,7 +5,7 @@ simulated or experimental data.
 import re
 import numpy as np
 import pyfar as pf
-
+import warnings
 
 def reverberation_time_linear_regression(
         energy_decay_curve, T='T20', return_intercept=False):
@@ -658,3 +658,425 @@ def sound_strength(energy_decay_curve_room,
     return 10*np.log10(_energy_ratio(limits,
                                      energy_decay_curve_free_field,
                                      energy_decay_curve_room))
+
+
+def speech_transmission_index_indirect(
+        rir, rir_type="acoustical", level=None, snr=np.inf,
+        ambient_noise_correction=True):
+    """
+    Computes the Speech Transmission Index (STI) according to
+    IEC 60268-16:2020 using the indirect method.
+
+    The STI is a scalar measure between 0 (bad) and 1 (excellent)
+    describing speech intelligibility. It is computed from the
+    :py:func:`~modulation_transfer_function`, optionally including auditory
+    masking and ambient noise effects.
+
+    STI considers 7 octave bands from 125 Hz to 8 kHz
+    and 14 modulation frequencies between 0.63 Hz and
+    12.5 Hz [#iec]_.
+
+    Parameters
+    ----------
+    rir : pyfar.Signal
+        Single or multi-channel room impulse response for which the
+        STI is computed. The room impulse response must be at least
+        1.6 seconds long. See [#iec]_, Section 6.2.
+    rir_type : ``'electrical'``, ``'acoustical'``
+        Determines whether input signals given by `rir` were obtained
+        acoustically or electrically. Default is ``'acoustical'``.
+        Auditory masking effects are only applied for acoustical
+        signals [#iec]_, section A.3.1.
+    level : numpy.ndarray or None, optional
+        Test signal level without noise in dB SPL, given per octave band
+        (125 Hz–8 kHz). Shape can be ``(7,)`` (7 octave bands: 125 Hz–8 kHz)
+        to use the same values for all channels, or ``(rir.cshape, 7)``
+        for channel-specific values.
+        If ``None`` is provided, auditory and ambient noise corrections are
+        omitted. See [#iec]_, section A.3.2.
+    snr : numpy.ndarray or float, optional
+        Signal-to-noise ratio in dB for each octave band (125 Hz–8 kHz).
+        Shape can be ``(7,)`` (7 octave bands: 125 Hz–8 kHz)
+        to use the same values for all channels, or ``(rir.cshape, 7)``
+        for channel-specific values.
+        Default is ``np.inf`` (no ambient noise). See [#iec]_, section 3.
+    ambient_noise_correction: bool, optional
+        Apply ambient noise correction according to [#iec]_,
+        Annex A.2.3. Default is ``True``. Only applied when
+        ``level is not None`` and ``ambient_noise_correction is True``.
+
+    Returns
+    -------
+    sti : numpy.ndarray
+        Channel-wise Speech Transmission Index with shape ``rir.cshape``.
+
+    Notes
+    -----
+    pyfar uses octave-band filters of order 14 and the filter order
+    influences the MTF. Higher filter orders produce steeper roll-off and
+    a more ideal band separation, which affects the energy distribution
+    within each octave band and thus the computed modulation depth.
+    The influence on the broadband STI is negligible, since individual
+    deviations in the MTF tend to average out in the weighted sum over
+    octave bands and modulation frequencies.
+
+    References
+    ----------
+    .. [#iec] IEC 60268-16:2020
+     Sound system equipment - Part 16: Objective rating of speech
+     intelligibility by speech transmission index.
+    """
+    # check if input data is a pyfar.Signal
+    if not isinstance(rir, pf.Signal):
+        raise TypeError("Input data must be a pyfar.Signal.")
+
+    if np.ndim(snr) == 0:
+        snr = np.full((7,), float(snr))
+    snr = np.asarray(snr)
+    # Check if SNR has valid shape: (7,) uses same values for all
+    # channels, (cshape, 7) for channel-specific values
+    if snr.shape != (7,) and snr.shape != rir.cshape + (7,):
+        raise ValueError(
+            f"Input 'snr' must have shape (7,) or "
+            f"{rir.cshape + (7,)} (7 octave bands or matching "
+            f"rir channels + 7 octave bands), but got {snr.shape}.",
+        )
+    if np.any(snr < 20):
+        warnings.warn(
+            "Input 'snr' should be at least 20 dB for every octave band.",
+            stacklevel=2,
+            )
+
+    if level is not None:
+        # check if input level is a numpy array
+        if not isinstance(level, np.ndarray):
+            raise TypeError("Input 'level' must be a numpy array.")
+        level = np.asarray(level)
+        # Check if level has valid shape: (7,) uses same values for
+        # all channels, (cshape, 7) for channel-specific values
+        if level.shape != (7,) and level.shape != rir.cshape + (7,):
+            raise ValueError(
+                f"Input 'level' must have shape (7,) or "
+                f"{rir.cshape + (7,)} (7 octave bands or matching "
+                f"rir channels + 7 octave bands), but got {level.shape}.",
+            )
+
+    # check rir_type
+    if rir_type is None:
+        rir_type = "acoustical"
+    if rir_type not in ["electrical", "acoustical"]:
+        raise ValueError(f"rir_type is '{rir_type}' but must be "
+                         "'electrical' or 'acoustical'.")
+
+    # Validate ambient_noise_correction parameter
+    if not isinstance(ambient_noise_correction, bool):
+        raise TypeError("ambient_noise_correction must be a boolean.")
+
+    sti = np.zeros(rir.cshape)
+
+    for ch in np.ndindex(rir.cshape):
+        # Use snr/level directly if shape is (7,), otherwise index by channel
+        current_snr = snr if snr.shape == (7,) else snr[ch]
+        current_level = (
+            None if level is None
+            else (level if level.shape == (7,) else level[ch])
+        )
+        mtf = modulation_transfer_function(rir[ch],
+                                           rir_type,
+                                           current_level,
+                                           current_snr,
+                                           ambient_noise_correction)
+        sti[ch] = _sti_calc(mtf)
+
+    return sti
+
+
+def modulation_transfer_function(
+        rir, rir_type="acoustical", level=None, snr=np.inf,
+        ambient_noise_correction=True):
+    """
+    Compute the modulation transfer function (MTF) of an impulse response
+    according to IEC 60268-16:2020.
+
+    The MTF describes the reduction of modulation depth caused by the
+    transmission path. It is evaluated for 7 octave bands (125 Hz–8 kHz)
+    and 14 modulation frequencies (0.63 Hz–12.5 Hz) and forms the basis
+    of the Speech Transmission Index (STI).
+
+    Parameters
+    ----------
+    rir : pyfar.Signal
+        Single-channel room impulse response with ``rir.cshape = (1, )``.
+        The room impulse response must be at least 1.6 seconds long.
+    rir_type : {'electrical', 'acoustical'}, optional
+        Determines whether input signals given by `rir` were obtained
+        acoustically or electrically. Default is ``'acoustical'``.
+        Auditory masking effects are only applied for acoustical
+        signals [#iecMTF]_, section A.3.1.
+    level : numpy.ndarray or None, optional
+        Test signal level without noise in dB SPL, given per octave band
+        (125 Hz–8 kHz). Shape must be ``(7,)`` (7 octave bands: 125 Hz–8 kHz).
+        If ``None`` is provided, auditory and ambient noise corrections are
+        omitted. Default is ``None``. See [#iecMTF]_, section A.3.2.
+    snr : numpy.ndarray or float, optional
+        Signal-to-noise ratio in dB for each octave band (125 Hz–8 kHz).
+        Shape must be ``(7,)`` (7 octave bands: 125 Hz–8 kHz).
+        Default is ``np.inf`` (no ambient noise). See [#iecMTF]_, section 3.
+    ambient_noise_correction : bool, optional
+        Apply ambient noise correction according to [#iecMTF]_,
+        Annex A.2.3. Default is ``True``. Only applied when
+        ``level is not None`` and ``ambient_noise_correction is True``.
+
+    Returns
+    -------
+    mtf : numpy.ndarray
+        Modulation transfer function with shape ``(7, 14)``.
+
+    Notes
+    -----
+    pyfar uses octave-band filters of order 14 and the filter order
+    influences the MTF. Higher filter orders produce steeper roll-off and
+    a more ideal band separation, which affects the energy distribution
+    within each octave band and thus the computed modulation depth.
+    The influence on the broadband STI is negligible, since individual
+    deviations in the MTF tend to average out in the weighted sum over
+    octave bands and modulation frequencies.
+
+    References
+    ----------
+    .. [#iecMTF] IEC 60268-16:2020
+       Sound system equipment - Part 16: Objective rating of speech
+       intelligibility by speech transmission index.
+    """
+    # Check if input data is a pyfar.Signal
+    if not isinstance(rir, pf.Signal):
+        raise TypeError("Input data must be a pyfar.Signal.")
+
+    # Check if data is single-channel
+    if rir.cshape != (1,):
+        raise ValueError(
+            "Input must be a single-channel impulse response, "
+            f"but got shape {rir.cshape}.",
+        )
+
+    # Check if signal is at least 1.6 seconds long
+    # (IEC 60268-16:2020, Section 6.2)
+    if rir.n_samples / rir.sampling_rate < 1.6:
+        raise ValueError(
+            "Input signal must be at least 1.6 seconds long "
+            "(see IEC 60268-16:2020, Section 6.2).",
+        )
+
+    if np.ndim(snr) == 0:
+        snr = np.full((7,), float(snr))
+    if not isinstance(snr, np.ndarray):
+        raise TypeError("snr must be a numpy array.")
+    if snr.shape != (7,):
+        raise ValueError(
+            f"snr must have shape (7,) for 7 octave bands "
+            f"(125 Hz - 8 kHz), but got {snr.shape}.",
+        )
+    if np.any(snr < 20):
+        warnings.warn(
+            "Input 'snr' should be at least 20 dB for every "
+            "octave band.",
+            stacklevel=2,
+        )
+
+    if level is not None:
+        # check if input level is a numpy array
+        if not isinstance(level, np.ndarray):
+            raise TypeError("level must be a numpy array or None.")
+        if level.shape != (7,):
+            raise ValueError(
+                f"Level must have shape (7,) for 7 octave bands "
+                f"(125 Hz - 8 kHz), but got {level.shape}.",
+            )
+        if np.any(level < 1):
+            warnings.warn(
+                "Input 'level' should be at least 1 dB for every "
+                "octave band.",
+                stacklevel=2,
+            )
+
+    # check rir_type
+    if rir_type is None:
+        rir_type = "acoustical"
+    if rir_type not in ["electrical", "acoustical"]:
+        raise ValueError(f"Data_type is '{rir_type}' but must be "
+                         "'electrical' or 'acoustical'.")
+
+    # Validate ambient_noise_correction parameter
+    if not isinstance(ambient_noise_correction, bool):
+        raise TypeError("ambient_noise_correction must be a boolean.")
+
+    rir_oct = pf.dsp.filter.fractional_octave_bands(
+        rir, num_fractions=1, frequency_range=(125, 8000))
+
+    # Modulation frequencies (fm) in Hz for MTF calculation
+    # Defined in IEC 60268-16:2020, Section A.1.4
+    modulation_frequencies = np.array(
+        [0.63, 0.80, 1.0, 1.25, 1.60, 2.0, 2.5,
+         3.15, 4.0, 5.0, 6.3, 8.0, 10.0, 12.5],
+    )
+
+    modulation_frequencies = np.tile(
+        modulation_frequencies, (rir_oct.cshape[0], 1))
+    energy = rir_oct.time ** 2
+
+    # MTF calculation (IEC 60268-16:2020, Section 6.1)
+    term_exp = np.exp(
+        -2j * np.pi * modulation_frequencies[:, :, None] * rir_oct.times)
+    numerator = np.abs(np.sum(energy * term_exp, axis=-1))
+    denominator = np.sum(energy, axis=-1)
+    mtf = numerator / denominator
+
+    # Ambient noise correction (IEC 60268-16:2020, Annex A.2.3)
+    mtf *= 1 / (1 + 10 ** (-snr[:, None] / 10))
+
+    if level is not None and ambient_noise_correction is True:
+        mtf = _ambient_noise_correction(mtf, level, snr, rir_type)
+
+    # Clip MTF to valid range [0, 1] (IEC 60268-16:2020, Section A.2.4)
+    return np.clip(mtf, 0, 1)
+
+
+def _ambient_noise_correction(mtf, level, snr, rir_type):
+    r"""
+    Weight the MTF by auditory masking, ambient noise, and hearing threshold.
+
+    The basic MTF (after SNR correction) only accounts for reverberation and
+    the signal-to-noise ratio. This function applies an additional perceptual
+    weighting defined in [#iecANC]_, Annex A.2.4:
+
+    .. math::
+
+        m''(f_m, k) = m'(f_m, k) \cdot
+        \frac{I_k}{I_k + I_{\mathrm{am},k} + I_{\mathrm{rt},k}}
+
+    where :math:`f_m` is the modulation frequency, :math:`k` is the octave band
+    index, :math:`m'(f_m, k)` is the MTF after the ambient noise correction
+    (Annex A.2.3), and the three intensity terms are:
+
+    - :math:`I_k = I_{z,k} + I_{n,k}` — total acoustic intensity level
+      for octave band :math:`k`, i.e. test signal (:math:`I_{z,k}`) plus
+      background noise (:math:`I_{n,k}`).
+    - :math:`I_{\mathrm{am},k}` — masking intensity due to the
+      level-dependent auditory masking effect acting on octave band :math:`k`
+      from band :math:`k-1`, according to [#iecANC]_, Annex A.4.2
+      (acoustical signals only).
+    - :math:`I_{\mathrm{rt},k}` — acoustic intensity level of the
+      reception threshold for octave band :math:`k`, according to
+      [#iecANC]_, Annex A.4.3 (acoustical signals only).
+
+    For electrical signals the auditory terms are zero and this correction
+    has no effect.
+
+    Parameters
+    ----------
+    mtf : numpy.ndarray
+        Modulation transfer function after SNR correction, shape ``(7, 14)``.
+    level : numpy.ndarray
+        Test signal level without noise in dB SPL per octave band,
+        shape ``(7,)``.
+    snr : numpy.ndarray
+        Signal-to-noise ratio in dB per octave band, shape ``(7,)``.
+    rir_type : {'electrical', 'acoustical'}
+        Auditory masking and hearing threshold corrections are only applied
+        for ``'acoustical'`` signals.
+
+    Returns
+    -------
+    mtf : numpy.ndarray
+        Corrected modulation transfer function, shape ``(7, 14)``.
+
+    References
+    ----------
+    .. [#iecANC] IEC 60268-16:2020
+       Sound system equipment - Part 16: Objective rating of speech
+       intelligibility by speech transmission index.
+    """
+    # Total intensity per octave band: signal + noise
+    # (IEC 60268-16:2020, Annex A.2.4)
+    Ik = 10 ** (level / 10) + 10 ** ((level - snr) / 10)
+
+    # Auditory masking and reception threshold terms are zero for
+    # electrical signals (IEC 60268-16:2020, Annex A.4.2, A.4.3)
+    I_amk = np.zeros(7)
+    I_rt = np.zeros((7, 1))
+
+    if rir_type == "acoustical":
+        # Level-dependent auditory masking factor
+        # (IEC 60268-16:2020, Annex A.4.2)
+        amdb = level.copy()
+        amdb[amdb < 63] = 0.5*amdb[amdb < 63] - 65
+        amdb[(63 <= amdb) & (amdb < 67)] = 1.8 * amdb[(63 <= amdb) &
+                                                    (amdb < 67)] - 146.9
+        amdb[(67 <= amdb) & (amdb < 100)] = 0.5 * amdb[(67 <= amdb) &
+                                                    (amdb < 100)] - 59.8
+        amdb[100 <= amdb] = amdb[100 <= amdb] - 10
+        a = 10**(amdb/10)
+        # Masking intensity (IEC 60268-16:2020, Annex A.4.2)
+        I_k1 = np.roll(Ik, 1)
+        I_amk = I_k1 * a
+        I_amk[0] = 0  # No masking for lowest band (125 Hz)
+        # Absolute speech reception threshold
+        # (IEC 60268-16:2020, Annex A.4.3)
+        A_k = np.array([[46, 27, 12, 6.5, 7.5, 8, 12]]).T
+        I_rt = 10 ** (A_k / 10)
+
+    # Auditory masking + threshold correction (IEC 60268-16:2020, Annex A.2.4)
+    mtf = mtf * Ik[:, None] / (Ik[:, None] + I_amk[:, None] + I_rt)
+    return mtf
+
+
+def _sti_calc(mtf):
+    """
+    Computes the Speech Transmission Index (STI) from the MTF.
+
+    Parameters
+    ----------
+    mtf : numpy.ndarray
+        Modulation transfer function with shape ``(7, 14)`` for which
+        the STI is computed.
+
+    Returns
+    -------
+    sti : float
+        Speech Transmission Index.
+    """
+    # Check if mtf is a numpy array
+    if not isinstance(mtf, np.ndarray):
+        raise TypeError("mtf must be a numpy array.")
+
+    # Check if mtf has the correct shape
+    if mtf.shape != (7, 14):
+        raise ValueError(
+            f"mtf must have shape (7, 14) for 7 octave bands and "
+            f"14 modulation frequencies, but got {mtf.shape}.",
+        )
+
+    # Effective SNR from MTF (IEC 60268-16:2020, Annex A.2.1)
+    with np.errstate(divide='ignore'):
+        snr_eff = 10 * np.log10(mtf / (1 - mtf))
+
+    # Clip SNR to [-15, 15] dB range (IEC 60268-16:2020, Annex A.2.1)
+    snr_eff = np.clip(snr_eff, -15, 15)
+
+    # Transmission index (TI) for each octave band and modulation
+    # frequency (IEC 60268-16:2020, Annex A.2.1)
+    ti = (snr_eff + 15) / 30
+
+    # Modulation transmission index per octave band: average over
+    # modulation frequencies (IEC 60268-16:2020, Annex A.2.1)
+    mti = np.mean(ti, axis=-1)
+
+    # STI Octave evaluation factors (IEC 60268-16:2020, Table A.1)
+    alpha = np.array([0.085, 0.127, 0.230, 0.233, 0.309, 0.224, 0.173])
+    beta = np.array([0.085, 0.078, 0.065, 0.011, 0.047, 0.095])
+
+    # STI (IEC 60268-16:2020, Annex A.2.1)
+    sti = np.sum(alpha * mti) - np.sum(beta * np.sqrt(mti[:-1] * mti[1:]))
+
+    # limit STI to 1 (IEC 60268-16:2020, Section A.2.1)
+    return min(sti, 1.0)
