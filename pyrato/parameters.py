@@ -5,6 +5,7 @@ simulated or experimental data.
 import re
 import numpy as np
 import pyfar as pf
+from scipy.stats import linregress
 
 
 def reverberation_time_linear_regression(
@@ -88,16 +89,16 @@ def reverberation_time_linear_regression(
 
     for ch in np.ndindex(energy_decay_curve.cshape):
         edc_db = edcs_db[ch]
-        idx_upper = np.nanargmin(np.abs(upper - edc_db))
-        idx_lower = np.nanargmin(np.abs(lower - edc_db))
+        idx_upper = np.nanargmin(np.abs(upper - (edc_db-edc_db[0])))
+        idx_lower = np.nanargmin(np.abs(lower - (edc_db-edc_db[0])))
 
-        A = np.vstack(
-            [times[idx_upper:idx_lower], np.ones(idx_lower - idx_upper)]).T
-        gradient, const = np.linalg.lstsq(
-            A, edc_db[..., idx_upper:idx_lower], rcond=None)[0]
+        regression = linregress(
+            times[idx_upper:idx_lower],
+            edc_db[..., idx_upper:idx_lower],
+        )
 
-        reverberation_times[ch] = -60 / gradient
-        intercepts[ch] = 10**(const/10)
+        reverberation_times[ch] = -60 / regression.slope
+        intercepts[ch] = 10**((regression.intercept)/10)
 
     if return_intercept is True:
         return reverberation_times, intercepts
