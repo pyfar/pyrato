@@ -1003,8 +1003,7 @@ def test_mtf_winmf_reference_snr_correction():
         mtf = modulation_transfer_function(
             ir, rir_type="acoustical", level=level, snr=snr,
             ambient_noise_correction=False)
-    mtf_ref = np.loadtxt('./tests/test_data/mtf_ir_level_snr_WINMF.csv', 
-                         delimiter=';').T
+    mtf_ref = np.loadtxt('./tests/test_data/mtf_ir_level_snr_WINMF.csv', delimiter=';').T
     np.testing.assert_allclose(mtf, mtf_ref, atol=0.07)
 
 def test_mtf_winmf_reference_masking():
@@ -1028,7 +1027,10 @@ def test_mtf_winmf_reference_masking():
         mtf = modulation_transfer_function(
             ir, rir_type="acoustical", level=level, snr=snr,
             ambient_noise_correction=True)
-    mtf_ref = np.loadtxt('./tests/test_data/mtf_ir_level_snr_masking_WINMF.csv', delimiter=';').T
+    mtf_ref = np.loadtxt(
+        './tests/test_data/mtf_ir_level_snr_masking_WINMF.csv',
+        delimiter=';'
+    ).T
     np.testing.assert_allclose(mtf, mtf_ref, atol=0.07)
 
 def test_sti_electrical_vs_acoustical():
@@ -1437,4 +1439,3 @@ def test_strength_preserves_multichannel_shape(make_edc):
     assert result.shape == edc_room.cshape
     npt.assert_allclose(result[0], 0.0, atol=1e-12)
     npt.assert_allclose(result[1], 10*np.log10(2.0), atol=1e-8)
-    
