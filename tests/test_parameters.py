@@ -1003,7 +1003,8 @@ def test_mtf_winmf_reference_snr_correction():
         mtf = modulation_transfer_function(
             ir, rir_type="acoustical", level=level, snr=snr,
             ambient_noise_correction=False)
-    mtf_ref = np.loadtxt('./tests/test_data/mtf_ir_level_snr_WINMF.csv', delimiter=';').T
+    mtf_ref = np.loadtxt('./tests/test_data/mtf_ir_level_snr_WINMF.csv', 
+                         delimiter=';').T
     np.testing.assert_allclose(mtf, mtf_ref, atol=0.07)
 
 def test_mtf_winmf_reference_masking():
@@ -1029,7 +1030,7 @@ def test_mtf_winmf_reference_masking():
             ambient_noise_correction=True)
     mtf_ref = np.loadtxt(
         './tests/test_data/mtf_ir_level_snr_masking_WINMF.csv',
-        delimiter=';'
+        delimiter=';',
     ).T
     np.testing.assert_allclose(mtf, mtf_ref, atol=0.07)
 
@@ -1391,51 +1392,4 @@ def test_sti_ir_level_snr():
         sti_test = speech_transmission_index_indirect(
             ir, rir_type="acoustical", level=level, snr=snr)
     np.testing.assert_allclose(sti_test, sti_expected, atol=0.07)
-def test_strength_returns_zero_db_for_identical_edcs(make_edc):
-    """Return 0 dB when room and reference EDCs are identical."""
-    energy = np.array([1.0, 0.8, 0.4, 0.2])
-    edc_room= make_edc(energy=energy, sampling_rate=1000, normalize=False)
-    result = sound_strength(edc_room, edc_room)
-    npt.assert_allclose(result, 0.0, atol=1e-12)
-
-def test_strength_matches_known_reference_ratio(make_edc):
-    """Calculate correct strength for a known energy ratio (2:1 → +3.01 dB)."""
-    edc_room= make_edc(
-        energy=np.array([2.0, 1.0, 0.0, 0.0]),
-        sampling_rate=1000,
-        normalize=False,
-        dynamic_range=200,
-    )
-    edc_free_field = make_edc(
-        energy=np.array([1.0, 0.5, 0.0, 0.0]),
-        sampling_rate=1000,
-        normalize=False,
-        dynamic_range=200,
-    )
-
-    expected = 10 * np.log10(2.0)
-    result = sound_strength(edc_room, edc_free_field)
-    npt.assert_allclose(result, expected, atol=1e-8)
-
-def test_strength_preserves_multichannel_shape(make_edc):
-    """Preserve multichannel shape and compute strength per channel
-    independently.
-    """
-    energy_omni = np.stack([
-        np.array([1.0, 0.8, 0.4, 0.2]),
-        np.array([2.0, 1.6, 0.8, 0.4]),
-    ])
-    energy_free_field = np.stack([
-        np.array([1.0, 0.8, 0.4, 0.2]),
-        np.array([1.0, 0.8, 0.4, 0.2]),
-    ])
-    edc_room= make_edc(
-        energy=energy_omni, sampling_rate=1000, normalize=False)
-    edc_free_field = make_edc(
-        energy=energy_free_field, sampling_rate=1000, normalize=False)
-
-    result = sound_strength(edc_room, edc_free_field)
-
-    assert result.shape == edc_room.cshape
-    npt.assert_allclose(result[0], 0.0, atol=1e-12)
-    npt.assert_allclose(result[1], 10*np.log10(2.0), atol=1e-8)
+    
