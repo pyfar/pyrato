@@ -45,10 +45,10 @@ def energy_decay_curve_analytic(
         surfaces, alphas, volume, times, source=None,
         receiver=None, method='eyring', c=343.4, frequency=None,
         air_absorption=True):
-    """Calculate the energy decay curve analytically by using Eyring's or
-    Sabine's equation.
+    """Analytically calculate the energy decay curve.
 
-    Calculation according to [#]_.
+    The decay curve is calculated as a single exponential decay with a decay
+    time based on Eyring's or Sabine's equation [#]_.
 
     Parameters
     ----------
@@ -68,7 +68,7 @@ def energy_decay_curve_analytic(
         Use either Eyring's or Sabine's equation
     c : double
         Speed of sound
-    frequency : double, optional
+    frequency : float, optional
         Center frequency of the respective octave band. This is only used for
         the air absorption calculation.
     air_absorption : bool, optional
@@ -82,6 +82,7 @@ def energy_decay_curve_analytic(
 
     References
     ----------
+
     .. [#] H. Kuttruff, Room acoustics, 4th Ed. Taylor & Francis, 2009.
 
     """
@@ -122,24 +123,26 @@ def air_attenuation_coefficient(
         temperature=20,
         humidity=50,
         atmospheric_pressure=101325):
-    """Calculate the attenuation coefficient m for the absorption caused
-     by friction with the surrounding air.
+    """Calculate the attenuation coefficient for air.
+
+    The coefficient represents the absorption of sound energy caused by
+    friction with the surrounding air.
 
     Parameters
     ----------
-    frequency : double
+    frequency : float
         The frequency for which the attenuation coefficient is calculated.
         When processing in fractional octave bands use the center frequency.
-    temperature : double
+    temperature : float
         Temperature in degrees Celsius.
-    humidity : double
+    humidity : float
         Humidity in percent.
-    atmospheric_pressure : double
+    atmospheric_pressure : float
         Atmospheric pressure.
 
     Returns
     -------
-    attenuation_coefficient : double
+    attenuation_coefficient : float
         The resulting attenuation coefficient.
 
     """

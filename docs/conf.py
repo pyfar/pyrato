@@ -19,9 +19,9 @@ import pyrato  # noqa
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
+    'sphinx.ext.napoleon',
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
-    'sphinx.ext.napoleon',
     'sphinx.ext.autosummary',
     'matplotlib.sphinxext.plot_directive',
     'sphinx.ext.mathjax',
@@ -103,7 +103,7 @@ intersphinx_mapping = {
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = 'pydata_sphinx_theme'
-html_static_path = ['_static']
+# html_static_path = ['_static']
 html_css_files = ['css/custom.css']
 html_logo = 'resources/logos/pyfar_logos_fixed_size_pyrato.png'
 html_title = "pyrato"
