@@ -92,12 +92,24 @@ def schroeder_integration(room_impulse_response, is_energy=False):
     .. [#] M. R. Schroeder, "New Method of Measuring Reverberation Time,"
            The Journal of the Acoustical Society of America, vol. 37, no. 6,
            pp. 1187-1187, 1965.
+    .. [#] ISO 3382, Acoustics — Measurement of the reverberation
+        time of rooms with reference to other acoustical parameters.
 
     Note
     ----
-    This function does not apply any compensation of measurement noise and
-    integrates the full length of the input signal. It should only be used
-    if no measurement noise or artifacts are present in the data.
+    No preprocessing of the impulse response is performed. In particular,
+    this function does not:
+
+    - detect or align the direct sound (impulse response start),
+    - compensate for measurement noise,
+    - truncate the impulse response at the noise floor.
+
+    The full length of the input signal is squared and integrated.
+
+    For measurements in accordance with ISO 3382 [#]_, appropriate
+    preprocessing of the impulse response (time alignment, band-pass
+    filtering, and noise handling) must be performed before calling this
+    function.
 
     Example
     -------
