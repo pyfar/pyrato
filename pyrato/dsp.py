@@ -432,23 +432,35 @@ def _smooth_rir(
     """
     data = np.atleast_2d(data)
     n_samples = data.shape[-1]
+    n_channels = len(np.atleast_1d(smooth_block_length))
     n_samples_nan = np.count_nonzero(np.isnan(data), axis=-1)
 
-    n_samples_per_block = int(np.round(smooth_block_length * sampling_rate, 0))
+    n_samples_per_block = (np.round(
+        smooth_block_length * sampling_rate, 0)).astype(int)
     n_blocks = np.asarray(
         np.floor((n_samples-n_samples_nan)/n_samples_per_block),
         dtype=int)
 
-    n_blocks_min = int(np.min(n_blocks))
-    n_samples_actual = int(n_blocks_min*n_samples_per_block)
-    reshaped_array = np.reshape(
-        data[..., :n_samples_actual],
-        (-1, n_blocks_min, n_samples_per_block))
-    time_window_data = np.mean(reshaped_array, axis=-1)
-
+    n_blocks_min = (np.min(n_blocks)).astype(int)
+    n_samples_actual = (n_blocks_min*n_samples_per_block).astype(int)
+    time_window_data = np.empty((n_channels, n_blocks_min))
     # Use average time instances corresponding to the average energy level
     # instead of time for the first sample of the block
-    time_vector_window = \
+    if n_channels > 1:
+        for ch in range(n_channels):
+            reshaped_array = np.reshape(
+                data[ch, :n_samples_actual[ch]],
+                (n_blocks_min, n_samples_per_block[ch]))
+            time_window_data[ch, :] = np.mean(reshaped_array, axis=-1)
+            time_vector_window = (
+            (0.5+np.arange(0, n_blocks_min)).reshape(1, -1) * (
+            n_samples_per_block/sampling_rate).reshape(-1, 1))
+    else:
+        reshaped_array = np.reshape(
+            data[..., :n_samples_actual],
+            (-1, n_blocks_min, n_samples_per_block))
+        time_window_data = np.mean(reshaped_array, axis=-1)
+        time_vector_window = \
         ((0.5+np.arange(0, n_blocks_min)) * n_samples_per_block/sampling_rate)
 
     # Use the time corresponding to the sampling of the original data
