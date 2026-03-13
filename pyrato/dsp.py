@@ -107,6 +107,7 @@ def find_impulse_response_maximum(
         threshold=20,
         noise_energy='auto'):
     """Find the maximum of an impulse response as argmax(h(t)).
+
     Performs an initial SNR check according to a defined threshold level in dB.
 
     Parameters
@@ -269,7 +270,9 @@ def time_shift(signal, shift, circular_shift=True, unit='samples'):
 
 
 def center_frequencies_octaves():
-    """Return the octave center frequencies according to the IEC 61260:1:2014
+    """Return the center frequencies of fractional octave bands.
+
+    The center frequencies are calculated according to the IEC 61260:1:2014
     standard.
 
     Returns
@@ -289,8 +292,9 @@ def center_frequencies_octaves():
 
 
 def center_frequencies_third_octaves():
-    """Return the third octave center frequencies according
-    to the ICE 61260:1:2014 standard.
+    """Return the third octave center frequencies.
+
+    Frequencies are calculated according to the ICE 61260:1:2014 standard.
 
     Returns
     -------
@@ -312,6 +316,7 @@ def filter_fractional_octave_bands(
         signal, num_fractions,
         freq_range=(20.0, 20e3), order=6):
     """Apply a fractional octave filter to a signal.
+
     Filter bank implementation using second order sections of butterworth
     filters for increased numeric accuracy and stability.
 
@@ -344,13 +349,15 @@ def estimate_noise_energy(
         data,
         interval=[0.9, 1.0],
         is_energy=False):
-    """This function estimates the noise energy level of a given room impulse
-    response. The noise is assumed to be Gaussian.
+    """Estimate the noise power of additive noise in impulse responses.
+
+    The noise power is distributed from an interval in which the additive
+    noise is assumed to be larger than the impulse response data.
 
     Parameters
     ----------
-    data: np.array
-        The room impulse response with shape ``(..., n_samples)``.
+    data: pyfar.Signal
+        The impulse response.
     interval : tuple, float
         Defines the interval of the RIR to be evaluated for the estimation.
         The interval is relative to the length of the RIR ``0 = 0%, 1=100%``.
@@ -376,8 +383,9 @@ def estimate_noise_energy(
 def _estimate_noise_energy(
         energy_data,
         interval=[0.9, 1.0]):
-    """This function estimates the noise energy level of a given room impulse
-    response. The noise is assumed to be Gaussian.
+    """Estimate the noise power of additive noise in impulse responses.
+
+    Private function for use with numpy arrays.
 
     Parameters
     ----------
@@ -465,10 +473,10 @@ def preprocess_rir(
     """Preprocess the room impulse response for further processing:
         - Square data
         - Shift the RIR to the first sample of the array, compensating for the
-          delay of the time of arrival of the direct sound. The time shift is
-          performed as a non-cyclic shift, adding numpy.nan values in the end
-          of the RIR corresponding to the number of samples the data is
-          shifted by.
+            delay of the time of arrival of the direct sound. The time shift is
+            performed as a non-cyclic shift, adding numpy.nan values in the end
+            of the RIR corresponding to the number of samples the data is
+            shifted by.
         - The time shift can be done channel-independent or not.
 
     Parameters
