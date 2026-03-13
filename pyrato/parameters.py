@@ -17,15 +17,16 @@ def reverberation_time_linear_regression(
     Parameters
     ----------
     energy_decay_curve : pyfar.TimeData
-        Energy decay curve. The time needs to be the arrays last dimension.
+        Energy decay curve.
     T : 'T15', 'T20', 'T30', 'T40', 'T50', 'T60', 'EDT', 'LDT'
         Decay interval to be used for the reverberation time extrapolation. EDT
         corresponds to the early decay time extrapolated from the interval
         ``[0, -10]`` dB, LDT corresponds to the late decay time extrapolated
         from the interval ``[-25, -35]`` dB.
     return_intercept : bool
-        If True, the intercept of the linear regression is returned in addition
-        to the reverberation time. The default is False.
+        If `True`, the function returns the intercept of the linear regression,
+        which corresponds to the amplitude of the energy decay curve on a
+        linear scale. The default is False.
 
     Returns
     -------
@@ -34,6 +35,7 @@ def reverberation_time_linear_regression(
 
     References
     ----------
+
     .. [#] ISO 3382, Acoustics - Measurement of the reverberation time of
            rooms with reference to other acoustical parameters.
 
