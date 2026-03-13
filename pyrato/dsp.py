@@ -417,7 +417,7 @@ def _smooth_rir(
         The room impulse response with dimension ``(..., n_samples)``.
     sampling_rate: integer
         Defines the sampling rate of the room impulse response.
-    smooth_block_length : double
+    smooth_block_length : double or array-like of double
         Defines the block-length of the smoothing algorithm in seconds.
 
     Returns
