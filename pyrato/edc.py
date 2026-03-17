@@ -912,13 +912,17 @@ def intersection_time_lundeby(
         sampling_rate = np.round(1/np.diff(data.times).mean(), decimals=4)
     energy_data = energy_data.time
 
+    # number of frequency bands given by first channel axis
+    n_bands = data.cshape[0]
+
     if smoothing_parameter == "broadband":
         # broadband: use 30 ms windows sizes
-        freq_dependent_window_time = 0.03
+        freq_dependent_window_time = np.atleast_1d([0.03] * n_bands)
     elif isinstance(smoothing_parameter, (int, list, tuple, np.ndarray)):
-        smoothing_parameter = np.asarray(smoothing_parameter)
-        if (smoothing_parameter.ndim > 0) and (
-            smoothing_parameter.size != data.cshape[0]):
+        smoothing_parameter = np.atleast_1d(smoothing_parameter)
+        if smoothing_parameter.size == 1:
+            smoothing_parameter = np.tile(smoothing_parameter, n_bands)
+        elif smoothing_parameter.size != n_bands:
             raise ValueError(
                 "The length of smoothing_parameter must match data.cshape[0].")
         freq_dependent_window_time = (800 / smoothing_parameter + 10) / 1000
@@ -944,18 +948,13 @@ def intersection_time_lundeby(
     noise_peak_level = np.zeros(data.cshape, data.time.dtype)
 
     for ch in np.ndindex(data.cshape):
-        if len(np.atleast_1d(smoothing_parameter)) > 1:
-            output = _intersection_time_lundby(
-                time_window_data[ch], noise_estimation[ch], energy_data[ch],
-                np.squeeze(np.atleast_2d(time_vector_window)[ch, :]),
-                dB_above_noise, n_intervals_per_10dB,
-                use_dyn_range_for_regression, sampling_rate,
-                ch, failure_policy)
-        else:
-            output = _intersection_time_lundby(
+
+        output = _intersection_time_lundby(
             time_window_data[ch], noise_estimation[ch], energy_data[ch],
-            time_vector_window, dB_above_noise, n_intervals_per_10dB,
-            use_dyn_range_for_regression, sampling_rate, ch, failure_policy)
+            np.squeeze(np.atleast_2d(time_vector_window)[ch, :]),
+            dB_above_noise, n_intervals_per_10dB,
+            use_dyn_range_for_regression, sampling_rate,
+            ch, failure_policy)
 
         if output is None:
             reverberation_time[ch] = np.nan
