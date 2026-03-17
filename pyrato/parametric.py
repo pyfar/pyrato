@@ -333,53 +333,64 @@ def reverberation_time_eyring(
     return reverberation_time
 
 
-def calculate_sabine_reverberation_time(surfaces, alphas, volume):
-    """Calculate the reverberation time using Sabine's equation.
+def reverberation_time_sabine(
+        volume: float,
+        surface_area: float,
+        mean_absorption: Union[float, np.ndarray],
+        speed_of_sound: float = 343.4,
+    ) -> np.ndarray:
+    r"""
+    Calculate the reverberation time in rooms as defined by Wallace Sabine.
 
-    Calculation according to [#]_.
+    The reverberation time is calculated according to Ref. [#]_ as
+
+    .. math::
+        T_{60} = \frac{24 \cdot \ln(10)}{c}
+        \cdot \frac{V}{S\tilde{\alpha}}
+
+    where :math:`V` is the room volume, :math:`S` is the total surface area
+    of the room, :math:`\tilde{\alpha}` is the average absorption
+    coefficient of the room surfaces, and :math:`c` is the speed of sound.
 
     Parameters
     ----------
-    surfaces : ndarray, double
-        Surface areas of all surfaces in the room in square meters.
-    alphas : ndarray, double
-        Absorption coefficients corresponding to each surface
-    volume : double
-        Room volume in cubic meters
-
-    The shape of `surfaces` and `alphas` must match.
+    surface_area : float
+        Total surface area of the room in :math:`\mathrm{m}^2`.
+    mean_absorption : float, numpy.ndarray
+        Average absorption coefficient of room surfaces between 0 and 1. If
+        an array is passed, the reverberation time is calculated for each value
+        in the array.
+    volume : float
+        Room volume in :math:`\mathrm{m}^3`.
+    speed_of_sound : float
+        Speed of sound in m/s. Default is 343.4 m/s, which corresponds to the
+        speed of sound in air at 20 °C.
 
     Returns
     -------
-    reverberation_time_sabine :  double
-        The value of calculated reverberation time in seconds
+    numpy.ndarray
+        Reverberation time in seconds.
 
     References
     ----------
     .. [#] H. Kuttruff, Room acoustics, 4th Ed. Taylor & Francis, 2009.
 
     """
-    surfaces = np.asarray(surfaces)
-    alphas = np.asarray(alphas)
 
-    if alphas.shape != surfaces.shape:
-       raise ValueError("Size of alphas and surfaces " \
-       "ndarray sizes must match.")
+    if speed_of_sound <= 0:
+        raise ValueError("Speed of sound should be larger than 0")
+    if volume <= 0:
+        raise ValueError("Volume should be larger than 0")
+    if surface_area <= 0:
+        raise ValueError("Surface area should be larger than 0")
 
-    if np.any(alphas) < 0 or np.any(alphas > 1):
-       raise ValueError("Absorption coefficient values must "\
-                        f"be in range [0, 1]. Got {alphas}.")
-    if np.any(surfaces < 0):
-       raise ValueError("Surface areas cannot "\
-                        f"be negative. Got {surfaces}.")
-    if volume < 0:
-       raise ValueError(f"Volume cannot be negative. Got {volume}.")
+    mean_absorption = np.asarray(mean_absorption)
+    if np.any(mean_absorption < 0) or np.any(mean_absorption > 1):
+        raise ValueError("mean_absorption should be between 0 and 1")
 
-    absorption_area = np.sum(surfaces*alphas)
+    factor = 24 * np.log(10) / speed_of_sound
 
-    if absorption_area == 0:
-       raise ZeroDivisionError("Absorption area should be positive.")
+    with np.errstate(divide='ignore'):
+        reverberation_time = factor * volume / (surface_area * mean_absorption)
 
-    reverberation_time_sabine = 0.161*volume/(absorption_area)
-
-    return reverberation_time_sabine
+    return reverberation_time
