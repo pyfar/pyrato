@@ -28,7 +28,7 @@ def energy_decay_curve(
     times : numpy.ndarray[float]
         The times at which the energy decay curve is evaluated.
     reverberation_time : float | numpy.ndarray[float]
-        The reverberation time in seconds. The an array is passed, a energy
+        The reverberation time in seconds. If an array is passed, a energy
         decay curve is calculated for each reverberation time.
     energy : float | numpy.ndarray[float], optional
         The initial energy of the sound field, by default 1. If
