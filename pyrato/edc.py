@@ -524,12 +524,12 @@ def energy_decay_curve_chu(
 
     Chu [#]_ proposed to subtract the average power of the additive measurement
     noise from the energy impulse response prior to applying the Schroeder
-    integral. The noise power is estimated from the last 10 percent of the
+    integral. The noise power $N_{est}$ is estimated from the last 10 percent of the
     room impulse response if not given by the user.
 
     .. math::
 
-        E(t) = \int_t^{t_{IR}} (h^2(\tau) - N_{est}^2) d\tau
+        E(t) = \int_t^{t_{IR}} (h^2(\tau) - N_{est}) d\tau
 
     Parameters
     ----------
@@ -538,7 +538,7 @@ def energy_decay_curve_chu(
     noise_level: ndarray, float or string
         If set to 'auto', the noise power is calculated based on the last 10
         percent of the RIR. Otherwise it needs to be given for each individual
-        channel of the input.
+        channel of the input. The default is 'auto'.
     is_energy: boolean
         If `True` the input data is proportional to energy density; if `False`
         the input data is proportional to sound pressure.
@@ -662,7 +662,7 @@ def energy_decay_curve_chu_lundeby(
         plot=False):
     r"""Combination of Chu's and Lundeby's methods.
 
-    The average power of the additive measurement noise is subtracted from the
+    The average power $N_{set}$ of the additive measurement noise is subtracted from the
     energy impulse response prior to applying the Schroeder integral. The
     Schroeder integration is truncated at the intersection with the noise
     floor and the truncation error compensated based on the assumption of a
@@ -671,7 +671,7 @@ def energy_decay_curve_chu_lundeby(
 
     .. math::
 
-        E_(t) = \int_t^{t_i} (h^2(\tau) - N_{est}^2) d\tau + C
+        E_(t) = \int_t^{t_i} (h^2(\tau) - N_{est}) d\tau + C
 
         C = p_{i}^2 \cdot T_\mathrm{late} \cdot \frac{1}{6 \cdot ln(10)}
 
