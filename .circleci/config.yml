@@ -224,7 +224,7 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.13"
+                - "3.14"
           requires:
             - build_and_test
           filters:
@@ -238,7 +238,7 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.13"
+                - "3.14"
           requires:
             - build_and_test
           filters:
@@ -252,7 +252,7 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.13"
+                - "3.14"
           requires:
             - build_and_test
           filters:
@@ -266,7 +266,7 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.13"
+                - "3.14"
           requires:
             - build_and_test
             - ruff
