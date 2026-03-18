@@ -7,10 +7,6 @@ __email__ = 'info@pyfar.org'
 __version__ = '0.4.1'
 
 
-from .parametric import (
-    air_attenuation_coefficient,
-)
-
 from . import edc
 from . import parameters
 from . import dsp
@@ -23,5 +19,4 @@ __all__ = [
     'dsp',
     'analytic',
     'parametric',
-    'air_attenuation_coefficient',
 ]
