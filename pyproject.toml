@@ -4,7 +4,7 @@ version = "0.4.1"
 description = "Collection of functions commonly used in room acoustics."
 readme = "README.md"
 license = {file = "LICENSE"}
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 authors = [
     { name = "The pyfar developers", email = "info@pyfar.org" },
 ]
@@ -18,15 +18,13 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Natural Language :: English",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    
+    "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    'pyfar>=0.5.0',
+    'pyfar>=0.8.0',
     'numpy>=1.14.0',
     'scipy>=1.5.0',
     'matplotlib',

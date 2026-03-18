@@ -96,7 +96,7 @@ jobs:
       version: <<parameters.version>>
     steps:
       - checkout
-      
+
       - run:
           name: install dependencies
           command: pip install ".[tests]"
@@ -163,12 +163,11 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.9"
-                - "3.10"
                 - "3.11"
                 - "3.12"
                 - "3.13"
-                
+                - "3.14"
+
       - ruff:
           matrix:
             parameters:
@@ -209,12 +208,11 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.9"
-                - "3.10"
                 - "3.11"
                 - "3.12"
                 - "3.13"
-                
+                - "3.14"
+
           filters:
             branches:
               ignore: /.*/
