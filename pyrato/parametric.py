@@ -135,11 +135,36 @@ def energy_decay_curve(
     .. [#] H. Kuttruff, Room acoustics, 4th Ed. Taylor & Francis, 2009.
 
     """
+    reverberation_time = np.asarray(reverberation_time)
+    energy = np.asarray(energy)
+    times = np.asarray(times)
 
-    damping_term = 3*np.log(10) / reverberation_time
-    edc = energy * np.exp(-2*damping_term*times)
+    if np.any(reverberation_time < 0):
+        raise ValueError("Reverberation time must be greater than zero.")
 
-    return pf.TimeData(edc, times)
+    if np.any(energy < 0):
+        raise ValueError("Energy must be greater than or equal to zero.")
+
+    if reverberation_time.shape != energy.shape:
+        shape = np.broadcast_shapes(energy.shape, reverberation_time.shape)
+        try:
+            energy = np.broadcast_to(energy, shape)
+        except ValueError as error:
+            raise ValueError(
+                "Reverberation time and energy must have the same shape.",
+            ) from error
+
+    matching_shape = reverberation_time.shape
+    reverberation_time = reverberation_time.flatten()
+    energy = energy.flatten()
+
+    reverberation_time = np.atleast_2d(reverberation_time)
+    energy = np.atleast_2d(energy)
+
+    damping_term = (3*np.log(10) / reverberation_time).T
+    edc = energy.T * np.exp(-2*damping_term*times)
+
+    return pf.TimeData(np.reshape(edc, (*matching_shape, times.size)), times)
 
 
 def air_attenuation_coefficient(

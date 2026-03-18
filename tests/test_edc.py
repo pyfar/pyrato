@@ -126,6 +126,9 @@ def test_multidim_edc(edc_function):
 
 
 def test_edc_function():
+    """Test for the parametric energy decay curve based on previous
+    implementation which also included RT prediction using Sabine's equation.
+    """
     times = np.linspace(0, 0.25, 50)
 
     c = 343.4
@@ -156,3 +159,28 @@ def test_edc_function():
         6.37107964e-04, 5.46555336e-04,
         ])
     npt.assert_almost_equal(edc.time, np.atleast_2d(truth))
+
+
+def test_parametric_edc():
+    """Test returned edc by the parametric edc function and shape broadcasting.
+    """
+    times = np.linspace(0, 0.25, 50)
+    T_60 = np.array([2, 1])
+
+    edc = ra.parametric.energy_decay_curve(times, T_60)
+    assert edc.cshape == (2,)
+
+    e_0 = np.ones_like(T_60)
+    edc = ra.parametric.energy_decay_curve(times, T_60, energy=e_0)
+
+    damping_term = 6*np.log(10) / T_60
+    truth = np.atleast_2d(e_0).T * np.exp(-np.atleast_2d(damping_term).T*times)
+
+    npt.assert_almost_equal(edc.time, truth)
+    assert edc.cshape == (2,)
+
+    edc = ra.parametric.energy_decay_curve(
+        times, np.ones((3, 2)), energy=np.ones((3, 2)))
+
+    assert edc.cshape == (3, 2)
+
