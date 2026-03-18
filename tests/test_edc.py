@@ -184,3 +184,12 @@ def test_parametric_edc():
 
     assert edc.cshape == (3, 2)
 
+
+def test_parametric_edc_wrong_shapes():
+    """Test error handling for wrong shapes."""
+    times = np.linspace(0, 0.25, 50)
+    T_60 = np.array([2, 1])
+    energy = np.array([1, 1, 1])
+
+    with pytest.raises(ValueError, match="same shape."):
+        ra.parametric.energy_decay_curve(times, T_60, energy=energy)

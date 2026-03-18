@@ -13,7 +13,7 @@ def energy_decay_curve(
         reverberation_time : float | np.ndarray,
         energy : float | np.ndarray = 1,
     ) -> pf.TimeData:
-    r"""Calculate the energy decay curve from the reverberation time and energy.
+    r"""Calculate the energy decay curve for the reverberation time and energy.
 
     The energy decay curve is calculated as
 
@@ -28,9 +28,13 @@ def energy_decay_curve(
     times : numpy.ndarray[float]
         The times at which the energy decay curve is evaluated.
     reverberation_time : float | numpy.ndarray[float]
-        The reverberation time in seconds.
+        The reverberation time in seconds. The an array is passed, a energy
+        decay curve is calculated for each reverberation time.
     energy : float | numpy.ndarray[float], optional
-        The initial energy of the sound field, by default 1.
+        The initial energy of the sound field, by default 1. If
+        ``reverberation_time`` is an array, the shape of ``energy`` is required
+        to match the shape or be broadcastable to the shape of
+        ``reverberation_time``.
 
     Returns
     -------
@@ -49,7 +53,7 @@ def energy_decay_curve(
         >>> import pyfar as pf
         >>>
         >>> times = np.linspace(0, 3, 50)
-        >>> T_60 = 2
+        >>> T_60 = [2, 1]
         >>> edc = pyrato.parametric.energy_decay_curve(times, T_60)
         >>> pf.plot.time(edc, log_prefix=10, dB=True)
 
@@ -70,12 +74,12 @@ def energy_decay_curve(
         raise ValueError("Energy must be greater than or equal to zero.")
 
     if reverberation_time.shape != energy.shape:
-        shape = np.broadcast_shapes(energy.shape, reverberation_time.shape)
         try:
-            energy = np.broadcast_to(energy, shape)
+            energy = np.broadcast_to(energy, reverberation_time.shape)
         except ValueError as error:
             raise ValueError(
-                "Reverberation time and energy must have the same shape.",
+                "Reverberation time and energy must be broadcastable to the "
+                "same shape.",
             ) from error
 
     matching_shape = reverberation_time.shape
