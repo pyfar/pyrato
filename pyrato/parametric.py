@@ -106,11 +106,11 @@ def energy_decay_curve(
     reverberation_time : float | numpy.ndarray[float]
         The reverberation time in seconds.
     energy : float | numpy.ndarray[float], optional
-        The initial energy of the sound field, by default 1
+        The initial energy of the sound field, by default 1.
 
     Returns
     -------
-    pyfar.TimeData
+    energy_decay_curve : pyfar.TimeData
         The energy decay curve.
 
     Example
