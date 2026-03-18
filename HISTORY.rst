@@ -8,8 +8,9 @@ History
 * Bugfix: Reverberation time estimation of non normalized EDCs (PR #138)
 * Bugfix: Properly support EDC calculation for multi-dimensional RIRs (PR #113)
 * Bugfix: Properly support multi-dimensional RIRs in the Schroeder integration (PR #62)
+* Dependencies: Limit to pyfar < 0.8.0 (PR #161)
 * CI: Add deprecation tests
-*
+
 
 0.4.1 (2024-06-05)
 ------------------
