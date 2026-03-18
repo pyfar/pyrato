@@ -187,14 +187,16 @@ def preprocess_rir(
         is_energy=False,
         shift=False,
         channel_independent=False):
-    """Preprocess the room impulse response for further processing:
-        - Square data
-        - Shift the RIR to the first sample of the array, compensating for the
-        delay of the time of arrival of the direct sound. The time shift is
-        performed as a non-cyclic shift, adding numpy.nan values in the end
-        of the RIR corresponding to the number of samples the data is
-        shifted by.
-        - The time shift can be done channel-independent or not.
+    """Preprocess the room impulse response for further processing.
+
+    - Square data
+    - Shift the RIR to the first sample of the array, compensating for the
+      delay of the time of arrival of the direct sound. The time shift is
+      performed as a non-cyclic shift, adding numpy.nan values in the end
+      of the RIR corresponding to the number of samples the data is
+      shifted by.
+    - The time shift can be done channel-independent or not.
+
 
     Parameters
     ----------
