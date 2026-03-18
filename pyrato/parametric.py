@@ -85,9 +85,9 @@ def energy_decay_curve_analytic(
 
 
 def energy_decay_curve(
-        times : np.ndarray[float],
-        reverberation_time : float | np.ndarray[float],
-        energy : float | np.ndarray[float] = 1,
+        times : np.ndarray,
+        reverberation_time : float | np.ndarray,
+        energy : float | np.ndarray = 1,
     ) -> pf.TimeData:
     r"""Calculate the energy decay curve from the reverberation time and energy.
 
