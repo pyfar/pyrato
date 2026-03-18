@@ -2,6 +2,16 @@
 History
 =======
 
+0.4.2 (2026-03-18)
+------------------
+* Bugfix: Channel independent normalization parametrization was reversed (PR #117)
+* Bugfix: Reverberation time estimation of non normalized EDCs (PR #138)
+* Bugfix: Properly support EDC calculation for multi-dimensional RIRs (PR #113)
+* Bugfix: Properly support multi-dimensional RIRs in the Schroeder integration (PR #62)
+* Dependencies: Limit to pyfar < 0.8.0 (PR #161)
+* CI: Add deprecation tests
+
+
 0.4.1 (2024-06-05)
 ------------------
 * fix: include analytic module in the package (PR #27)
