@@ -71,19 +71,21 @@ def estimate_noise_energy(
 
     Parameters
     ----------
-    data: pyfar.Signal
+    data : pyfar.Signal
         The impulse response.
     interval : tuple, float
         Defines the interval of the RIR to be evaluated for the estimation.
         The interval is relative to the length of the RIR ``0 = 0%, 1=100%``.
         By default ``(0.9, 1.0)``.
-    is_energy: bool
+    is_energy : bool
         Defines if the data is already squared.
 
     Returns
     -------
-    noise_energy : float
-        The energy of the background noise.
+    noise_energy : numpy.ndarray[float]
+
+        The energy of the background noise,shaped according to the channel
+        shape of the input Signal.
     """
 
     energy_data = preprocess_rir(
@@ -188,10 +190,10 @@ def preprocess_rir(
     """Preprocess the room impulse response for further processing:
         - Square data
         - Shift the RIR to the first sample of the array, compensating for the
-            delay of the time of arrival of the direct sound. The time shift is
-            performed as a non-cyclic shift, adding numpy.nan values in the end
-            of the RIR corresponding to the number of samples the data is
-            shifted by.
+        delay of the time of arrival of the direct sound. The time shift is
+        performed as a non-cyclic shift, adding numpy.nan values in the end
+        of the RIR corresponding to the number of samples the data is
+        shifted by.
         - The time shift can be done channel-independent or not.
 
     Parameters

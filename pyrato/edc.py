@@ -107,8 +107,10 @@ def schroeder_integration(room_impulse_response, is_energy=False):
     The full length of the input signal is squared and integrated.
 
     For measurements in accordance with ISO 3382 [#]_, appropriate
-    preprocessing of the impulse response (time alignment, band-pass
-    filtering, and noise handling) must be performed before calling this
+    preprocessing (:func:`pyrato.edc.energy_decay_curve_truncation`) of the
+    impulse response
+    (time alignment, band-pass filtering, and noise handling) must be
+    performed before calling this
     function.
 
     Example
@@ -409,8 +411,8 @@ def energy_decay_curve_lundeby(
     References
     ----------
     .. [#] A. Lundeby, T. E. Vigran, H. Bietz, and M. Vorländer,
-            “Uncertainties of Measurements in Room Acoustics,”
-            Acta Acust. United Ac., vol. 81, no. 4, pp. 344-355, Jul. 1995.
+        “Uncertainties of Measurements in Room Acoustics,”
+        Acta Acust. United Ac., vol. 81, no. 4, pp. 344-355, Jul. 1995.
 
     Examples
     --------
@@ -524,8 +526,8 @@ def energy_decay_curve_chu(
 
     Chu [#]_ proposed to subtract the average power of the additive measurement
     noise from the energy impulse response prior to applying the Schroeder
-    integral. The noise power $N_{est}$ is estimated from the last 10 percent of the
-    room impulse response if not given by the user.
+    integral. The noise power $N_{est}$ is estimated from the last 10 percent
+    of the room impulse response if not given by the user.
 
     .. math::
 
@@ -662,9 +664,9 @@ def energy_decay_curve_chu_lundeby(
         plot=False):
     r"""Combination of Chu's and Lundeby's methods.
 
-    The average power $N_{set}$ of the additive measurement noise is subtracted from the
-    energy impulse response prior to applying the Schroeder integral. The
-    Schroeder integration is truncated at the intersection with the noise
+    The average power $N_{set}$ of the additive measurement noise is subtracted
+    from the energy impulse response prior to applying the Schroeder integral.
+    The Schroeder integration is truncated at the intersection with the noise
     floor and the truncation error compensated based on the assumption of a
     single exponential late decay process.
     For a more detailed description of the method, see [#]_.
