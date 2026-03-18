@@ -5,82 +5,95 @@ such as Sabine's theory of sound in rooms.
 """
 import numpy as np
 from typing import Union
+import pyfar as pf
 
 
-def energy_decay_curve_analytic(
-        surfaces, alphas, volume, times, source=None,
-        receiver=None, method='eyring', c=343.4, frequency=None,
-        air_absorption=True):
-    """Calculate the energy decay curve analytically by using Eyring's or
-    Sabine's equation.
+def energy_decay_curve(
+        times : np.ndarray,
+        reverberation_time : float | np.ndarray,
+        energy : float | np.ndarray = 1,
+    ) -> pf.TimeData:
+    r"""Calculate the energy decay curve for the reverberation time and energy.
 
-    Calculation according to [#]_.
+    The energy decay curve is calculated as
+
+    .. math::
+        E(t) = E_0 e^{-\frac{6 \ln(10)}{T_{60}} t}
+
+    where :math:`E_0` is the initial energy, :math:`T_{60}` the reverberation
+    time, and :math:`t` the time [#]_.
 
     Parameters
     ----------
-    surfaces : ndarray, double
-        Surface areas of all surfaces in the room
-    alphas : ndarray, double
-        Absorption coefficients corresponding to each surface
-    volume : double
-        Room volume
-    times : ndarray, double
-        Time vector for which the decay curve is calculated
-    source : Coordinates
-        Coordinate object with the source coordinates
-    receiver : Coordinates
-        Coordinate object with the receiver coordinates
-    method : 'eyring', 'sabine'
-        Use either Eyring's or Sabine's equation
-    c : double
-        Speed of sound
-    frequency : double, optional
-        Center frequency of the respective octave band. This is only used for
-        the air absorption calculation.
-    air_absorption : bool, optional
-        If True, the air absorption is included in the calculation.
-        Default is True.
+    times : numpy.ndarray[float]
+        The times at which the energy decay curve is evaluated.
+    reverberation_time : float | numpy.ndarray[float]
+        The reverberation time in seconds. If an array is passed, an energy
+        decay curve is calculated for each reverberation time.
+    energy : float | numpy.ndarray[float], optional
+        The initial energy of the sound field, by default 1. If
+        `reverberation_time` is an array, the shape of `energy` is required
+        to match the shape or be broadcastable to the shape of
+        `reverberation_time`.
 
     Returns
     -------
-    energy_decay_curve : ndarray, double
-        The energy decay curve
+    energy_decay_curve : pyfar.TimeData
+        The energy decay curve with a ``cshape`` equal to the shape of
+        the passed ``reverberation_time``.
+
+    Example
+    -------
+    Calculate and plot an energy decay curve with a reverberation time of
+    2 seconds.
+
+    .. plot::
+
+        >>> import numpy as np
+        >>> import pyrato
+        >>> import pyfar as pf
+        >>>
+        >>> times = np.linspace(0, 3, 50)
+        >>> T_60 = [2, 1]
+        >>> edc = pyrato.parametric.energy_decay_curve(times, T_60)
+        >>> pf.plot.time(edc, log_prefix=10, dB=True)
+
 
     References
     ----------
     .. [#] H. Kuttruff, Room acoustics, 4th Ed. Taylor & Francis, 2009.
 
     """
+    reverberation_time = np.asarray(reverberation_time)
+    energy = np.asarray(energy)
+    times = np.asarray(times)
 
-    alphas = np.asarray(alphas)
-    surfaces = np.asarray(surfaces)
-    surface_room = np.sum(surfaces)
-    alpha_mean = np.sum(surfaces*alphas) / surface_room
+    if np.any(reverberation_time <= 0):
+        raise ValueError("Reverberation time must be greater than zero.")
 
-    if air_absorption:
-        m = air_attenuation_coefficient(frequency)
-    else:
-        m = 0
+    if np.any(energy < 0):
+        raise ValueError("Energy must be greater than or equal to zero.")
 
-    if all([source, receiver]):
-        dist_source_receiver = np.linalg.norm(
-            source.cartesian - receiver.cartesian)
-        delay_direct = dist_source_receiver / c
-    else:
-        delay_direct = 0
+    if reverberation_time.shape != energy.shape:
+        try:
+            energy = np.broadcast_to(energy, reverberation_time.shape)
+        except ValueError as error:
+            raise ValueError(
+                "Reverberation time and energy must be broadcastable to the "
+                "same shape.",
+            ) from error
 
-    if method == 'eyring':
-        energy_decay_curve = np.exp(
-            -c*(times - delay_direct) *
-            ((-surface_room * np.log(1 - alpha_mean) / 4 / volume) + m))
-    elif method == 'sabine':
-        energy_decay_curve = np.exp(
-            -c*(times - delay_direct) *
-            ((surface_room * alpha_mean / 4 / volume) + m))
-    else:
-        raise ValueError("The method has to be either 'eyring' or 'sabine'.")
+    matching_shape = reverberation_time.shape
+    reverberation_time = reverberation_time.flatten()
+    energy = energy.flatten()
 
-    return energy_decay_curve
+    reverberation_time = np.atleast_2d(reverberation_time)
+    energy = np.atleast_2d(energy)
+
+    damping_term = (3*np.log(10) / reverberation_time).T
+    edc = energy.T * np.exp(-2*damping_term*times)
+
+    return pf.TimeData(np.reshape(edc, (*matching_shape, times.size)), times)
 
 
 def air_attenuation_coefficient(
