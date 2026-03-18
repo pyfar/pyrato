@@ -254,7 +254,7 @@ def early_lateral_energy_fraction(energy_decay_curve_omni,
     Returns
     -------
     Early Lateral Energy Fraction: numpy.ndarray
-        Early lateral energy fraction (:math:`J_\mathrm{LF}`) in decibels,
+        Early lateral energy fraction (:math:`J_\mathrm{LF}`),
         shaped according to the channel shape of the input EDCs.
 
     References
