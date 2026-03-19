@@ -61,6 +61,7 @@ def energy_decay_curve(
 
     References
     ----------
+
     .. [#] H. Kuttruff, Room acoustics, 4th Ed. Taylor & Francis, 2009.
 
     """
