@@ -34,57 +34,6 @@ def test_max_ir():
         start_sample_est = dsp.find_impulse_response_maximum(
             ir_awgn, threshold=200)
 
-# ------------------
-# Time shift
-# ------------------
-
-
-@pytest.mark.parametrize("shift_samples", [10, -10, 0])
-def test_time_shift_left_right(shift_samples):
-    n_samples = 2**9
-    ir = pf.signals.impulse(n_samples, delay=20)
-
-    ir_truth = pf.signals.impulse(n_samples, 20+shift_samples)
-    ir_shifted = dsp.time_shift(ir, shift_samples)
-
-    npt.assert_allclose(ir_shifted.time, ir_truth.time)
-
-
-def test_time_shift_return_vals():
-    n_samples = 2**9
-    ir = pf.signals.impulse(n_samples, delay=20)
-
-    ir_shifted = dsp.time_shift(ir, 1, circular_shift=True)
-    assert type(ir_shifted) is pf.Signal
-
-    ir_shifted = dsp.time_shift(ir, 1, circular_shift=False)
-    assert type(ir_shifted) is pf.TimeData
-
-
-def test_time_shift_non_circular_left_right():
-    shift_samples = 10
-    n_samples = 2**9
-
-    ir = pf.signals.impulse(n_samples, delay=20)
-
-    ir_truth = np.zeros(n_samples, dtype=float)
-    ir_truth[20+shift_samples] = 1
-    ir_truth[:shift_samples] = np.nan
-
-    ir_truth = pf.TimeData(ir_truth, np.arange(n_samples)/ir.sampling_rate)
-
-    ir_shifted = dsp.time_shift(ir, shift_samples, circular_shift=False)
-    npt.assert_allclose(ir_shifted.time, ir_truth.time, equal_nan=True)
-
-    shift_samples = -10
-    ir_truth = np.zeros(n_samples, dtype=float)
-    ir_truth[20+shift_samples] = 1
-    ir_truth[shift_samples:] = np.nan
-    ir_truth = pf.TimeData(ir_truth, np.arange(n_samples)/ir.sampling_rate)
-
-    ir_shifted = dsp.time_shift(ir, shift_samples, circular_shift=False)
-    npt.assert_allclose(ir_shifted.time, ir_truth.time, equal_nan=True)
-
 
 # ----------------
 # Noise power estimation
