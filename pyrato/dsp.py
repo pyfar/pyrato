@@ -88,7 +88,7 @@ def estimate_noise_energy(
         shape of the input Signal.
     """
 
-    energy_data = preprocess_rir(
+    energy_data = _preprocess_rir(
         data,
         is_energy=is_energy,
         shift=False,
@@ -182,7 +182,7 @@ def _smooth_rir(
     return time_window_data, time_vector_window, time_vector
 
 
-def preprocess_rir(
+def _preprocess_rir(
         data,
         is_energy=False,
         shift=False,

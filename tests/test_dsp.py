@@ -105,7 +105,7 @@ def test_preprocessing_1D():
         os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
         delimiter=',')
     rir = pf.Signal(rir, 1)
-    actual = dsp.preprocess_rir(
+    actual = dsp._preprocess_rir(
         rir,
         is_energy=False,
         shift=False,
@@ -123,7 +123,7 @@ def test_preprocessing_2D():
         delimiter=',')
     rir = pf.Signal(rir, 1)
 
-    actual = dsp.preprocess_rir(
+    actual = dsp._preprocess_rir(
         rir,
         is_energy=False,
         shift=False,
@@ -141,7 +141,7 @@ def test_preprocessing_time_shift_1D():
         delimiter=',')
     rir = pf.Signal(rir, 1)
 
-    actual = dsp.preprocess_rir(
+    actual = dsp._preprocess_rir(
         rir,
         is_energy=False,
         shift=True,
@@ -164,7 +164,7 @@ def test_preprocessing_time_shift_2D():
         os.path.join(test_data_path, 'preprocessing_time_shift_2D.csv'),
         delimiter=','))
 
-    actual = dsp.preprocess_rir(
+    actual = dsp._preprocess_rir(
         rir,
         is_energy=False,
         shift=True,
@@ -184,7 +184,7 @@ def test_preprocessing_time_shift_channel_independent_1D():
             'preprocessing_time_shift_channel_independent_1D.csv'),
         delimiter=','))
 
-    actual = dsp.preprocess_rir(
+    actual = dsp._preprocess_rir(
         rir,
         is_energy=False,
         shift=True,
@@ -203,7 +203,7 @@ def test_preprocessing_time_shift_channel_independent_2D():
             'preprocessing_time_shift_channel_independent_2D.csv'),
         delimiter=','))
 
-    actual = dsp.preprocess_rir(
+    actual = dsp._preprocess_rir(
         rir,
         is_energy=False,
         shift=True,
