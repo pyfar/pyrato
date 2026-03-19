@@ -13,7 +13,6 @@ History
 
 Breaking changes
 ^^^^^^^^^^^^^^^^
-
 - ``pyrato`` has been structured into the modules
 
   - ``pyrato.analytic`` containing analytic functions for room acoustics.
@@ -32,12 +31,9 @@ Breaking changes
   - ``pyrato.parametric.calculate_speed_of_sound`` was removed in favor of multiple functions in ``pyfar.constants`` that can compute the speed of sound.
 
 - ``pyrato.dsp.truncate_energy_decay_curve`` was renamed to ``pyrato.dsp.threshold_energy_decay_curve```.
-- ``pyrato.parametric.reverberation_time_eyring`` was refactored for parameters to be more verbose and consistent with other functions in pyrato.
-- ``pyrato.parametric.calculate_sabine_reverberation_time`` was renamed to ``pyrato.parametric.reverberation_time_sabine`` and refactored for parameters to be more verbose and consistent with other functions in pyrato.
 
 Added:
 ^^^^^^
-
 - Room acoustic parameters according to ISO 3382 to ``pyrator.parameters``
 
   - ``clarity`` to compute the clarity for arbitrary time limits including the standardized parameters C50 and C80.
@@ -47,12 +43,18 @@ Added:
   - ``speech_transmission_index_indirect`` and ``modulation_transfer_function`` to compute the STI based on impulse responses.
 
 - ``pyrato.edc.intersection_time_lundby`` can now process impulse response channels independently and by default raises a warning, if the computation fails for a specific channel. Before this update, it raised an error, even if the computation only failed for certain channels.
+- ``pyrato.parametric.reverberation_time_eyring`` and ``pyrato.parametric.reverberation_time_sabine`` to estimate the reverberation.
+- ``pyrato.parametric.critical_distance`` to compute the critical distance based on room volume and reverberation time.
+- ``pyrato.parametric.mean_free_path`` to estimate the mean freq path length from a rooms volume and surface area.
 
 Changed:
 ^^^^^^^^
-
 - ``pyrato.parametric.energy_decay_curve_analytic`` was refactored to take the desired reverberation time as input parameter.
 - Updated tests and package versions used for testing, as well as test fixtures.
+
+Removed
+^^^^^^^
+- Support for Python 3.9 and 3.10 was removed.
 
 Documentation
 ^^^^^^^^^^^^^
