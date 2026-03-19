@@ -8,7 +8,7 @@ History
 .. warning::
 
     ``pyrato`` version 1.0.0 introduces several breaking changes which are not backwards compatible with prior versions.
-    This includes changes in the module structure, and deprecations of functions that are now part of the ``pyfar`` v0.8 package.
+    This includes changes in the module structure, and deprecations of functions that are now part of the ``pyfar`` v0.8.0 package.
 
 
 Breaking changes
@@ -16,11 +16,10 @@ Breaking changes
 - ``pyrato`` has been structured into the modules
 
   - ``pyrato.analytic`` containing analytic functions for room acoustics.
-  - ``pyrato.dsp`` containing functions for low-level room impulse response processing.
+  - ``pyrato.dsp`` containing functions for low-level room impulse response pre-processing.
   - ``pyrato.edc`` containing functions for computing Energy Decay Curves (EDC).
-  - ``pyrato.parameters`` containing functions to compute room acoustical parameters from simple geometric considerations.
-  - ``pyrato.parametric`` containing functions to compute room acoustical parameters from room impulse responses.
-
+  - ``pyrato.parameters`` containing functions to compute room acoustical parameters from room impulse responses.
+  - ``pyrato.parametric`` containing functions to compute room acoustical parameters from simple geometric considerations.
 - The following functions were removed and calling functions now use equivalent functions from pyfar
 
   - ``pyrato.dsp.find_impulse_response_start`` was removed in favor of ``pyfar.dsp.find_impulse_response_start``.
@@ -37,12 +36,12 @@ Added:
 - Room acoustic parameters according to ISO 3382 to ``pyrator.parameters``
 
   - ``clarity`` to compute the clarity for arbitrary time limits including the standardized parameters C50 and C80.
-  - ``early_lateral_energy_fraction`` to compute the ear lateral energy fraction J_LF.
+  - ``early_lateral_energy_fraction`` to compute the early lateral energy fraction J_LF.
   - ``late_lateral_sound_level`` to compute the late lateral sound level L_J
-  - ``sound_strength`` to compute the sound sound_strength G.
+  - ``sound_strength`` to compute the sound strength G.
   - ``speech_transmission_index_indirect`` and ``modulation_transfer_function`` to compute the STI based on impulse responses.
 
-- ``pyrato.edc.intersection_time_lundby`` can now process impulse response channels independently and by default raises a warning, if the computation fails for a specific channel. Before this update, it raised an error, even if the computation only failed for certain channels.
+- ``pyrato.edc.intersection_time_lundby`` Now by default raises a warning, if the computation fails for a specific channel. Before this update, it raised an error, even if the computation only failed for certain channels.
 - ``pyrato.parametric.reverberation_time_eyring`` and ``pyrato.parametric.reverberation_time_sabine`` to estimate the reverberation.
 - ``pyrato.parametric.critical_distance`` to compute the critical distance based on room volume and reverberation time.
 - ``pyrato.parametric.mean_free_path`` to estimate the mean freq path length from a rooms volume and surface area.
