@@ -1094,7 +1094,7 @@ def _intersection_time_lundby(
     noise_estimation : float
         The energy of the background noise.
     energy_data : np.ndarray
-        Data returned by ``pyrato.dsp.preprocess_rir``.
+        Data returned by ``pyrato.dsp._preprocess_rir``.
     time_vector_window : ndarray
         The time vector of the smoothed data obtained from
         ``pyrato.dsp._smooth_rir``.
