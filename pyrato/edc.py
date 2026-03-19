@@ -292,7 +292,7 @@ def energy_decay_curve_truncation(
     shape = data.time.shape
     data = data.flatten()
 
-    energy_data = dsp.preprocess_rir(
+    energy_data = dsp._preprocess_rir(
         data,
         is_energy=is_energy,
         shift=time_shift,
@@ -451,7 +451,7 @@ def energy_decay_curve_lundeby(
     shape = data.time.shape
     data = data.flatten()
 
-    energy_data = dsp.preprocess_rir(
+    energy_data = dsp._preprocess_rir(
         data,
         is_energy=is_energy,
         shift=time_shift,
@@ -607,7 +607,7 @@ def energy_decay_curve_chu(
     shape = data.cshape
     data = data.flatten()
 
-    energy_data = dsp.preprocess_rir(
+    energy_data = dsp._preprocess_rir(
         data,
         is_energy=is_energy,
         shift=time_shift,
@@ -756,7 +756,7 @@ def energy_decay_curve_chu_lundeby(
     shape = data.time.shape
     data = data.flatten()
 
-    energy_data = dsp.preprocess_rir(
+    energy_data = dsp._preprocess_rir(
         data,
         is_energy=is_energy,
         shift=time_shift,
@@ -930,7 +930,7 @@ def intersection_time_lundeby(
     # Dynamic range 10 ... 20 dB
     use_dyn_range_for_regression = 20
 
-    energy_data = dsp.preprocess_rir(
+    energy_data = dsp._preprocess_rir(
         data,
         is_energy=is_energy,
         shift=time_shift,

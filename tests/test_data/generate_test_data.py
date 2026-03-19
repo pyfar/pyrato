@@ -76,19 +76,19 @@ noise_energy_1D = pyrato.estimate_noise_energy(
 noise_energy_2D = pyrato.estimate_noise_energy(
     rir_array, interval=[0.9, 1.0], is_energy=False)
 
-preprocessing_1D = pyrato.dsp.preprocess_rir(
+preprocessing_1D = pyrato.dsp._preprocess_rir(
     rir_array[0], is_energy=False, shift=False, channel_independent=False)
-preprocessing_2D = pyrato.dsp.preprocess_rir(
+preprocessing_2D = pyrato.dsp._preprocess_rir(
     rir_array, is_energy=False, shift=False, channel_independent=False)
 
-preprocessing_time_shift_1D = pyrato.dsp.preprocess_rir(
+preprocessing_time_shift_1D = pyrato.dsp._preprocess_rir(
     rir_array[0], is_energy=False, shift=True, channel_independent=False)
-preprocessing_time_shift_2D = pyrato.dsp.preprocess_rir(
+preprocessing_time_shift_2D = pyrato.dsp._preprocess_rir(
     rir_array, is_energy=False, shift=True, channel_independent=False)
 
-preprocessing_time_shift_channel_independent_1D = pyrato.dsp.preprocess_rir(
+preprocessing_time_shift_channel_independent_1D = pyrato.dsp._preprocess_rir(
     rir_array[0], is_energy=False, shift=True, channel_independent=True)
-preprocessing_time_shift_channel_independent_2D = pyrato.dsp.preprocess_rir(
+preprocessing_time_shift_channel_independent_2D = pyrato.dsp._preprocess_rir(
     rir_array, is_energy=False, shift=True, channel_independent=True)
 
 smoothed_rir_1D = pyrato.dsp._smooth_rir(
