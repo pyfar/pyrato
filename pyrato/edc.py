@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-The edc_noise_handling module provides various methods for noise
-compensation of room impulse responses.
+Sub-module implementing different methods for the calculation of energy decay
+curves (EDCs) from measured or simulated room impulse responses (RIRs).
 """
 
 import numpy as np
@@ -92,12 +92,26 @@ def schroeder_integration(room_impulse_response, is_energy=False):
     .. [#] M. R. Schroeder, "New Method of Measuring Reverberation Time,"
            The Journal of the Acoustical Society of America, vol. 37, no. 6,
            pp. 1187-1187, 1965.
+    .. [#] ISO 3382, Acoustics — Measurement of the reverberation
+        time of rooms with reference to other acoustical parameters.
 
-    Note
-    ----
-    This function does not apply any compensation of measurement noise and
-    integrates the full length of the input signal. It should only be used
-    if no measurement noise or artifacts are present in the data.
+    Notes
+    -----
+    No preprocessing of the impulse response is performed. In particular,
+    this function does not:
+
+    - detect or align the direct sound (impulse response start),
+    - compensate for measurement noise,
+    - truncate the impulse response at the noise floor.
+
+    The full length of the input signal is squared and integrated.
+
+    For measurements in accordance with ISO 3382 [#]_, appropriate
+    preprocessing (:func:`pyrato.edc.energy_decay_curve_truncation`) of the
+    impulse response
+    (time alignment, band-pass filtering, and noise handling) must be
+    performed before calling this
+    function.
 
     Example
     -------
@@ -117,7 +131,7 @@ def schroeder_integration(room_impulse_response, is_energy=False):
         ...     L, source_pos, receiver_pos,
         ...     reverberation_time=1, max_freq=1e3, n_samples=2**16,
         ...     speed_of_sound=343.9)
-        >>> edc = ra.schroeder_integration(rir)
+        >>> edc = ra.edc.schroeder_integration(rir)
         >>> pf.plot.time(rir/np.abs(rir.time).max(), dB=True, label='RIR')
         >>> ax = pf.plot.time(
         ...     edc/edc.time[..., 0], dB=True, log_prefix=10, label='EDC')
@@ -142,24 +156,20 @@ def _schroeder_integration(impulse_response, is_energy=False):
         \langle e^2(t) \rangle = \int_{t}^{\infty} h^2(\tau)
         \mathrm{d} \tau
 
+    This is a private function for use with numpy arrays.
+
     Parameters
     ----------
     impulse_response : ndarray, double
         Room impulse response as array
-    is_energy : boolean, optional
-        Whether the input represents energy data or sound pressure values.
+    is_energy: boolean
+        If `True` the input data is proportional to energy density; if `False`
+        the input data is proportional to sound pressure.
 
     Returns
     -------
     energy_decay_curve : ndarray, double
         The energy decay curve
-
-    References
-    ----------
-    .. [#] M. R. Schroeder, “New Method of Measuring Reverberation Time,”
-           The Journal of the Acoustical Society of America, vol. 37, no. 6,
-           pp. 1187-1187, 1965.
-
     """
     if not is_energy:
         data = np.abs(impulse_response)**2
@@ -187,8 +197,22 @@ def energy_decay_curve_truncation(
         normalize=True,
         threshold=15,
         plot=False):
-    """This function truncates a given room impulse response by the
-    intersection time after Lundeby and calculates the energy decay curve.
+    r"""Truncated Schroeder integration.
+
+    The integration is truncated at the intersection with measurement noise,
+    which is estimated from the room impulse response using Lundeby's
+    algorithm. An initial estimation of the noise power is performed on the
+    last 10 percent of the impulse response, if no value is passed. Using the
+    default parameters, the function is compliant with ISO 3382-1:2009 [#]_.
+
+    .. math::
+
+        E_(t) = \int_t^{t_{i}} h^2(\tau) d\tau
+
+    .. note::
+        The EDC contains ``np.nan`` values if the intersection time could not
+        be computed due to a low signal-to-noise ration. In this case a warning
+        is raised as well.
 
     Parameters
     ----------
@@ -203,7 +227,8 @@ def energy_decay_curve_truncation(
         percent of the RIR. Otherwise specify manually for each channel
         as array.
     is_energy: boolean
-        Defines, if the data is already squared.
+        If `True` the input data is proportional to energy density; if `False`
+        the input data is proportional to sound pressure.
     time_shift : boolean
         Defines, if the silence at beginning of the RIR should be removed.
     channel_independent : boolean
@@ -216,7 +241,7 @@ def energy_decay_curve_truncation(
         Defines a peak-signal-to-noise ratio based threshold in dB for final
         truncation of the EDC. Values below the sum of the threshold level and
         the peak-signal-to-noise ratio in dB are discarded. The default is
-        15 dB, which is in correspondence with ISO 3382-1:2009 [#]_.
+        15 dB, which is in correspondence with ISO 3382-1:2009.
     plot: Boolean
         Specifies, whether the results should be visualized or not.
 
@@ -255,7 +280,7 @@ def energy_decay_curve_truncation(
         ...     rir.n_samples, rms=rir.time.max()*10**(-50/20),
         ...     sampling_rate=rir.sampling_rate)
         >>> rir = rir + awgn
-        >>> edc = ra.energy_decay_curve_truncation(rir)
+        >>> edc = ra.edc.energy_decay_curve_truncation(rir)
         ...
         >>> ax = pf.plot.time(rir, dB=True, label='RIR')
         >>> pf.plot.time(edc, dB=True, log_prefix=10, label='EDC')
@@ -267,7 +292,7 @@ def energy_decay_curve_truncation(
     shape = data.time.shape
     data = data.flatten()
 
-    energy_data = dsp.preprocess_rir(
+    energy_data = dsp._preprocess_rir(
         data,
         is_energy=is_energy,
         shift=time_shift,
@@ -281,38 +306,37 @@ def energy_decay_curve_truncation(
         is_energy=True,
         time_shift=False,
         channel_independent=False,
-        plot=False)[0]
-
-    intersection_time_idx = np.rint(intersection_time * data.sampling_rate)
-
-    psnr = dsp.peak_signal_to_noise_ratio(
-        data, noise_level, is_energy=is_energy)
-    trunc_levels = 10*np.log10((psnr)) - threshold
+        plot=False,
+        failure_policy='warning')[0]
 
     energy_decay_curve = np.zeros([*data.cshape, n_samples])
+
     for ch in np.ndindex(data.cshape):
+
+        if np.isnan(intersection_time[ch]):
+            energy_decay_curve[ch] = np.nan
+            continue
+
+        intersection_time_idx = np.rint(
+            intersection_time[ch] * data.sampling_rate)
+
+        psnr = dsp.peak_signal_to_noise_ratio(
+            data[ch], noise_level, is_energy=is_energy)
+        trunc_level = 10*np.log10((psnr)) - threshold
+
         energy_decay_curve[
-            ch, :int(intersection_time_idx[ch])] = \
+            ch, :int(intersection_time_idx)] = \
                 _schroeder_integration(
                     energy_data.time[
-                        ch, :int(intersection_time_idx[ch])],
+                        ch, :int(intersection_time_idx)],
                     is_energy=True)
 
-    energy_decay_curve = _truncate_energy_decay_curve(
-        energy_decay_curve, trunc_levels)
+        energy_decay_curve[ch] = _threshold_energy_decay_curve(
+            energy_decay_curve[ch], trunc_level)
 
     if normalize:
-        # Normalize the EDC...
-        if not channel_independent:
-            # by the max across all channels
-            energy_decay_curve = \
-                np.divide(energy_decay_curve[..., :],
-                          np.nanmax(energy_decay_curve))
-        else:
-            # by the max of each individual channel
-            energy_decay_curve = \
-                energy_decay_curve[..., :] \
-                    / np.nanmax(energy_decay_curve, axis=-1, keepdims=True)
+        energy_decay_curve = _normalize_edc(
+            energy_decay_curve, channel_independent)
 
     edc = pf.TimeData(
         energy_decay_curve.reshape(shape), data.times, comment=data.comment)
@@ -335,10 +359,23 @@ def energy_decay_curve_lundeby(
         channel_independent=False,
         normalize=True,
         plot=False):
-    """Correction term to prevent the truncation error.
+    r"""Truncated Schroeder integration with additive truncation compensation.
 
-    The missing signal energy from truncation time to infinity is
-    estimated and added to the truncated integral. After Lundeby et al. [#]_.
+    Lundeby et al. [#]_ proposed a correction term to for the truncation
+    error. The missing signal energy, caused by limiting the integration time,
+    is estimated under the assumption of a single exponential late decay
+    process.
+
+    .. math::
+
+        E(t) = \int_t^{t_i} h^2(\tau) d\tau + C
+
+        C = p_{i}^2 \cdot T_\mathrm{late} \cdot \frac{1}{6 \cdot ln(10)}
+
+    .. note::
+        The EDC contains ``np.nan`` values if the intersection time could not
+        be computed due to a low signal-to-noise ration. In this case a warning
+        is raised as well.
 
     Parameters
     ----------
@@ -353,9 +390,10 @@ def energy_decay_curve_lundeby(
         percent of the RIR. Otherwise specify manually for each channel
         as array.
     is_energy: boolean
-        Defines, if the data is already squared.
-    time_shift : boolean
-        Defines, if the silence at beginning of the RIR should be removed.
+        If `True` the input data is proportional to energy density; if `False`
+        the input data is proportional to sound pressure.
+    time_shift : bool
+        If `True`, the delay of the RIR is removed.
     channel_independent : boolean
         Defines, if the time shift and normalizsation is done
         channel-independently or not.
@@ -368,16 +406,18 @@ def energy_decay_curve_lundeby(
     Returns
     -------
     pyfar.TimeData
-        Returns the noise handeled edc.
+        Returns the noise compensated energy decay curve.
 
     References
     ----------
-    .. [#] Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of
-           Measurements in Room Acoustics - ACUSTICA Vol. 81 (1995)
+    .. [#] A. Lundeby, T. E. Vigran, H. Bietz, and M. Vorländer,
+        “Uncertainties of Measurements in Room Acoustics,”
+        Acta Acust. United Ac., vol. 81, no. 4, pp. 344-355, Jul. 1995.
 
     Examples
     --------
-    Plot the RIR and the EDC calculated after Lundeby.
+    Plot the room impulse response and the energy decay curve calculated
+    after Lundeby.
 
     .. plot::
 
@@ -399,7 +439,7 @@ def energy_decay_curve_lundeby(
         ...     rir.n_samples, rms=rir.time.max()*10**(-50/20),
         ...     sampling_rate=rir.sampling_rate)
         >>> rir = rir + awgn
-        >>> edc = ra.energy_decay_curve_lundeby(rir)
+        >>> edc = ra.edc.energy_decay_curve_lundeby(rir)
         ...
         >>> ax = pf.plot.time(rir, dB=True, label='RIR')
         >>> pf.plot.time(edc, dB=True, log_prefix=10, label='EDC')
@@ -411,7 +451,7 @@ def energy_decay_curve_lundeby(
     shape = data.time.shape
     data = data.flatten()
 
-    energy_data = dsp.preprocess_rir(
+    energy_data = dsp._preprocess_rir(
         data,
         is_energy=is_energy,
         shift=time_shift,
@@ -427,12 +467,18 @@ def energy_decay_curve_lundeby(
             is_energy=True,
             time_shift=False,
             channel_independent=False,
-            plot=False)
+            plot=False,
+            failure_policy='warning')
     time_vector = data.times
 
     energy_decay_curve = np.zeros([*data.cshape, n_samples])
 
     for ch in np.ndindex(data.cshape):
+
+        if np.isnan(intersection_time[ch]):
+            energy_decay_curve[ch] = np.nan
+            continue
+
         intersection_time_idx = np.argmin(
             np.abs(time_vector - intersection_time[ch]))
         p_square_at_intersection = noise_estimation[ch]
@@ -452,17 +498,8 @@ def energy_decay_curve_lundeby(
         energy_decay_curve[ch, intersection_time_idx:] = np.nan
 
     if normalize:
-        # Normalize the EDC...
-        if not channel_independent:
-            # by the max across all channels
-            energy_decay_curve = \
-                np.divide(energy_decay_curve[..., :],
-                          np.nanmax(energy_decay_curve))
-        else:
-            # by the max of each individual channel
-            energy_decay_curve = \
-                energy_decay_curve[..., :] \
-                    / np.nanmax(energy_decay_curve, axis=-1, keepdims=True)
+        energy_decay_curve = _normalize_edc(
+            energy_decay_curve, channel_independent)
 
     edc = pf.TimeData(
         energy_decay_curve.reshape(shape), data.times, comment=data.comment)
@@ -485,29 +522,35 @@ def energy_decay_curve_chu(
         normalize=True,
         threshold=10,
         plot=False):
-    """Implementation of the "subtraction of noise"-method after Chu.
+    r"""Schroeder integration with prior subtraction of average noise power.
 
-    The noise level is estimated and subtracted from the impulse response
-    before backward integration after Chu [#]_.
+    Chu [#]_ proposed to subtract the average power of the additive measurement
+    noise from the energy impulse response prior to applying the Schroeder
+    integral. The noise power $N_{est}$ is estimated from the last 10 percent
+    of the room impulse response if not given by the user.
+
+    .. math::
+
+        E(t) = \int_t^{t_{IR}} (h^2(\tau) - N_{est}) d\tau
 
     Parameters
     ----------
-    data : ndarray, double
-        The room impulse response with dimension ``(..., n_samples)``
-    noise_level: ndarray, double OR string
-        If not specified, the noise level is calculated based on the last 10
-        percent of the RIR. Otherwise specify manually for each channel
-        as array.
+    data : pyfar.Signal
+        The room impulse response
+    noise_level: ndarray, float or string
+        If set to 'auto', the noise power is calculated based on the last 10
+        percent of the RIR. Otherwise it needs to be given for each individual
+        channel of the input. The default is 'auto'.
     is_energy: boolean
-        Defines, if the data is already squared.
-    time_shift : boolean
-        Defines, if the silence at beginning of the RIR should be removed.
+        If `True` the input data is proportional to energy density; if `False`
+        the input data is proportional to sound pressure.
+    time_shift : bool
+        If `True`, the delay of the RIR is removed.
     channel_independent : boolean
-        Defines, if the time shift and normalizsation is done
+        Defines, if the time shift and normalization is done
         channel-independently or not.
-    normalize : boolean
-        Defines, if the energy decay curve should be normalized in the end
-        or not.
+    normalize : bool
+        If `True`, the energy decay curve is normalized.
     threshold : float, None
         Defines a peak-signal-to-noise ratio based threshold in dB for final
         truncation of the EDC. Values below the sum of the threshold level and
@@ -518,11 +561,13 @@ def energy_decay_curve_chu(
 
     Returns
     -------
-    energy_decay_curve: ndarray, double
-        Returns the noise handeled edc.
+    pyfar.TimeData
+        Returns the noise compensated edc.
+
 
     References
     ----------
+
     .. [#] W. T. Chu. “Comparison of reverberation measurements using
            Schroeder's impulse method and decay-curve averaging method”.
            In: Journal of the Acoustical Society of America 63.5 (1978),
@@ -549,7 +594,7 @@ def energy_decay_curve_chu(
         ...     rir.n_samples, rms=rir.time.max()*10**(-40/20),
         ...     sampling_rate=rir.sampling_rate)
         >>> rir = rir + awgn
-        >>> edc = ra.energy_decay_curve_chu(rir)
+        >>> edc = ra.edc.energy_decay_curve_chu(rir)
         ...
         >>> pf.plot.time(rir/np.abs(rir.time).max(), dB=True, label='RIR')
         >>> ax = pf.plot.time(
@@ -562,7 +607,7 @@ def energy_decay_curve_chu(
     shape = data.cshape
     data = data.flatten()
 
-    energy_data = dsp.preprocess_rir(
+    energy_data = dsp._preprocess_rir(
         data,
         is_energy=is_energy,
         shift=time_shift,
@@ -575,17 +620,8 @@ def energy_decay_curve_chu(
     edc = schroeder_integration(subtracted, is_energy=True)
 
     if normalize:
-        # Normalize the EDC...
-        if not channel_independent:
-            # by the max across all channels
-            edc.time = \
-                np.divide(edc.time[..., :],
-                          np.nanmax(edc.time))
-        else:
-            # by the max of each individual channel
-            edc.time = \
-                edc.time[..., :] \
-                    / np.nanmax(edc.time, axis=-1, keepdims=True)
+        edc.time = _normalize_edc(
+            edc.time, channel_independent)
 
     mask = edc.time <= 2*np.finfo(float).eps
     if np.any(mask):
@@ -597,7 +633,7 @@ def energy_decay_curve_chu(
         psnr = dsp.peak_signal_to_noise_ratio(
             data, noise_level, is_energy=is_energy)
         trunc_levels = 10*np.log10((psnr)) - threshold
-        edc = truncate_energy_decay_curve(edc, trunc_levels)
+        edc = threshold_energy_decay_curve(edc, trunc_levels)
 
     edc = edc.reshape(shape)
 
@@ -626,11 +662,25 @@ def energy_decay_curve_chu_lundeby(
         channel_independent=False,
         normalize=True,
         plot=False):
-    """This function combines Chu's and Lundeby's methods.
+    r"""Combination of Chu's and Lundeby's methods.
 
-    The estimated noise level is subtracted before backward integration,
-    the impulse response is truncated at the intersection time,
-    and the correction for the truncation is applied [#]_, [#]_, [#]_.
+    The average power $N_{set}$ of the additive measurement noise is subtracted
+    from the energy impulse response prior to applying the Schroeder integral.
+    The Schroeder integration is truncated at the intersection with the noise
+    floor and the truncation error compensated based on the assumption of a
+    single exponential late decay process.
+    For a more detailed description of the method, see [#]_.
+
+    .. math::
+
+        E_(t) = \int_t^{t_i} (h^2(\tau) - N_{est}) d\tau + C
+
+        C = p_{i}^2 \cdot T_\mathrm{late} \cdot \frac{1}{6 \cdot ln(10)}
+
+    .. note::
+        The EDC contains ``np.nan`` values if the intersection time could not
+        be computed due to a low signal-to-noise ration. In this case a warning
+        is raised as well.
 
     Parameters
     ----------
@@ -645,7 +695,8 @@ def energy_decay_curve_chu_lundeby(
         percent of the RIR. Otherwise specify manually for each channel
         as array.
     is_energy: boolean
-        Defines, if the data is already squared.
+        If `True` the input data is proportional to energy density; if `False`
+        the input data is proportional to sound pressure.
     time_shift : boolean
         Defines, if the silence at beginning of the RIR should be removed.
     channel_independent : boolean
@@ -660,18 +711,13 @@ def energy_decay_curve_chu_lundeby(
     Returns
     -------
     pyfar.TimeData
-        Returns the noise handeled edc.
+        Returns the noise compensated edc.
 
     References
     ----------
-    .. [#] Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of
-           Measurements in Room Acoustics - ACUSTICA Vol. 81 (1995)
-    .. [#] W. T. Chu. “Comparison of reverberation measurements using
-           Schroeder's impulse method and decay-curve averaging method”. In:
-           Journal of the Acoustical Society of America 63.5 (1978),
-           pp. 1444-1450.
-    .. [#] M. Guski, “Influences of external error sources on measurements of
-            room acoustic parameters,” 2015.
+    .. [#] M. Guski and M. Vorländer, “Comparison of Noise Compensation
+            Methods for Room Acoustic Impulse Response Evaluations,” Acta
+            Acust. United Ac., vol. 100, pp. 320-327, 2014, doi: 10/f5vxx2.
 
     Examples
     --------
@@ -698,7 +744,7 @@ def energy_decay_curve_chu_lundeby(
         ...     rir.n_samples, rms=rir.time.max()*10**(-50/20),
         ...     sampling_rate=rir.sampling_rate)
         >>> rir = rir + awgn
-        >>> edc = ra.energy_decay_curve_chu_lundeby(rir)
+        >>> edc = ra.edc.energy_decay_curve_chu_lundeby(rir)
         ...
         >>> ax = pf.plot.time(rir, dB=True, label='RIR')
         >>> pf.plot.time(edc, dB=True, log_prefix=10, label='EDC')
@@ -710,7 +756,7 @@ def energy_decay_curve_chu_lundeby(
     shape = data.time.shape
     data = data.flatten()
 
-    energy_data = dsp.preprocess_rir(
+    energy_data = dsp._preprocess_rir(
         data,
         is_energy=is_energy,
         shift=time_shift,
@@ -729,12 +775,18 @@ def energy_decay_curve_chu_lundeby(
             is_energy=True,
             time_shift=False,
             channel_independent=False,
-            plot=False)
+            plot=False,
+            failure_policy='warning')
 
     time_vector = data.times
     energy_decay_curve = np.zeros([*data.cshape, n_samples])
 
     for ch in np.ndindex(data.cshape):
+
+        if np.isnan(intersection_time[ch]):
+            energy_decay_curve[ch] = np.nan
+            continue
+
         intersection_time_idx = np.argmin(np.abs(
             time_vector - intersection_time[ch]))
         if isinstance(noise_level, str) and noise_level == 'auto':
@@ -757,17 +809,8 @@ def energy_decay_curve_chu_lundeby(
         energy_decay_curve[ch, intersection_time_idx:] = np.nan
 
     if normalize:
-        # Normalize the EDC...
-        if not channel_independent:
-            # by the max across all channels
-            energy_decay_curve = \
-                np.divide(energy_decay_curve[..., :],
-                          np.nanmax(energy_decay_curve))
-        else:
-            # by the max of each individual channel
-            energy_decay_curve = \
-                energy_decay_curve[..., :] \
-                    / np.nanmax(energy_decay_curve, axis=-1, keepdims=True)
+        energy_decay_curve = _normalize_edc(
+            energy_decay_curve, channel_independent)
 
     edc = pf.TimeData(
         energy_decay_curve.reshape(shape), data.times, comment=data.comment)
@@ -788,7 +831,8 @@ def intersection_time_lundeby(
         is_energy=False,
         time_shift=False,
         channel_independent=False,
-        plot=False):
+        plot=False,
+        failure_policy='error'):
     """Calculate the intersection time between impulse response and noise.
 
     This function uses the algorithm after Lundeby et al. [#]_ to calculate
@@ -808,7 +852,8 @@ def intersection_time_lundeby(
         percent of the RIR. Otherwise specify manually for each channel
         as array.
     is_energy: boolean
-        Defines, if the data is already squared.
+        If `True` the input data is proportional to energy density; if `False`
+        the input data is proportional to sound pressure.
     time_shift : boolean
         Defines, if the silence at beginning of the RIR should be removed.
     channel_independent : boolean
@@ -816,6 +861,16 @@ def intersection_time_lundeby(
         channel-independently or not.
     plot: Boolean
         Specifies, whether the results should be visualized or not.
+    failure_policy : string, optional
+        Specifies how failures in detecting the Lundby parameters (see return
+        values below) are handled.
+
+        - ``'error'``: raises an error and the computation is terminated.
+        - ``'warning'``: raises a warning and returns NaN values. This is
+          useful when computing parameters for multi-channel input, e.g., in
+          octave bands.
+
+        The default is ``'error'``.
 
     Returns
     -------
@@ -828,6 +883,7 @@ def intersection_time_lundeby(
 
     References
     ----------
+
     .. [#] Lundeby, Virgran, Bietz and Vorlaender - Uncertainties of
            Measurements in Room Acoustics - ACUSTICA Vol. 81 (1995)
 
@@ -856,7 +912,7 @@ def intersection_time_lundeby(
         ...     rir.n_samples, rms=rir.time.max()*10**(-40/20),
         ...     sampling_rate=rir.sampling_rate)
         >>> rir = rir + awgn
-        >>> inter_time, _, noise_power = ra.intersection_time_lundeby(rir)
+        >>> inter_time, _, noise_power = ra.edc.intersection_time_lundeby(rir)
         ...
         >>> ax = pf.plot.time(rir, dB=True, label='RIR')
         >>> ax.axvline(inter_time, c='k', linestyle='--', label='$T_i$')
@@ -874,7 +930,7 @@ def intersection_time_lundeby(
     # Dynamic range 10 ... 20 dB
     use_dyn_range_for_regression = 20
 
-    energy_data = dsp.preprocess_rir(
+    energy_data = dsp._preprocess_rir(
         data,
         is_energy=is_energy,
         shift=time_shift,
@@ -909,153 +965,41 @@ def intersection_time_lundeby(
     noise_peak_level = np.zeros(data.cshape, data.time.dtype)
 
     for ch in np.ndindex(data.cshape):
-        time_window_data_current_channel = time_window_data[ch]
-        start_idx = np.nanargmax(time_window_data_current_channel, axis=-1)
-        try:
-            stop_idx = (np.argwhere(10*np.log10(
-                time_window_data_current_channel[start_idx+1:-1]) >
-                    (10*np.log10(noise_estimation[ch]) +
-                        dB_above_noise))[-1, 0] + start_idx)
-        except IndexError as e:
-            raise ValueError(
-                'Regression failed: Low SNR. Estimation terminated.',
-            ) from e
 
-        dyn_range = np.diff(10*np.log10(np.take(
-            time_window_data_current_channel, [start_idx, stop_idx])))
+        output = _intersection_time_lundby(
+            time_window_data[ch], noise_estimation[ch], energy_data[ch],
+            time_vector_window, dB_above_noise, n_intervals_per_10dB,
+            use_dyn_range_for_regression, sampling_rate, ch, failure_policy)
 
-        if (stop_idx == start_idx) or dyn_range > -5:
-            raise ValueError(
-                'Regression failed: Low SNR. Estimation terminated.')
+        if output is None:
+            reverberation_time[ch] = np.nan
+            noise_level[ch] = np.nan
+            intersection_time[ch] = np.nan
 
-        # regression_matrix*slope = edc
-        regression_matrix = np.vstack((np.ones(
-            [stop_idx-start_idx]), time_vector_window[start_idx:stop_idx]))
-        slope = np.linalg.lstsq(
-            regression_matrix.T,
-            10*np.log10(time_window_data_current_channel[start_idx:stop_idx]),
-            rcond=None)[0]
+        else:
+            slope, noise_estimation_current_channel, crossing_point, \
+            time_window_data_current_channel, idx_last_10_percent, \
+            idx_10dB_below_crosspoint, regression_time, regression_values, \
+            preliminary_crossing_point, time_vector_window_current_channel \
+                = output
 
-        if slope[1] == 0 or np.any(np.isnan(slope)):
-            raise ValueError(
-                'Regression did not work, reverberation time would be ',
-                'infinite, setting to 0 and terminating the estimation. ',
-                'Please remove preceeding delay or check the SNR')
-
-        regression_time = np.array(
-            [time_vector_window[start_idx], time_vector_window[stop_idx]])
-        regression_values = np.array(
-            [10*np.log10(time_window_data[0, start_idx]),
-             (10*np.log10(time_window_data[0, start_idx])
-                + slope[1]*time_vector_window[stop_idx])])
-
-        # (4) PRELIMINARY CROSSING POINT
-        crossing_point = \
-            (10*np.log10(noise_estimation[ch]) - slope[0]) / slope[1]
-        preliminary_crossing_point = crossing_point
-
-        # (5) NEW LOCAL TIME INTERVAL LENGTH
-        n_blocks_in_decay = (np.diff(
-            10*np.log10(np.take(
-                time_window_data_current_channel, [start_idx, stop_idx])))[0]
-            / -10 * n_intervals_per_10dB)
-
-        n_samples_per_block = np.round(np.diff(np.take(
-            time_vector_window,
-            [start_idx, stop_idx]))[0] / n_blocks_in_decay * sampling_rate)
-
-        window_time = n_samples_per_block/sampling_rate
-
-        # (6) AVERAGE
-        time_window_data_current_channel, \
-            time_vector_window_current_channel, \
-            time_vector_current_channel = dsp._smooth_rir(
-                energy_data[ch], sampling_rate, window_time)
-        time_window_data_current_channel = np.squeeze(
-            time_window_data_current_channel)
-        idx_max = np.nanargmax(time_window_data_current_channel)
-
-        # high start value to enter while-loop
-        old_crossing_point = 11+crossing_point
-        loop_counter = 0
-
-        while True:
-            # (7) ESTIMATE BACKGROUND LEVEL
-            corresponding_decay = 10  # 5...10 dB
-            idx_last_10_percent = np.round(
-                time_window_data_current_channel.shape[-1]*0.9)
-
-            t_block = n_samples_per_block / sampling_rate
-            rel_decay = corresponding_decay / slope[1]
-            idx_10dB_below_crosspoint = np.nanmax(
-                np.r_[1, np.round(((crossing_point - rel_decay) / t_block))])
-
-            noise_estimation_current_channel = np.nanmean(
-                time_window_data_current_channel[int(np.nanmin(
-                    [idx_last_10_percent, idx_10dB_below_crosspoint])):])
-
-            # (8) ESTIMATE LATE DECAY SLOPE
-            try:
-                start_idx_loop = np.argwhere(10*np.log10(
-                    time_window_data_current_channel[idx_max:]) < (
-                        10*np.log10(noise_estimation_current_channel)
-                        + dB_above_noise
-                        + use_dyn_range_for_regression))[0, 0] + idx_max
-            except TypeError:
-                start_idx_loop = 0
-
-            try:
-                stop_idx_loop = np.argwhere(10*np.log10(
-                    time_window_data_current_channel[start_idx_loop+1:]) < (
-                        10*np.log10(noise_estimation_current_channel)
-                        + dB_above_noise))[0, 0] + start_idx_loop
-            except IndexError as e:
-                raise ValueError(
-                    'Regression failed: Low SNR. Estimation terminated.',
-                ) from e
-
-            # regression_matrix*slope = edc
-            regression_matrix = np.vstack((np.ones(
-                [stop_idx_loop-start_idx_loop]),
-                time_vector_window_current_channel[
-                    start_idx_loop:stop_idx_loop]))
-
-            slope = np.linalg.lstsq(
-                regression_matrix.T,
-                (10*np.log10(time_window_data_current_channel[
-                    start_idx_loop:stop_idx_loop])),
-                rcond=None)[0]
-
-            if slope[1] >= 0:
-                raise ValueError(
-                    'Regression did not work, reverberation time would be ',
-                    'infinite, setting to 0 and terminating the estimation. ',
-                    'Please remove preceeding delay or check the SNR')
-
-            # (9) FIND CROSSPOINT
-            old_crossing_point = crossing_point
-            crossing_point = ((10*np.log10(noise_estimation_current_channel)
-                               - slope[0]) / slope[1])
-
-            loop_counter = loop_counter + 1
-
-            if (np.abs(old_crossing_point-crossing_point) < 0.01):
-                break
-            if loop_counter > 30:
-                # TO-DO: Paper says 5 iterations are sufficient in all cases!
-                warnings.warn(
-                    "Lundeby algorithm was terminated after 30 iterations.",
-                    stacklevel=2)
-                break
-
-        reverberation_time[ch] = -60/slope[1]
-        noise_level[ch] = noise_estimation_current_channel
-        intersection_time[ch] = crossing_point
-        noise_peak_level[ch] = 10 * np.log10(
-            np.nanmax(time_window_data_current_channel[int(np.nanmin(
-                [idx_last_10_percent, idx_10dB_below_crosspoint])):]))
+            reverberation_time[ch] = -60/slope[1]
+            noise_level[ch] = noise_estimation_current_channel
+            intersection_time[ch] = crossing_point
+            noise_peak_level[ch] = 10 * np.log10(
+                np.nanmax(time_window_data_current_channel[int(np.nanmin(
+                    [idx_last_10_percent, idx_10dB_below_crosspoint])):]))
 
     if plot:
+
+        if np.prod(data.cshape) > 1:
+            raise ValueError(
+                'The plot can only be done for single channel input')
+
+        if output is None:
+            raise ValueError('The plot can not be done because the estimation '
+                             'failed (see warnings for more information)')
+
         plt.figure(figsize=(15, 3))
         plt.subplot(131)
         max_data_db = np.nanmax(10*np.log10(energy_data))
@@ -1135,7 +1079,251 @@ def intersection_time_lundeby(
     return intersection_time, reverberation_time, noise_level
 
 
-def _truncate_energy_decay_curve(energy_decay_curve, threshold_level):
+def _intersection_time_lundby(
+        time_window_data, noise_estimation, energy_data,
+        time_vector_window, dB_above_noise, n_intervals_per_10dB,
+        use_dyn_range_for_regression, sampling_rate, ch, failure_policy):
+    """
+    Private function to handle the channel-wise processing for
+    `intersection_time_lundby`.
+
+    Parameters
+    ----------
+    time_window_data : np.ndarray
+        The smoothed RIR obtained from ``pyrato.dsp._smooth_rir``.
+    noise_estimation : float
+        The energy of the background noise.
+    energy_data : np.ndarray
+        Data returned by ``pyrato.dsp._preprocess_rir``.
+    time_vector_window : ndarray
+        The time vector of the smoothed data obtained from
+        ``pyrato.dsp._smooth_rir``.
+    dB_above_noise : float
+        End-point of the regression in dB.
+    n_intervals_per_10dB : float
+        Time intervals per 10 dB decay.
+    use_dyn_range_for_regression : float
+        Dynamic range for regression in dB.
+    sampling_rate : float, int
+        Sampling rate in Hz.
+    ch : multidimensional index
+        Channel index used for verbose warning messages
+    failure_policy : str
+        Specifies how failures in detecting the Lundby parameters (see return
+        values below) are handled.
+
+        - ``'error'``: raises an error and the computation is terminated.
+        - ``'warning'``: raises a warning and returns NaN values. This is
+          useful when computing parameters for multi-channel input, e.g., in
+          octave bands.
+
+    Returns
+    -------
+    ``None``if the parameter estimation failed, otherwise:
+
+    slope : np.ndarray
+        Coefficients [intercept, slope] of the regression line.
+    noise_estimation_current_channel : float
+        Refined background noise energy for the channel.
+    crossing_point : float
+        Intersection time between decay line and noise floor in seconds.
+    time_window_data_current_channel** : np.ndarray
+        Smoothed energy decay curve at final iteration.
+    idx_last_10_percent : float
+        Index at 90% of the time window length.
+    idx_10dB_below_crosspoint : float
+        Index 10 dB below the crossing point.
+    regression_time : np.ndarray
+        Start and stop times of the regression window in seconds.
+    regression_values : np.ndarray
+        Start and stop values of the regression line in dB.
+    preliminary_crossing_point : float
+        Initial crossing point estimate before iteration.
+    time_vector_window_current_channel : np.ndarray
+        Time vector corresponding to the smoothed data.
+    """
+
+    time_window_data_current_channel = time_window_data
+    start_idx = np.nanargmax(time_window_data_current_channel, axis=-1)
+    try:
+        stop_idx = (np.argwhere(10*np.log10(
+            time_window_data_current_channel[start_idx+1:-1]) >
+                (10*np.log10(noise_estimation) +
+                    dB_above_noise))[-1, 0] + start_idx)
+    except IndexError as e:
+        message = f'Regression failed for channel {ch} due to low SNR.'
+        if failure_policy == 'error':
+            raise ValueError(message) from e
+        else:
+            warnings.warn(message, stacklevel=2)
+            return None
+
+
+    dyn_range = np.diff(10*np.log10(np.take(
+        time_window_data_current_channel, [start_idx, stop_idx])))
+
+    if (stop_idx == start_idx) or dyn_range > -5:
+        message = f'Regression failed for channel {ch} due to low SNR.'
+        if failure_policy == 'error':
+            raise ValueError(message)
+        else:
+            warnings.warn(message, stacklevel=2)
+            return None
+
+    # regression_matrix*slope = edc
+    regression_matrix = np.vstack((np.ones(
+        [stop_idx-start_idx]), time_vector_window[start_idx:stop_idx]))
+    slope = np.linalg.lstsq(
+        regression_matrix.T,
+        10*np.log10(time_window_data_current_channel[start_idx:stop_idx]),
+        rcond=None)[0]
+
+    if slope[1] == 0 or np.any(np.isnan(slope)):
+        message = (
+            f'Regression failed for channel {ch}. '
+            'Remove preceeding delay or check the SNR')
+        if failure_policy == 'error':
+            raise ValueError(message)
+        else:
+            warnings.warn(message, stacklevel=2)
+            return None
+
+    regression_time = np.array(
+        [time_vector_window[start_idx], time_vector_window[stop_idx]])
+    regression_values = np.array(
+        [10*np.log10(time_window_data[start_idx]),
+            (10*np.log10(time_window_data[start_idx])
+            + slope[1]*time_vector_window[stop_idx])])
+
+    # (4) PRELIMINARY CROSSING POINT
+    crossing_point = \
+        (10*np.log10(noise_estimation) - slope[0]) / slope[1]
+    preliminary_crossing_point = crossing_point
+
+    # (5) NEW LOCAL TIME INTERVAL LENGTH
+    n_blocks_in_decay = (np.diff(
+        10*np.log10(np.take(
+            time_window_data_current_channel, [start_idx, stop_idx])))[0]
+        / -10 * n_intervals_per_10dB)
+
+    n_samples_per_block = np.round(np.diff(np.take(
+        time_vector_window,
+        [start_idx, stop_idx]))[0] / n_blocks_in_decay * sampling_rate)
+
+    window_time = n_samples_per_block/sampling_rate
+
+    # (6) AVERAGE
+    time_window_data_current_channel, \
+        time_vector_window_current_channel, \
+        time_vector_current_channel = dsp._smooth_rir(
+            energy_data, sampling_rate, window_time)
+    time_window_data_current_channel = np.squeeze(
+        time_window_data_current_channel)
+    idx_max = np.nanargmax(time_window_data_current_channel)
+
+    # high start value to enter while-loop
+    old_crossing_point = 11+crossing_point
+    loop_counter = 0
+
+    while True:
+        # (7) ESTIMATE BACKGROUND LEVEL
+        corresponding_decay = 10  # 5...10 dB
+        idx_last_10_percent = np.round(
+            time_window_data_current_channel.shape[-1]*0.9)
+
+        t_block = n_samples_per_block / sampling_rate
+        rel_decay = corresponding_decay / slope[1]
+        idx_10dB_below_crosspoint = np.nanmax(
+            np.r_[1, np.round(((crossing_point - rel_decay) / t_block))])
+
+        noise_estimation_current_channel = np.nanmean(
+            time_window_data_current_channel[int(np.nanmin(
+                [idx_last_10_percent, idx_10dB_below_crosspoint])):])
+
+        # (8) ESTIMATE LATE DECAY SLOPE
+        try:
+            start_idx_loop = np.argwhere(10*np.log10(
+                time_window_data_current_channel[idx_max:]) < (
+                    10*np.log10(noise_estimation_current_channel)
+                    + dB_above_noise
+                    + use_dyn_range_for_regression))[0, 0] + idx_max
+        except TypeError:
+            start_idx_loop = 0
+
+        try:
+            stop_idx_loop = np.argwhere(10*np.log10(
+                time_window_data_current_channel[start_idx_loop+1:]) < (
+                    10*np.log10(noise_estimation_current_channel)
+                    + dB_above_noise))[0, 0] + start_idx_loop
+        except IndexError as e:
+            message = f'Regression failed for channel {ch} due to low SNR.'
+            if failure_policy == 'error':
+                raise ValueError(message) from e
+            else:
+                warnings.warn(message, stacklevel=2)
+                return None
+
+        # regression_matrix*slope = edc
+        regression_matrix = np.vstack((np.ones(
+            [stop_idx_loop-start_idx_loop]),
+            time_vector_window_current_channel[
+                start_idx_loop:stop_idx_loop]))
+
+        slope = np.linalg.lstsq(
+            regression_matrix.T,
+            (10*np.log10(time_window_data_current_channel[
+                start_idx_loop:stop_idx_loop])),
+            rcond=None)[0]
+
+        if slope[1] >= 0:
+            message = (
+                f'Regression failed for channel {ch}. '
+                'Remove preceeding delay or check the SNR')
+            if failure_policy == 'error':
+                raise ValueError(message)
+            else:
+                warnings.warn(message, stacklevel=2)
+                return None
+
+        # (9) FIND CROSSPOINT
+        old_crossing_point = crossing_point
+        crossing_point = ((10*np.log10(noise_estimation_current_channel)
+                            - slope[0]) / slope[1])
+
+        loop_counter = loop_counter + 1
+
+        if (np.abs(old_crossing_point-crossing_point) < 0.01):
+            break
+        if loop_counter > 30:
+            # TO-DO: Paper says 5 iterations are sufficient in all cases!
+            warnings.warn(
+                "Lundeby algorithm was terminated after 30 iterations.",
+                stacklevel=2)
+            break
+
+    return (slope, noise_estimation_current_channel, crossing_point,
+            time_window_data_current_channel, idx_last_10_percent,
+            idx_10dB_below_crosspoint, regression_time, regression_values,
+            preliminary_crossing_point, time_vector_window_current_channel)
+
+
+def _threshold_energy_decay_curve(energy_decay_curve, threshold_level):
+    """
+    Threshold an energy decay curve.
+
+    Parameters
+    ----------
+    energy_decay_curve : array like
+        The energy decay curve
+    threshold_level : float
+        The threshold level in dB. The data below the threshold level are set
+        to ``numpy.nan`` values.
+
+    Returns
+    -------
+    energy_decay_curve : numpy.ndarray
+        The thresholded energy decay curve
+    """
 
     edc = np.atleast_2d(energy_decay_curve)
     threshold_level = np.atleast_2d(threshold_level)
@@ -1148,8 +1336,9 @@ def _truncate_energy_decay_curve(energy_decay_curve, threshold_level):
     return edc
 
 
-def truncate_energy_decay_curve(energy_decay_curve, threshold):
-    """Truncate an energy decay curve, discarding values below the threshold.
+def threshold_energy_decay_curve(energy_decay_curve, threshold):
+    """
+    Threshold an energy decay curve.
 
     Parameters
     ----------
@@ -1157,9 +1346,54 @@ def truncate_energy_decay_curve(energy_decay_curve, threshold):
         The energy decay curve
     threshold : float
         The threshold level in dB. The data below the threshold level are set
-        to numpy.nan values.
+        to ``numpy.nan`` values.
+
+    Returns
+    -------
+    energy_decay_curve : pyfar.TimeData
+        The thresholded energy decay curve
     """
     return pf.TimeData(
-        _truncate_energy_decay_curve(energy_decay_curve.time, threshold),
+        _threshold_energy_decay_curve(energy_decay_curve.time, threshold),
         energy_decay_curve.times,
         energy_decay_curve.comment)
+
+
+def _normalize_edc(energy_decay_curve, channel_independent):
+    """
+    Helper function to normalize the energy decay curve.
+
+    Parameters
+    ----------
+    energy_decay_curve : numpy array
+        EDC of shape `(..., n_samples)`.
+    channel_independent : boolean
+        Defines, if the time shift and normalization is done
+        channel-independently or not.
+
+    Returns
+    -------
+    energy_decay_curve : numpy array
+        The normalized EDC
+    """
+
+    # ignore runtime warnings due to NaN values in edc. More informative
+    # warnings are raised by `intersection_time_lundeby` and everything
+    # that happens below is by intention
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", "All-NaN slice encountered", RuntimeWarning)
+
+        # Normalize the EDC...
+        if not channel_independent:
+            # by the max across all channels
+            energy_decay_curve = \
+                np.divide(energy_decay_curve[..., :],
+                        np.nanmax(energy_decay_curve))
+        else:
+            # by the max of each individual channel
+            energy_decay_curve = \
+                energy_decay_curve[..., :] \
+                    / np.nanmax(energy_decay_curve, axis=-1, keepdims=True)
+
+    return energy_decay_curve

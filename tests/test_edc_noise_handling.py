@@ -12,6 +12,9 @@ import numpy.testing as npt
 from pyrato import edc as enh
 from numpy import genfromtxt
 import pyfar as pf
+import pytest
+import re
+
 test_data_path = os.path.join(os.path.dirname(__file__), 'test_data')
 
 
@@ -263,7 +266,46 @@ def test_intersection_time_2D():
     npt.assert_allclose(actual, expected)
 
 
-def test_energy_decay_curve_threshold():
+def test_intersection_time_failure_handling():
+    """Test warnings and errors when computing the intersection time."""
+
+    # this 'rir' as an SNR of -infinity and causes an error when computing the
+    # lundeby parameters
+    rir = pf.Signal(np.random.default_rng().standard_normal(44100), 44100)
+
+    message = re.escape('Regression failed for channel (0,) due to low SNR.')
+
+    # test raising errors
+    with pytest.raises(ValueError, match=message):
+        enh.intersection_time_lundeby(rir, failure_policy='error')
+
+    # test warning
+    with pytest.warns(UserWarning, match=message):
+        enh.intersection_time_lundeby(rir, failure_policy='warning')
+
+
+@pytest.mark.parametrize('calling_function', [
+    enh.energy_decay_curve_truncation,
+    enh.energy_decay_curve_lundeby,
+    enh.energy_decay_curve_chu_lundeby])
+def test_intersection_time_failure_handling_from_calling_functions(
+    calling_function):
+    """
+    Test if functions calling `intersection_time_lundeby` raise warnings and
+    not errors.
+    """
+
+    # this 'rir' as an SNR of -infinity and causes an error when computing the
+    # lundeby parameters
+    rir = pf.Signal(np.random.default_rng().standard_normal(44100), 44100)
+
+    # Using only 'SNR' to match the warning message because different warnings
+    # are raised depending on the tested function
+    with pytest.warns(UserWarning, match='SNR'):
+        calling_function(rir)
+
+
+def test__threshold_energy_decay_curve():
 
     t_60 = 1
     m = -60/t_60
@@ -274,7 +316,7 @@ def test_energy_decay_curve_threshold():
 
     edc_log = np.tile(edc_log, (2, 3, 1))
 
-    edc = enh._truncate_energy_decay_curve(10**(edc_log.copy()/10), 30)
+    edc = enh._threshold_energy_decay_curve(10**(edc_log.copy()/10), 30)
 
     edc_ref = 10**(edc_log.copy()/10)
     edc_ref[..., n_samples//2:] = np.nan
@@ -282,7 +324,7 @@ def test_energy_decay_curve_threshold():
     npt.assert_allclose(edc, edc_ref)
 
 
-def test_truncate_energy_decay_curve():
+def test_threshold_energy_decay_curve():
     t_60 = 1
     m = -60/t_60
 
@@ -293,7 +335,7 @@ def test_truncate_energy_decay_curve():
     edc_log = np.tile(edc_log, (2, 3, 1))
 
     edc = pf.TimeData(10**(edc_log.copy()/10), times)
-    edc_trunc = enh.truncate_energy_decay_curve(edc, 30)
+    edc_trunc = enh.threshold_energy_decay_curve(edc, 30)
 
     edc_ref = 10**(edc_log.copy()/10)
     edc_ref[..., n_samples//2:] = np.nan

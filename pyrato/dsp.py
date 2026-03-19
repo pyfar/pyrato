@@ -8,105 +8,12 @@ import pyfar as pf
 import numpy as np
 
 
-def find_impulse_response_start(
-        impulse_response,
-        threshold=20):
-    """Find the start sample of an impulse response.
-
-    The start sample is identified as the first sample which is below the
-    ``threshold`` level relative to the maximum level of the impulse response.
-    For room impulse responses, ISO 3382 [#]_ specifies a threshold of 20 dB.
-    This function is primary intended to be used when processing room impulse
-    responses.
-
-    Parameters
-    ----------
-    impulse_response : pyfar.Signal
-        The impulse response
-    threshold : float, optional
-        The threshold level in dB, by default 20, which complies with ISO 3382.
-
-    Returns
-    -------
-    start_sample : numpy.ndarray, int
-        Sample at which the impulse response starts
-
-    Notes
-    -----
-    The function tries to estimate the PSNR in the IR based on the signal
-    power in the last 10 percent of the IR. The automatic estimation may fail
-    if the noise spectrum is not white or the impulse response contains
-    non-linear distortions. If the PSNR is lower than the specified threshold,
-    the function will issue a warning.
-
-    References
-    ----------
-    .. [#] ISO 3382-1:2009-10, Acoustics - Measurement of the reverberation
-           time of rooms with reference to other acoustical parameters. pp. 22
-
-    Examples
-    --------
-    Create a band-limited impulse shifted by 0.5 samples and estimate the
-    starting sample of the impulse and plot.
-
-    .. plot::
-
-        >>> import pyfar as pf
-        >>> import numpy as np
-        >>> n_samples = 256
-        >>> delay_samples = n_samples // 2 + 1/2
-        >>> ir = pf.signals.impulse(n_samples)
-        >>> ir = pf.dsp.linear_phase(ir, delay_samples, unit='samples')
-        >>> start_samples = pf.dsp.find_impulse_response_start(ir)
-        >>> ax = pf.plot.time(ir, unit='ms', label='impulse response', dB=True)
-        >>> ax.axvline(
-        ...     start_samples/ir.sampling_rate*1e3,
-        ...     color='k', linestyle='-.', label='start sample')
-        >>> ax.axhline(
-        ...     20*np.log10(np.max(np.abs(ir.time)))-20,
-        ...     color='k', linestyle=':', label='threshold')
-        >>> ax.legend()
-
-    Create a train of weighted impulses with levels below and above the
-    threshold, serving as a very abstract room impulse response. The starting
-    sample is identified as the last sample below the threshold relative to the
-    maximum of the impulse response.
-
-    .. plot::
-
-        >>> import pyfar as pf
-        >>> import numpy as np
-        >>> n_samples = 64
-        >>> delays = np.array([14, 22, 26, 30, 33])
-        >>> amplitudes = np.array([-35, -22, -6, 0, -9], dtype=float)
-        >>> ir = pf.signals.impulse(n_samples, delays, 10**(amplitudes/20))
-        >>> ir.time = np.sum(ir.time, axis=0)
-        >>> start_sample_est = pf.dsp.find_impulse_response_start(
-        ...     ir, threshold=20)
-        >>> ax = pf.plot.time(
-        ...     ir, dB=True, unit='samples',
-        ...     label=f'peak samples: {delays}')
-        >>> ax.axvline(
-        ...     start_sample_est, linestyle='-.', color='k',
-        ...     label=f'ir start sample: {start_sample_est}')
-        >>> ax.axhline(
-        ...     20*np.log10(np.max(np.abs(ir.time)))-20,
-        ...     color='k', linestyle=':', label='threshold')
-        >>> ax.legend()
-    """
-    warnings.warn(
-        "This function will be deprecated in version 0.5.0 "
-        "Use pyfar.dsp.find_impulse_response_start instead",
-        DeprecationWarning, stacklevel=2)
-
-    return pf.dsp.find_impulse_response_start(impulse_response, threshold)
-
-
 def find_impulse_response_maximum(
         impulse_response,
         threshold=20,
         noise_energy='auto'):
     """Find the maximum of an impulse response as argmax(h(t)).
+
     Performs an initial SNR check according to a defined threshold level in dB.
 
     Parameters
@@ -153,218 +60,35 @@ def find_impulse_response_maximum(
     return max_sample
 
 
-def time_shift(signal, shift, circular_shift=True, unit='samples'):
-    """Apply a time-shift to a signal.
-
-    By default, the shift is performed as a cyclic shift on the time axis,
-    potentially resulting in non-causal signals for negative shift values.
-    Use the option ``circular_shift=False`` to pad with nan values instead,
-    note that in this case the return type will be a ``pyfar.TimeData``.
-
-    Parameters
-    ----------
-    signal : Signal
-        The signal to be shifted
-    shift : int, float
-        The time-shift value. A positive value will result in right shift on
-        the time axis (delaying of the signal), whereas a negative value
-        yields a left shift on the time axis (non-causal shift to a earlier
-        time). If a single value is given, the same time shift will be applied
-        to each channel of the signal. Individual time shifts for each channel
-        can be performed by passing an array matching the signals channel
-        dimensions ``cshape``.
-    unit : str, optional
-        Unit of the shift variable, this can be either ``'samples'`` or ``'s'``
-        for seconds. By default ``'samples'`` is used. Note that in the case
-        of specifying the shift time in seconds, the value is rounded to the
-        next integer sample value to perform the shift.
-    circular_shift : bool, True
-        Perform a circular or non-circular shift. If a non-circular shift is
-        performed, the data will be padded with nan values at the respective
-        beginning or ending of the data, corresponding to the number of samples
-        the data is shifted. In this case, a ``pyfar.TimeData`` object is
-        returned.
-
-
-    Returns
-    -------
-    pyfar.Signal, pyfar.TimeData
-        The time-shifted signal. If a circular shift is performed, the return
-        value will be a ``pyfar.Signal``, in case of a non-circular shift, its
-        type will be ``pyfar.TimeData``.
-
-    Notes
-    -----
-    This function is primarily intended to be used when processing room impulse
-    responses. When ``circular_shift=True``, the function input is passed into
-    ``pyfar.dsp.time_shift``.
-
-    Examples
-    --------
-    Perform a circular shift a set of ideal impulses stored in three different
-    channels and plot the resulting signals
-
-    .. plot::
-
-        >>> import pyfar as pf
-        >>> import pyrato as ra
-        >>> import matplotlib.pyplot as plt
-        >>> impulse = pf.signals.impulse(
-        ...     32, amplitude=(1, 1.5, 1), delay=(14, 15, 16))
-        >>> shifted = ra.time_shift(impulse, [-2, 0, 2])
-        >>> pf.plot.use('light')
-        >>> _, axs = plt.subplots(2, 1)
-        >>> pf.plot.time(impulse, ax=axs[0])
-        >>> pf.plot.time(shifted, ax=axs[1])
-        >>> axs[0].set_title('Original signals')
-        >>> axs[1].set_title('Shifted signals')
-        >>> plt.tight_layout()
-
-    Perform a non-circular shift a single impulse and plot the results.
-
-    .. plot::
-
-        >>> import pyfar as pf
-        >>> import pyrato as ra
-        >>> import matplotlib.pyplot as plt
-        >>> impulse = pf.signals.impulse(32, delay=15)
-        >>> shifted = ra.time_shift(impulse, -10, circular_shift=False)
-        >>> pf.plot.use('light')
-        >>> _, axs = plt.subplots(2, 1)
-        >>> pf.plot.time(impulse, ax=axs[0])
-        >>> pf.plot.time(shifted, ax=axs[1])
-        >>> axs[0].set_title('Original signal')
-        >>> axs[1].set_title('Shifted signal')
-        >>> plt.tight_layout()
-
-    """
-    shift = np.atleast_1d(shift)
-    if shift.size == 1:
-        shift = np.ones(signal.cshape) * shift
-
-    if unit == 's':
-        shift_samples = np.round(shift*signal.sampling_rate).astype(int)
-    elif unit == 'samples':
-        shift_samples = shift.astype(int)
-    else:
-        raise ValueError(
-            f"Unit is: {unit}, but has to be 'samples' or 's'.")
-
-    shifted = pf.dsp.time_shift(signal, shift_samples, unit='samples')
-
-    if circular_shift is False:
-        # Convert to TimeData, as filling with nans will break Fourier trafos
-        shifted = pf.TimeData(
-            shifted.time,
-            shifted.times,
-            comment=shifted.comment)
-
-        for ch in np.ndindex(shifted.cshape):
-            if shift[ch] < 0:
-                shifted.time[ch, shift_samples[ch]:] = np.nan
-            else:
-                shifted.time[ch, :shift_samples[ch]] = np.nan
-
-    return shifted
-
-
-def center_frequencies_octaves():
-    """Return the octave center frequencies according to the IEC 61260:1:2014
-    standard.
-
-    Returns
-    -------
-    frequencies : ndarray, float
-        Octave center frequencies
-    """
-    warnings.warn(
-        "This function will be deprecated in version 0.5.0 "
-        "Use pyfar.dsp.filter.fractional_octave_frequencies instead",
-        DeprecationWarning, stacklevel=2)
-
-    nominal, exact = pf.dsp.filter.fractional_octave_frequencies(
-        1, (20, 20e3), return_cutoff=False)
-
-    return nominal, exact
-
-
-def center_frequencies_third_octaves():
-    """Return the third octave center frequencies according
-    to the ICE 61260:1:2014 standard.
-
-    Returns
-    -------
-    frequencies : ndarray, float
-        third octave center frequencies
-    """
-    warnings.warn(
-        "This function will be deprecated in version 0.5.0 "
-        "Use pyfar.dsp.filter.fractional_octave_frequencies instead",
-        DeprecationWarning, stacklevel=2)
-
-    nominal, exact = pf.dsp.filter.fractional_octave_frequencies(
-        3, (20, 20e3), return_cutoff=False)
-
-    return nominal, exact
-
-
-def filter_fractional_octave_bands(
-        signal, num_fractions,
-        freq_range=(20.0, 20e3), order=6):
-    """Apply a fractional octave filter to a signal.
-    Filter bank implementation using second order sections of butterworth
-    filters for increased numeric accuracy and stability.
-
-    Parameters
-    ----------
-    signal : ndarray
-        input signal to be filtered
-    num_fractions : integer
-        number of octave fractions
-    freq_range : tuple of float, optional
-        frequency range of the filter bank, by default (20.0, 20e3)
-    order : integer, optional
-        order of the butterworth filter
-
-    Returns
-    -------
-    signal_filtered : ndarray
-        Signal filtered into fractional octave bands.
-    """
-    warnings.warn(
-        "This function will be deprecated in version 0.5.0 "
-        "Use pyfar.dsp.filter.fractional_octave_bands instead",
-        DeprecationWarning, stacklevel=2)
-
-    return pf.dsp.filter.fractional_octave_bands(
-        signal, num_fractions, frequency_range=freq_range, order=order)
-
-
 def estimate_noise_energy(
         data,
         interval=[0.9, 1.0],
         is_energy=False):
-    """This function estimates the noise energy level of a given room impulse
-    response. The noise is assumed to be Gaussian.
+    """Estimate the noise power of additive noise in impulse responses.
+
+    The noise power is distributed from an interval in which the additive
+    noise is assumed to be larger than the impulse response data.
 
     Parameters
     ----------
-    data: np.array
-        The room impulse response with shape ``(..., n_samples)``.
+    data : pyfar.Signal
+        The impulse response.
     interval : tuple, float
         Defines the interval of the RIR to be evaluated for the estimation.
         The interval is relative to the length of the RIR ``0 = 0%, 1=100%``.
         By default ``(0.9, 1.0)``.
-    is_energy: bool
+    is_energy : bool
         Defines if the data is already squared.
 
     Returns
     -------
-    noise_energy : float
-        The energy of the background noise.
+    noise_energy : numpy.ndarray[float]
+
+        The energy of the background noise,shaped according to the channel
+        shape of the input Signal.
     """
 
-    energy_data = preprocess_rir(
+    energy_data = _preprocess_rir(
         data,
         is_energy=is_energy,
         shift=False,
@@ -376,8 +100,9 @@ def estimate_noise_energy(
 def _estimate_noise_energy(
         energy_data,
         interval=[0.9, 1.0]):
-    """This function estimates the noise energy level of a given room impulse
-    response. The noise is assumed to be Gaussian.
+    """Estimate the noise power of additive noise in impulse responses.
+
+    Private function for use with numpy arrays.
 
     Parameters
     ----------
@@ -457,19 +182,21 @@ def _smooth_rir(
     return time_window_data, time_vector_window, time_vector
 
 
-def preprocess_rir(
+def _preprocess_rir(
         data,
         is_energy=False,
         shift=False,
         channel_independent=False):
-    """Preprocess the room impulse response for further processing:
-        - Square data
-        - Shift the RIR to the first sample of the array, compensating for the
-          delay of the time of arrival of the direct sound. The time shift is
-          performed as a non-cyclic shift, adding numpy.nan values in the end
-          of the RIR corresponding to the number of samples the data is
-          shifted by.
-        - The time shift can be done channel-independent or not.
+    """Preprocess the room impulse response for further processing.
+
+    - Square data
+    - Shift the RIR to the first sample of the array, compensating for the
+      delay of the time of arrival of the direct sound. The time shift is
+      performed as a non-cyclic shift, adding numpy.nan values in the end
+      of the RIR corresponding to the number of samples the data is
+      shifted by.
+    - The time shift can be done channel-independent or not.
+
 
     Parameters
     ----------
@@ -501,8 +228,8 @@ def preprocess_rir(
             shift_samples = np.asarray(
                 -min_shift * np.ones(data.cshape), dtype=int)
 
-        result = time_shift(
-            data, shift_samples, circular_shift=False)
+        result = pf.dsp.time_shift(
+            data, shift_samples, mode='linear', pad_value=np.nan)
     else:
         result = data
 

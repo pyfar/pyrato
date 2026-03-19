@@ -23,8 +23,6 @@ Use pip to install pyrato
 
     pip install pyrato
 
-(Requires Python 3.9 or higher)
-
 If the installation fails, please check out the [help section](https://pyfar-gallery.readthedocs.io/en/latest/help).
 
 Contributing

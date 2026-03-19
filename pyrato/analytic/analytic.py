@@ -216,7 +216,7 @@ def rectangular_room_rigid_walls(
     omega_squared = omega**2
 
     transfer_function = np.zeros(n_bins, complex)
-    for om_n, coeff_n in zip(omega_n, coeff):
+    for om_n, coeff_n in zip(omega_n, coeff, strict=True):
         den = omega_squared - delta_n_raw**2 - om_n**2 - 2*1j*delta_n_raw*omega
         transfer_function += (coeff_n/den)
 

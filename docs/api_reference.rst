@@ -12,5 +12,8 @@ Modules
 .. toctree::
    :maxdepth: 1
 
-   modules/pyrato
    modules/analytic
+   modules/dsp
+   modules/edc
+   modules/parameters
+   modules/parametric
