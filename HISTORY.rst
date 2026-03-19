@@ -2,6 +2,65 @@
 History
 =======
 
+1.0.0 (2026-03-19)
+------------------
+
+.. warning::
+
+    ``pyrato`` version 1.0.0 introduces several breaking changes which are not backwards compatible with prior versions.
+    This includes changes in the module structure, and deprecations of functions that are now part of the ``pyfar`` v0.8.0 package.
+
+
+Breaking changes
+^^^^^^^^^^^^^^^^
+- ``pyrato`` has been structured into the modules
+
+  - ``pyrato.analytic`` containing analytic functions for room acoustics.
+  - ``pyrato.dsp`` containing functions for low-level room impulse response pre-processing.
+  - ``pyrato.edc`` containing functions for computing Energy Decay Curves (EDC).
+  - ``pyrato.parameters`` containing functions to compute room acoustical parameters from room impulse responses.
+  - ``pyrato.parametric`` containing functions to compute room acoustical parameters from simple geometric considerations.
+- The following functions were removed and calling functions now use equivalent functions from pyfar
+
+  - ``pyrato.dsp.find_impulse_response_start`` was removed in favor of ``pyfar.dsp.find_impulse_response_start``.
+  - ``pyrato.dsp.center_frequencies_octaves`` and ``pyrato.dsp.center_frequencies_third_octaves`` were removed in favor of ``pyfar.constants.fractional_octave_frequencies_nominal``.
+  - ``pyrato.dsp.filter_fractional_octave_bands`` was removed in favor of ``pyfar.dsp.filter.fractional_octave_bands``.
+  - ``pyrato.dsp.time_shift`` was removed in favor of ``pyfar.dsp.time_shift``.
+  - ``pyrator.parametric.air_attenuation_coefficient`` was removed in favor of ``pyfar.constants.air_attenuation``.
+  - ``pyrato.parametric.calculate_speed_of_sound`` was removed in favor of multiple functions in ``pyfar.constants`` that can compute the speed of sound.
+
+- ``pyrato.dsp.truncate_energy_decay_curve`` was renamed to ``pyrato.dsp.threshold_energy_decay_curve```.
+
+Added:
+^^^^^^
+- Room acoustic parameters according to ISO 3382 to ``pyrator.parameters``
+
+  - ``clarity`` to compute the clarity for arbitrary time limits including the standardized parameters C50 and C80.
+  - ``early_lateral_energy_fraction`` to compute the early lateral energy fraction J_LF.
+  - ``late_lateral_sound_level`` to compute the late lateral sound level L_J
+  - ``sound_strength`` to compute the sound strength G.
+  - ``speech_transmission_index_indirect`` and ``modulation_transfer_function`` to compute the STI based on impulse responses.
+
+- ``pyrato.edc.intersection_time_lundby`` Now by default raises a warning, if the computation fails for a specific channel. Before this update, it raised an error, even if the computation only failed for certain channels.
+- ``pyrato.parametric.reverberation_time_eyring`` and ``pyrato.parametric.reverberation_time_sabine`` to estimate the reverberation.
+- ``pyrato.parametric.critical_distance`` to compute the critical distance based on room volume and reverberation time.
+- ``pyrato.parametric.mean_free_path`` to estimate the mean freq path length from a rooms volume and surface area.
+
+Changed:
+^^^^^^^^
+- ``pyrato.parametric.energy_decay_curve_analytic`` was refactored to take the desired reverberation time as input parameter.
+- Updated tests and package versions used for testing, as well as test fixtures.
+
+Removed
+^^^^^^^
+- Support for Python 3.9 and 3.10 was removed.
+
+Documentation
+^^^^^^^^^^^^^
+- Improved the scope and clarity of the documentation.
+- Added buttons to copy code contained in the documentation.
+
+
 0.4.2 (2026-03-18)
 ------------------
 * Bugfix: Channel independent normalization parametrization was reversed (PR #117)
