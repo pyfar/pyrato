@@ -59,121 +59,6 @@ def find_impulse_response_maximum(
     return max_sample
 
 
-def time_shift(signal, shift, circular_shift=True, unit='samples'):
-    """Apply a time-shift to a signal.
-
-    By default, the shift is performed as a cyclic shift on the time axis,
-    potentially resulting in non-causal signals for negative shift values.
-    Use the option ``circular_shift=False`` to pad with nan values instead,
-    note that in this case the return type will be a ``pyfar.TimeData``.
-
-    Parameters
-    ----------
-    signal : Signal
-        The signal to be shifted
-    shift : int, float
-        The time-shift value. A positive value will result in right shift on
-        the time axis (delaying of the signal), whereas a negative value
-        yields a left shift on the time axis (non-causal shift to a earlier
-        time). If a single value is given, the same time shift will be applied
-        to each channel of the signal. Individual time shifts for each channel
-        can be performed by passing an array matching the signals channel
-        dimensions ``cshape``.
-    unit : str, optional
-        Unit of the shift variable, this can be either ``'samples'`` or ``'s'``
-        for seconds. By default ``'samples'`` is used. Note that in the case
-        of specifying the shift time in seconds, the value is rounded to the
-        next integer sample value to perform the shift.
-    circular_shift : bool, True
-        Perform a circular or non-circular shift. If a non-circular shift is
-        performed, the data will be padded with nan values at the respective
-        beginning or ending of the data, corresponding to the number of samples
-        the data is shifted. In this case, a ``pyfar.TimeData`` object is
-        returned.
-
-
-    Returns
-    -------
-    pyfar.Signal, pyfar.TimeData
-        The time-shifted signal. If a circular shift is performed, the return
-        value will be a ``pyfar.Signal``, in case of a non-circular shift, its
-        type will be ``pyfar.TimeData``.
-
-    Notes
-    -----
-    This function is primarily intended to be used when processing room impulse
-    responses. When ``circular_shift=True``, the function input is passed into
-    ``pyfar.dsp.time_shift``.
-
-    Examples
-    --------
-    Perform a circular shift a set of ideal impulses stored in three different
-    channels and plot the resulting signals
-
-    .. plot::
-
-        >>> import pyfar as pf
-        >>> import pyrato as ra
-        >>> import matplotlib.pyplot as plt
-        >>> impulse = pf.signals.impulse(
-        ...     32, amplitude=(1, 1.5, 1), delay=(14, 15, 16))
-        >>> shifted = ra.dsp.time_shift(impulse, [-2, 0, 2])
-        >>> pf.plot.use('light')
-        >>> _, axs = plt.subplots(2, 1)
-        >>> pf.plot.time(impulse, ax=axs[0])
-        >>> pf.plot.time(shifted, ax=axs[1])
-        >>> axs[0].set_title('Original signals')
-        >>> axs[1].set_title('Shifted signals')
-        >>> plt.tight_layout()
-
-    Perform a non-circular shift a single impulse and plot the results.
-
-    .. plot::
-
-        >>> import pyfar as pf
-        >>> import pyrato as ra
-        >>> import matplotlib.pyplot as plt
-        >>> impulse = pf.signals.impulse(32, delay=15)
-        >>> shifted = ra.dsp.time_shift(impulse, -10, circular_shift=False)
-        >>> pf.plot.use('light')
-        >>> _, axs = plt.subplots(2, 1)
-        >>> pf.plot.time(impulse, ax=axs[0])
-        >>> pf.plot.time(shifted, ax=axs[1])
-        >>> axs[0].set_title('Original signal')
-        >>> axs[1].set_title('Shifted signal')
-        >>> plt.tight_layout()
-
-    """
-    shift = np.atleast_1d(shift)
-    if shift.size == 1:
-        shift = np.ones(signal.cshape) * shift
-
-    if unit == 's':
-        shift_samples = np.round(shift*signal.sampling_rate).astype(int)
-    elif unit == 'samples':
-        shift_samples = shift.astype(int)
-    else:
-        raise ValueError(
-            f"Unit is: {unit}, but has to be 'samples' or 's'.")
-
-    shifted = pf.dsp.time_shift(signal, shift_samples, unit='samples')
-
-    if circular_shift is False:
-        # Convert to TimeData, as filling with nans will break Fourier trafos
-        shifted = pf.TimeData(
-            shifted.time,
-            shifted.times,
-            comment=shifted.comment)
-
-        for ch in np.ndindex(shifted.cshape):
-            if shift[ch] < 0:
-                shifted.time[ch, shift_samples[ch]:] = np.nan
-            else:
-                shifted.time[ch, :shift_samples[ch]] = np.nan
-
-    return shifted
-
-
 def estimate_noise_energy(
         data,
         interval=[0.9, 1.0],
@@ -335,8 +220,8 @@ def preprocess_rir(
             shift_samples = np.asarray(
                 -min_shift * np.ones(data.cshape), dtype=int)
 
-        result = time_shift(
-            data, shift_samples, circular_shift=False)
+        result = pf.dsp.time_shift(
+            data, shift_samples, mode='linear', pad_value=np.nan)
     else:
         result = data
 
