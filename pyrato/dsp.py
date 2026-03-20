@@ -430,11 +430,9 @@ def _smooth_rir(
         The time vector fitting the original data.
 
     """
-    data = np.atleast_2d(data)
-    smooth_block_length = np.atleast_1d(smooth_block_length)
     n_samples = data.shape[-1]
     data = data.reshape(-1, n_samples)
-    smooth_block_length = smooth_block_length.flatten()
+    smooth_block_length = (np.atleast_1d(smooth_block_length)).flatten()
     n_channels = len(smooth_block_length)
     n_samples_nan = np.count_nonzero(np.isnan(data), axis=-1)
 
