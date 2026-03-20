@@ -431,8 +431,11 @@ def _smooth_rir(
 
     """
     data = np.atleast_2d(data)
+    smooth_block_length = np.atleast_1d(smooth_block_length)
     n_samples = data.shape[-1]
-    n_channels = len(np.atleast_1d(smooth_block_length))
+    data = data.reshape(-1, n_samples)
+    smooth_block_length = smooth_block_length.flatten()
+    n_channels = len(smooth_block_length)
     n_samples_nan = np.count_nonzero(np.isnan(data), axis=-1)
 
     n_samples_per_block = (np.round(
@@ -457,8 +460,8 @@ def _smooth_rir(
             n_samples_per_block/sampling_rate).reshape(-1, 1))
     else:
         reshaped_array = np.reshape(
-            data[..., :n_samples_actual],
-            (-1, n_blocks_min, n_samples_per_block))
+            data[..., :n_samples_actual[0]],
+            (-1, n_blocks_min, n_samples_per_block[0]))
         time_window_data = np.mean(reshaped_array, axis=-1)
         time_vector_window = \
         ((0.5+np.arange(0, n_blocks_min)) * n_samples_per_block/sampling_rate)

@@ -918,9 +918,9 @@ def intersection_time_lundeby(
     elif isinstance(smoothing_parameter, (int, list, tuple, np.ndarray)):
         smoothing_parameter = np.asarray(smoothing_parameter)
         if (smoothing_parameter.ndim > 0) and (
-            smoothing_parameter.size != data.cshape[0]):
+            smoothing_parameter.size != np.prod(data.cshape)):
             raise ValueError(
-                "The length of smoothing_parameter must match data.cshape[0].")
+                "The size of smoothing_parameter must match data.csize.")
         freq_dependent_window_time = (800 / smoothing_parameter + 10) / 1000
     else:
         raise TypeError(
