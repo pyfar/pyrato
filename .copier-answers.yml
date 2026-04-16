@@ -4,7 +4,7 @@ _src_path: https://github.com/pyfar/template-pyfar-package
 apt_packages: ''
 author: The pyfar developers
 copyright_statement: 2026, The pyfar developers
-dependencies: pyfar=0.8.0,numpy=1.14.0,scipy=1.5.0,matplotlib
+dependencies: pyfar>=0.8.0,numpy>=1.14.0,scipy>=1.5.0,matplotlib
 docs_custom_import: ''
 git_username: pyfar
 gitignore_custom: ''
