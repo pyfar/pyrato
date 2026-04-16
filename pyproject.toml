@@ -5,13 +5,15 @@ description = "Collection of functions commonly used in room acoustics."
 readme = "README.md"
 license = {file = "LICENSE"}
 requires-python = ">=3.11"
+
 authors = [
-    { name = "The pyfar developers", email = "info@pyfar.org" },
+    { name = "The pyfar developers", email = "info@pyfar.org" }
 ]
 keywords = [
     "acoustics",
     "pyfar",
 ]
+
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
@@ -23,11 +25,12 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
 ]
+
 dependencies = [
-    'pyfar>=0.8.0',
-    'numpy>=1.14.0',
-    'scipy>=1.5.0',
-    'matplotlib',
+    "pyfar=0.8.0",
+    "numpy=1.14.0",
+    "scipy=1.5.0",
+    "matplotlib",
 ]
 
 [project.optional-dependencies]
@@ -44,7 +47,6 @@ tests = [
     "watchdog",
     "ruff==0.8.3",
     "coverage",
-
 ]
 docs = [
     "sphinx",
@@ -54,7 +56,7 @@ docs = [
     "sphinx-design",
     "sphinx-favicon",
     "sphinx-reredirects",
-    "sphinx-copybutton"
+    "sphinx-copybutton",
 ]
 dev = ["pyrato[deploy,tests,docs]"]
 
@@ -89,25 +91,28 @@ lint.ignore = [
     "D401",   # First line should be in imperative mood
     "D404",   # First word of the docstring should not be "This"
     "B006",   # Do not use mutable data structures for argument defaults
-
+    "B008",   # Do not perform calls in argument defaults
+    "PT018",  # Assertion should be broken down into multiple parts
+    "PT019",  # Fixture `_` without value is injected as parameter
 ]
 lint.select = [
-    "A",      # Avoid builtin function and type shadowing
-    "ARG",    # Remove unused function/method arguments
     "B",      # bugbear extension
+    "ARG",    # Remove unused function/method arguments
     "C4",     # Check for common security issues
-    "COM",    # trailing comma rules
-    "D",      # Docstring guidelines
-    "D417",   # Missing argument descriptions in the docstring
     "E",      # PEP8 errors
-    "ERA",    # No commented out code
     "F",      # Pyflakes
-    "FIX",    # Code should not contain FIXME, TODO, etc
-    "I002",   # missing required import
-    "NPY",    # Check all numpy related deprecations
-    "PT",     # Pytest style
-    "TID252", # Use absolute over relative imports
     "W",      # PEP8 warnings
+    "D",      # Docstring guidelines
+    "NPY",    # Check all numpy related deprecations
+    "D417",   # Missing argument descriptions in the docstring
+    "PT",     # Pytest style
+    "A",      # Avoid builtin function and type shadowing
+    "ERA",    # No commented out code
+    "NPY",    # Check all numpy related deprecations
+    "COM",    # trailing comma rules
+    "I002",   # missing required import
+    "TID252", # Use absolute over relative imports
+    "FIX",    # Code should not contain FIXME, TODO, etc
 ]
 
 # Ignore missing docstrings in tests

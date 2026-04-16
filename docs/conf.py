@@ -57,7 +57,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'pyrato'
-copyright = "2021-2023, Marco Berzborn; 2023, The pyfar developers"
+copyright = "2026, The pyfar developers"
 author = "The pyfar developers"
 
 # The version info for the project you're documenting, acts as replacement
@@ -105,6 +105,7 @@ intersphinx_mapping = {
 html_theme = 'pydata_sphinx_theme'
 html_static_path = ['_static']
 html_css_files = ['css/custom.css']
+html_js_files = ['js/custom.js']
 html_logo = 'resources/logos/pyfar_logos_fixed_size_pyrato.png'
 html_title = "pyrato"
 html_favicon = '_static/favicon.ico'
@@ -151,6 +152,7 @@ branch = 'main'
 link = f'https://github.com/pyfar/gallery/raw/{branch}/docs/'
 folders_in = [
     '_static/css/custom.css',
+    '_static/js/custom.js',
     '_static/favicon.ico',
     '_static/header.rst',
     'resources/logos/pyfar_logos_fixed_size_pyrato.png',
