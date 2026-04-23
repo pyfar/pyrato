@@ -50,7 +50,7 @@ def test_edc_truncation_1D():
 
     actual = enh.energy_decay_curve_truncation(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=False,
@@ -63,7 +63,7 @@ def test_edc_truncation_1D():
 
     actual = enh.energy_decay_curve_truncation(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=False,
@@ -88,7 +88,7 @@ def test_edc_truncation_2D():
 
     actual = enh.energy_decay_curve_truncation(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=True,
@@ -107,7 +107,7 @@ def test_edc_lundeby_1D():
 
     actual = enh.energy_decay_curve_lundeby(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=False,
@@ -126,7 +126,7 @@ def test_edc_lundeby_2D():
 
     actual = enh.energy_decay_curve_lundeby(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=True,
@@ -145,7 +145,7 @@ def test_edc_lundeby_chu_1D():
 
     actual = enh.energy_decay_curve_chu_lundeby(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=False,
@@ -164,7 +164,7 @@ def test_edc_lundeby_chu_2D():
 
     actual = enh.energy_decay_curve_chu_lundeby(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=True,
@@ -240,7 +240,7 @@ def test_intersection_time_1D():
 
     actual = enh.intersection_time_lundeby(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=False,
         channel_independent=False,
@@ -258,11 +258,52 @@ def test_intersection_time_2D():
 
     actual = enh.intersection_time_lundeby(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=False,
         channel_independent=False,
         plot=False)
+    npt.assert_allclose(actual, expected)
+
+
+def test_intersection_time_smoothing_parameter_error():
+    """
+    Test the errors if an incorrect type or value is specified for
+    the `smoothing_parameter` in the intersection_time_lundeby function.
+    """
+    rir = pf.Signal(genfromtxt(
+        os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'),
+        delimiter=','), 3e3)
+    with pytest.raises(ValueError, match="size of smoothing_parameter must" \
+        " match the number of frequency bands."):
+        enh.intersection_time_lundeby(rir, smoothing_parameter=(125, 1e3, 4e3))
+    with pytest.raises(TypeError, match="must be an int or array_like of int"):
+        enh.intersection_time_lundeby(rir, smoothing_parameter=(22.5))
+    with pytest.raises(TypeError, match="must be an int or array_like of int"):
+        enh.intersection_time_lundeby(rir, smoothing_parameter=("brodband"))
+
+
+def test_intersection_time_smoothing_parameter_array_like():
+    """
+    Test correct computation of the intersection time with an array-like
+    value for smoothing_parameter.
+    """
+    rir = genfromtxt(
+        os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
+        delimiter=',')
+    rir1 = pf.Signal(rir, 3e3)
+    rir2 = pf.Signal((rir, rir), 3e3)
+    # Calculate intersection_time_lundeby with int values for
+    # smoothing_parameter
+    ch1 = np.vstack(
+        enh.intersection_time_lundeby(rir1, smoothing_parameter=(125)))
+    ch2 = np.vstack(
+        enh.intersection_time_lundeby(rir1, smoothing_parameter=(1000)))
+    expected = np.hstack((ch1, ch2))
+    # Calculate intersection_time_lundeby with an array-like value
+    # for smoothing_parameter
+    actual = np.vstack(
+        enh.intersection_time_lundeby(rir2, smoothing_parameter=(125, 1000)))
     npt.assert_allclose(actual, expected)
 
 
