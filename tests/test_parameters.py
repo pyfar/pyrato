@@ -16,6 +16,7 @@ from pyrato.parameters import speech_transmission_index_indirect
 from pyrato.parameters import modulation_transfer_function
 from pyrato.parameters import _sti_calc
 from pyrato.parameters import _ambient_noise_correction
+from pyrato.parameters import center_time
 # parameter clarity tests
 @pytest.mark.parametrize(
     ("energy", "expected_shape"),
@@ -1391,3 +1392,71 @@ def test_sti_ir_level_snr():
         sti_test = speech_transmission_index_indirect(
             ir, rir_type="acoustical", level=level, snr=snr)
     np.testing.assert_allclose(sti_test, sti_expected, atol=0.07)
+
+@pytest.mark.parametrize(
+    ("energy", "expected_shape"),
+    [
+        # 1D single channel
+        (np.linspace(1, 0, 1000), (1,)),
+        # 2D two channels
+        (np.linspace((1, 0.5), (0, 0), 1000).T, (2,)),
+        # 3D multichannel (2x3 channels)
+        (np.arange(2 * 3 * 1000).reshape(2, 3, 1000), (2, 3)),
+    ],
+)
+def test_center_time_accepts_timedata_and_returns_correct_shape(
+    energy, expected_shape, make_edc,
+):
+    """Test return shape and type of pyfar.TimeData input."""
+    edc = make_edc(energy=energy, sampling_rate=1000)
+    result = center_time(edc)
+    assert isinstance(result, np.ndarray)
+    assert result.shape == expected_shape
+    assert result.shape == edc.cshape
+
+def test_center_time_rejects_non_timedata():
+    """Reject wrong input type."""
+    with pytest.raises(TypeError,
+                       match="energy_decay_curve must be a pyfar.TimeData"):
+        center_time(np.ones(100))
+
+def test_center_time_rejects_edc_not_starting_at_zero():
+    """Reject EDC whose time axis does not start at zero."""
+    edc = pf.TimeData(np.ones((1, 100)), np.arange(1, 101) / 1000)
+    with pytest.raises(ValueError, match="must start at time zero"):
+        center_time(edc)
+
+def test_center_time_rejects_zero_initial_energy():
+    """Reject EDC with zero initial energy (would cause division by zero)."""
+    edc = pf.TimeData(np.zeros((1, 100)), np.arange(100) / 1000)
+    with pytest.raises(ValueError, match="Initial energy"):
+        center_time(edc)
+
+def test_center_time_exponential_decay_analytical(make_edc):
+    r"""Center time for exponential EDC matches analytical solution.
+
+    For e(t) = exp(-alpha * t) with alpha = 13.8155 / RT60:
+
+        T_s = integral(e(t), 0, inf) / e(0) = 1 / alpha
+    """
+    rt60 = 2.0
+    sampling_rate = 1000
+    total_samples = 5000
+    edc = make_edc(rt=rt60, sampling_rate=sampling_rate,
+                   total_samples=total_samples)
+    result = center_time(edc)
+
+    # Analytical expected value
+    a = 13.8155 / rt60
+    expected = 1 / a
+    npt.assert_allclose(result, expected, atol=1e-3)
+
+def test_center_time_multichannel(make_edc):
+    """Each channel is computed independently and results differ."""
+    energy = np.stack([
+        np.exp(-13.8155 / 1.0 * np.arange(2000) / 1000),
+        np.exp(-13.8155 / 2.0 * np.arange(2000) / 1000),
+    ])
+    edc = make_edc(energy=energy, sampling_rate=1000)
+    result = center_time(edc)
+    assert result[1] > result[0]
