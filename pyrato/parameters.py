@@ -1131,7 +1131,7 @@ def center_time(energy_decay_curve):
 
     References
     ----------
-    .. [#isoTs] ISO 3382, Acoustics — Measurement of the reverberation 
+    .. [#isoTs] ISO 3382, Acoustics — Measurement of the reverberation
         time of rooms with reference to other acoustical parameters.
     """
 
@@ -1146,7 +1146,9 @@ def center_time(energy_decay_curve):
         raise ValueError(
             "Initial energy of energy_decay_curve must not be zero.")
 
-    sampling_interval = 1.0 / energy_decay_curve.sampling_rate
+    sampling_interval = (
+        energy_decay_curve.times[1] - energy_decay_curve.times[0]
+    )
     initial_energy = energy_decay_curve.time[..., 0]
     center_time = (
         np.sum(energy_decay_curve.time, axis=-1)
