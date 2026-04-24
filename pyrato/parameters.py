@@ -1082,3 +1082,78 @@ def _sti_calc(mtf):
 
     # limit STI to 1 (IEC 60268-16:2020, Section A.2.1)
     return min(sti, 1.0)
+
+
+def center_time(energy_decay_curve):
+    r"""
+    Calculate the room-acoustic center time (:math:`T_s`).
+
+    The center time :math:`T_s` is the time of the centroid of the squared
+    impulse response. It quantifies the balance between early and late
+    sound energy [#isoTs]_.
+
+    The parameter is defined as
+
+    .. math::
+
+        T_s =
+        \frac{
+            \displaystyle \int_{0}^{\infty} t \cdot p^2(t)\,\mathrm{d}t
+        }{
+            \displaystyle \int_{0}^{\infty} p^2(t)\,\mathrm{d}t
+        }
+
+    where :math:`p(t)` is the room impulse response sound pressure.
+
+    Using the energy decay curve :math:`e(t)`, the parameter can be
+    computed efficiently via the EDC identity as
+
+    .. math::
+
+        T_s =
+        \frac{
+            \displaystyle \int_{0}^{\infty} e(t)\,\mathrm{d}t
+        }{
+            e(0)
+        }.
+
+    Parameters
+    ----------
+    energy_decay_curve : pyfar.TimeData
+        Energy decay curve of the room impulse response. The EDC must
+        start at time zero.
+
+    Returns
+    -------
+    center_time : numpy.ndarray
+        Center time (:math:`T_s`) in seconds,
+        shaped according to the channel shape of the input EDC.
+
+    References
+    ----------
+    .. [#isoTs] ISO 3382, Acoustics — Measurement of the reverberation
+        time of rooms with reference to other acoustical parameters.
+    """
+
+    if not isinstance(energy_decay_curve, pf.TimeData):
+        raise TypeError(
+            "energy_decay_curve must be a pyfar.TimeData or derived object.")
+
+    if not np.isclose(energy_decay_curve.times[0], 0.0):
+        raise ValueError("energy_decay_curve must start at time zero.")
+
+    if np.any(energy_decay_curve.time[..., 0] == 0):
+        raise ValueError(
+            "Initial energy of energy_decay_curve must not be zero.")
+
+    sampling_interval = (
+        energy_decay_curve.times[1] - energy_decay_curve.times[0]
+    )
+    initial_energy = energy_decay_curve.time[..., 0]
+    center_time = (
+        np.sum(energy_decay_curve.time, axis=-1)
+        * sampling_interval
+        / initial_energy
+    )
+
+    return center_time
