@@ -1090,7 +1090,7 @@ def center_time(energy_decay_curve):
 
     The center time :math:`T_s` is the time of the centroid of the squared
     impulse response. It quantifies the balance between early and late
-    sound energy and is related to the perceived clarity of the sound.
+    sound energy [#isoTs]_.
 
     The parameter is defined as
 
