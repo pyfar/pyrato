@@ -170,10 +170,8 @@ def _smooth_rir(
     n_samples_actual = int(n_blocks_min*n_samples_per_block)
     reshaped_array = np.reshape(
         data[..., :n_samples_actual],
-        (-1, n_blocks_min, n_samples_per_block))
+        (*cshape, n_blocks_min, n_samples_per_block))
     time_window_data = np.mean(reshaped_array, axis=-1)
-    # restore input cshape
-    time_window_data = np.reshape(time_window_data, cshape + (n_blocks_min, ))
 
     # Use average time instances corresponding to the average energy level
     # instead of time for the first sample of the block
