@@ -7,7 +7,7 @@ History
 
 Fixed:
 ^^^^^^
-- ``pyrato.edc.intersection_time_lundby`` now works for multi-dimensional Signals (PR #170)
+- ``pyrato.edc.intersection_time_lundeby`` now works for multi-dimensional Signals (PR #170)
 
 
 1.0.0 (2026-03-19)
