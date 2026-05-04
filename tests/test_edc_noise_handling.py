@@ -230,13 +230,16 @@ def test_edc_chu_2D():
     npt.assert_allclose(actual.time, expected)
 
 
-def test_intersection_time_1D():
+def test_intersection_time_lundeby_single():
+    """Test with a single-channel Signal."""
     rir = pf.Signal(genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_1D.csv'),
         delimiter=','), 3000)
     expected = np.atleast_2d(genfromtxt(
         os.path.join(test_data_path, 'intersection_time_1D.csv'),
         delimiter=',')).T
+
+    assert rir.cshape == (1, )
 
     actual = enh.intersection_time_lundeby(
         rir,
@@ -248,13 +251,40 @@ def test_intersection_time_1D():
     npt.assert_allclose(actual, expected)
 
 
-def test_intersection_time_2D():
+def test_intersection_time_lundeby_multichannel():
+    """Test with a two-channel Signal."""
     rir = pf.Signal(genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'),
         delimiter=','), 3000)
     expected = np.atleast_2d(genfromtxt(
         os.path.join(test_data_path, 'intersection_time_2D.csv'),
         delimiter=','))
+
+    assert rir.cshape == (2, )
+
+    actual = enh.intersection_time_lundeby(
+        rir,
+        freq='broadband',
+        is_energy=False,
+        time_shift=False,
+        channel_independent=False,
+        plot=False)
+    npt.assert_allclose(actual, expected)
+
+
+def test_intersection_time_lundeby_multi_dimensional():
+    """Test with a Signal of cshape = (2, 2)."""
+    rir = pf.Signal(genfromtxt(
+        os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'),
+        delimiter=','), 3000)
+    rir = pf.utils.concatenate_channels((rir, rir), 0).reshape((2, 2))
+
+    expected = np.atleast_2d(genfromtxt(
+        os.path.join(test_data_path, 'intersection_time_2D.csv'),
+        delimiter=','))
+    expected = [np.vstack((e, e)) for e in expected]
+
+    assert rir.cshape == (2, 2)
 
     actual = enh.intersection_time_lundeby(
         rir,
