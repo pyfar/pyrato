@@ -992,7 +992,7 @@ def intersection_time_lundeby(
     for ch in np.ndindex(data.cshape):
         output = _intersection_time_lundby(
         time_window_data[ch], noise_estimation[ch], energy_data[ch],
-        np.squeeze(np.atleast_2d(time_vector_window)[ch, :]),
+        np.squeeze(np.atleast_2d(time_vector_window)[ch]),
         dB_above_noise, n_intervals_per_10dB,
         use_dyn_range_for_regression, sampling_rate,
         ch, failure_policy)

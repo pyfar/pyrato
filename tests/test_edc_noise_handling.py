@@ -264,7 +264,7 @@ def test_intersection_time_lundeby_multichannel():
 
     actual = enh.intersection_time_lundeby(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=False,
         channel_independent=False,
