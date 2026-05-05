@@ -182,8 +182,10 @@ def _smooth_rir(
             time_vector_window = (
             (0.5+np.arange(0, n_blocks_min)).reshape(1, -1) * (
             n_samples_per_block/sampling_rate).reshape(-1, 1))
-        time_window_data = np.reshape(time_window_data, (cshape + (n_blocks_min,)))
-        time_vector_window = np.reshape(time_vector_window, (cshape + (n_blocks_min,)))
+        time_window_data = np.reshape(
+            time_window_data, (cshape + (n_blocks_min,)))
+        time_vector_window = np.reshape(
+            time_vector_window, (cshape + (n_blocks_min,)))
     else:
         reshaped_array = np.reshape(
             data[..., :n_samples_actual[0]],
