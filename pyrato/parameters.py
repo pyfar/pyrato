@@ -1154,7 +1154,7 @@ def center_time(energy_decay_curve):
     sampling_interval = dt[0]
     initial_energy = energy_decay_curve.time[..., 0]
     center_time = (
-        np.sum(energy_decay_curve.time, axis=-1)
+        np.nansum(energy_decay_curve.time, axis=-1)
         * sampling_interval
         / initial_energy
     )
