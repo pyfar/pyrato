@@ -1121,7 +1121,7 @@ def center_time(energy_decay_curve):
     ----------
     energy_decay_curve : pyfar.TimeData
         Energy decay curve of the room impulse response. The EDC must
-        start at time zero.
+        start at time zero and must have equal time spacing.
 
     Returns
     -------
@@ -1146,9 +1146,12 @@ def center_time(energy_decay_curve):
         raise ValueError(
             "Initial energy of energy_decay_curve must not be zero.")
 
-    sampling_interval = (
-        energy_decay_curve.times[1] - energy_decay_curve.times[0]
-    )
+    dt = np.diff(energy_decay_curve.times)
+    if not np.allclose(dt, dt[0]):
+        raise ValueError(
+            "energy_decay_curve must have equal time spacing.")
+
+    sampling_interval = dt[0]
     initial_energy = energy_decay_curve.time[..., 0]
     center_time = (
         np.sum(energy_decay_curve.time, axis=-1)
