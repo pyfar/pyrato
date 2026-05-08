@@ -1434,7 +1434,8 @@ def test_center_time_rejects_zero_initial_energy():
 
 def test_center_time_rejects_non_uniform_time_spacing():
     """Reject EDC with non-uniform time spacing."""
-    times = np.concatenate([[0, 0.001, 0.003], np.arange(3, 100) / 1000])
+    # monotonically increasing but not uniform
+    times = np.concatenate([[0, 0.001, 0.003], np.arange(4, 101) / 1000])
     edc = pf.TimeData(np.ones((1, len(times))), times)
     with pytest.raises(ValueError, match="equal time spacing"):
         center_time(edc)
