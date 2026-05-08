@@ -1468,3 +1468,21 @@ def test_center_time_multichannel(make_edc):
     edc = make_edc(energy=energy, sampling_rate=1000)
     result = center_time(edc)
     assert result[1] > result[0]
+
+def test_center_time_nan_tail_returns_finite_result(make_edc):
+    """center_time() returns a finite result when the EDC tail is NaN.
+
+    Lundeby/Chu methods set the noise tail to NaN. The finite head should
+    still produce a valid Ts.
+    """
+    rt60 = 1.0
+    sampling_rate = 1000
+    total_samples = 2000
+    edc = make_edc(rt=rt60, sampling_rate=sampling_rate,
+                   total_samples=total_samples)
+    # Simulate Lundeby/Chu truncation: set the last 500 samples to NaN
+    edc.time[..., 1500:] = np.nan
+
+    result = center_time(edc)
+
+    assert np.all(np.isfinite(result))
