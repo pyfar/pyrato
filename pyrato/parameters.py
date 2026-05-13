@@ -6,6 +6,7 @@ import re
 import numpy as np
 import pyfar as pf
 import warnings
+from scipy.integrate import trapezoid
 
 def reverberation_time_linear_regression(
         energy_decay_curve, T='T20', return_intercept=False):
@@ -1106,7 +1107,9 @@ def center_time(energy_decay_curve):
     where :math:`p(t)` is the room impulse response sound pressure.
 
     Using the energy decay curve :math:`e(t)`, the parameter can be
-    computed efficiently via the EDC identity as
+    computed efficiently via the Schroeder backward integral identity
+    :math:`e(t) = \int_t^\infty p^2(\tau)\,\mathrm{d}\tau` [#schroeder]_
+    and Fubini's theorem as
 
     .. math::
 
@@ -1120,8 +1123,7 @@ def center_time(energy_decay_curve):
     Parameters
     ----------
     energy_decay_curve : pyfar.TimeData
-        Energy decay curve of the room impulse response. The EDC must
-        start at time zero and must have equal time spacing.
+        Energy decay curve of the room impulse response.
 
     Returns
     -------
@@ -1133,6 +1135,9 @@ def center_time(energy_decay_curve):
     ----------
     .. [#isoTs] ISO 3382, Acoustics — Measurement of the reverberation
         time of rooms with reference to other acoustical parameters.
+    .. [#schroeder] M. R. Schroeder, "New Method of Measuring Reverberation
+        Time," J. Acoust. Soc. Am., vol. 37, no. 3, pp. 409-412, 1965.
+        doi:10.1121/1.1909343
     """
 
     if not isinstance(energy_decay_curve, pf.TimeData):
@@ -1146,16 +1151,12 @@ def center_time(energy_decay_curve):
         raise ValueError(
             "Initial energy of energy_decay_curve must not be zero.")
 
-    dt = np.diff(energy_decay_curve.times)
-    if not np.allclose(dt, dt[0]):
-        raise ValueError(
-            "energy_decay_curve must have equal time spacing.")
-
-    sampling_interval = dt[0]
     initial_energy = energy_decay_curve.time[..., 0]
+    # NaN values in the tail (e.g. from Lundeby/Chu truncation) are treated as
+    # zero, since the EDC is assumed to converge to zero.
+    edc = np.nan_to_num(energy_decay_curve.time, nan=0.0)
     center_time = (
-        np.nansum(energy_decay_curve.time, axis=-1)
-        * sampling_interval
+        trapezoid(edc, energy_decay_curve.times, axis=-1)
         / initial_energy
     )
 

@@ -1432,13 +1432,31 @@ def test_center_time_rejects_zero_initial_energy():
     with pytest.raises(ValueError, match="Initial energy"):
         center_time(edc)
 
-def test_center_time_rejects_non_uniform_time_spacing():
-    """Reject EDC with non-uniform time spacing."""
+def test_center_time_accepts_non_uniform_time_spacing():
+    """Accept EDC with non-uniform time spacing (trapezoid integration)."""
     # monotonically increasing but not uniform
     times = np.concatenate([[0, 0.001, 0.003], np.arange(4, 101) / 1000])
     edc = pf.TimeData(np.ones((1, len(times))), times)
-    with pytest.raises(ValueError, match="equal time spacing"):
-        center_time(edc)
+    result = center_time(edc)
+    assert np.all(np.isfinite(result))
+
+def test_center_time_non_uniform_spacing_analytical():
+    r"""center_time() is correct for non-uniform spacing with known solution.
+
+    For a linear EDC e(t) = 1 - t/T over [0, T]:
+
+        T_s = integral(e(t), 0, T) / e(0) = (T/2) / 1 = T/2
+    """
+    T = 0.1  # total duration in seconds
+    # non-uniform time grid: dense at start, coarse at end
+    times = np.concatenate([
+        np.linspace(0, 0.02, 20, endpoint=False),
+        np.linspace(0.02, T, 10),
+    ])
+    edc_values = 1 - times / T
+    edc = pf.TimeData(edc_values[np.newaxis, :], times)
+    result = center_time(edc)
+    npt.assert_allclose(result, T / 2, rtol=1e-6)
 
 def test_center_time_exponential_decay_analytical(make_edc):
     r"""Center time for exponential EDC matches analytical solution.
