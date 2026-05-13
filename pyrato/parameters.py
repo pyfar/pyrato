@@ -6,6 +6,7 @@ import re
 import numpy as np
 import pyfar as pf
 import warnings
+from scipy.integrate import trapezoid
 
 def reverberation_time_linear_regression(
         energy_decay_curve, T='T20', return_intercept=False):
@@ -1082,3 +1083,81 @@ def _sti_calc(mtf):
 
     # limit STI to 1 (IEC 60268-16:2020, Section A.2.1)
     return min(sti, 1.0)
+
+
+def center_time(energy_decay_curve):
+    r"""
+    Calculate the room-acoustic center time (:math:`T_s`).
+
+    The center time :math:`T_s` is the time of the centroid of the squared
+    impulse response. It quantifies the balance between early and late
+    sound energy [#isoTs]_.
+
+    The parameter is defined as
+
+    .. math::
+
+        T_s =
+        \frac{
+            \displaystyle \int_{0}^{\infty} t \cdot p^2(t)\,\mathrm{d}t
+        }{
+            \displaystyle \int_{0}^{\infty} p^2(t)\,\mathrm{d}t
+        }
+
+    where :math:`p(t)` is the room impulse response sound pressure.
+
+    Using the energy decay curve :math:`e(t)`, the parameter can be
+    computed efficiently via the Schroeder backward integral identity
+    :math:`e(t) = \int_t^\infty p^2(\tau)\,\mathrm{d}\tau` [#schroeder]_
+    and Fubini's theorem as
+
+    .. math::
+
+        T_s =
+        \frac{
+            \displaystyle \int_{0}^{\infty} e(t)\,\mathrm{d}t
+        }{
+            e(0)
+        }.
+
+    Parameters
+    ----------
+    energy_decay_curve : pyfar.TimeData
+        Energy decay curve of the room impulse response.
+
+    Returns
+    -------
+    center_time : numpy.ndarray
+        Center time (:math:`T_s`) in seconds,
+        shaped according to the channel shape of the input EDC.
+
+    References
+    ----------
+    .. [#isoTs] ISO 3382, Acoustics — Measurement of the reverberation
+        time of rooms with reference to other acoustical parameters.
+    .. [#schroeder] M. R. Schroeder, "New Method of Measuring Reverberation
+        Time," J. Acoust. Soc. Am., vol. 37, no. 3, pp. 409-412, 1965.
+        doi:10.1121/1.1909343
+    """
+
+    if not isinstance(energy_decay_curve, pf.TimeData):
+        raise TypeError(
+            "energy_decay_curve must be a pyfar.TimeData or derived object.")
+
+    if not np.isclose(energy_decay_curve.times[0], 0.0):
+        raise ValueError("energy_decay_curve must start at time zero.")
+
+    if np.any(energy_decay_curve.time[..., 0] == 0):
+        raise ValueError(
+            "Initial energy of energy_decay_curve must not be zero.")
+
+    initial_energy = energy_decay_curve.time[..., 0]
+    # NaN values in the tail (e.g. from Lundeby/Chu truncation) are treated as
+    # zero, since the EDC is assumed to converge to zero.
+    edc = np.nan_to_num(energy_decay_curve.time, nan=0.0)
+    center_time = (
+        trapezoid(edc, energy_decay_curve.times, axis=-1)
+        / initial_energy
+    )
+
+    return center_time
