@@ -852,13 +852,15 @@ def intersection_time_lundeby(
     ----------
     data : pyfar.Signal
         The room impulse response
-    smoothing_parameter : int or array_like of int or {'broadband'}
+    smoothing_parameter : scalar or array_like of scalar or {'broadband'}
         Used to determine the smoothing time window in the Lundeby
         algorithm. It should represent the center frequency (in Hz) of the
         frequency band(s) in which the RIR data was computed.
         If set to 'broadband', the smoothing time window will not be set
         in dependence of frequency and a fixed time window of 30 ms
         is used.
+        If set to an array_like, the length of the array must match
+        the number of frequency bands in the RIR data, i.e., data.cshape[0].
     initial_noise_power: ndarray, double OR string
         If ``'auto'``, the noise level is calculated based on the last 10
         percent of the RIR. Otherwise specify manually for each channel
@@ -959,7 +961,8 @@ def intersection_time_lundeby(
     if smoothing_parameter == "broadband":
         # broadband: use 30 ms windows sizes
         freq_dependent_window_time = np.atleast_1d([0.03] * n_bands)
-    elif isinstance(smoothing_parameter, (int, list, tuple, np.ndarray)):
+    elif isinstance(smoothing_parameter, (int, float, list,
+                                           tuple, np.ndarray)):
         smoothing_parameter = np.atleast_1d(smoothing_parameter)
         if smoothing_parameter.size == 1:
             smoothing_parameter = np.tile(smoothing_parameter, n_bands)
@@ -970,8 +973,8 @@ def intersection_time_lundeby(
         freq_dependent_window_time = (800 / smoothing_parameter + 10) / 1000
     else:
         raise TypeError(
-            "smoothing_parameter must be an int or array_like of int "
-            "or {'broadband'}")
+            "smoothing_parameter must be an int or float, an array_like"
+            " of int or float, or 'broadband'")
 
     freq_dependent_window_time = np.broadcast_to(
         freq_dependent_window_time.reshape(

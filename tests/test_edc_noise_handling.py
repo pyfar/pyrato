@@ -304,12 +304,14 @@ def test_intersection_time_smoothing_parameter_error():
     rir = pf.Signal(genfromtxt(
         os.path.join(test_data_path, 'analytic_rir_psnr50_2D.csv'),
         delimiter=','), 3e3)
-    with pytest.raises(ValueError, match="size of smoothing_parameter must" \
+    with pytest.raises(ValueError, match="size of smoothing_parameter must"
         " match the number of frequency bands."):
         enh.intersection_time_lundeby(rir, smoothing_parameter=(125, 1e3, 4e3))
-    with pytest.raises(TypeError, match="must be an int or array_like of int"):
-        enh.intersection_time_lundeby(rir, smoothing_parameter=(22.5))
-    with pytest.raises(TypeError, match="must be an int or array_like of int"):
+    with pytest.raises(TypeError, match="must be an int or float,"
+                        " an array_like of int or float, or 'broadband'"):
+        enh.intersection_time_lundeby(rir, smoothing_parameter=None)
+    with pytest.raises(TypeError, match="must be an int or float,"
+                        " an array_like of int or float, or 'broadband'"):
         enh.intersection_time_lundeby(rir, smoothing_parameter=("brodband"))
 
 
