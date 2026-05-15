@@ -337,6 +337,18 @@ def test_intersection_time_smoothing_parameter_array_like():
     npt.assert_allclose(actual, expected)
 
 
+def test_intersection_time_lundeby_smoothing_parameter_cdim2():
+    """
+    Test correct computation of the intersection time with 2-dimensional
+    cshape of the RIR.
+    """
+    rir = pf.signals.files.room_impulse_response(crop_noise_tail=False)
+    rirs = rir.copy()
+    rirs = (pf.utils.concatenate_channels((rirs, rirs, rirs, rirs), 0)
+            ).reshape((2, 2))
+    enh.intersection_time_lundeby(rirs, smoothing_parameter=[1e3, 4e3])
+
+
 def test_intersection_time_failure_handling():
     """Test warnings and errors when computing the intersection time."""
 

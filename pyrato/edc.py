@@ -955,7 +955,7 @@ def intersection_time_lundeby(
     energy_data = energy_data.time
 
     # number of frequency bands given by first channel axis
-    n_bands = np.prod(data.cshape)
+    n_bands = data.cshape[0]
     if smoothing_parameter == "broadband":
         # broadband: use 30 ms windows sizes
         freq_dependent_window_time = np.atleast_1d([0.03] * n_bands)
@@ -972,6 +972,11 @@ def intersection_time_lundeby(
         raise TypeError(
             "smoothing_parameter must be an int or array_like of int "
             "or {'broadband'}")
+
+    freq_dependent_window_time = np.broadcast_to(
+        freq_dependent_window_time.reshape(
+            n_bands, *([1] * (len(data.cshape) - 1))),
+        data.cshape).copy()
 
     # (1) SMOOTH
     time_window_data, time_vector_window, time_vector = dsp._smooth_rir(
