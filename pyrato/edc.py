@@ -187,6 +187,10 @@ def _schroeder_integration(impulse_response, is_energy=False):
     return energy_decay_curve
 
 
+@pf._utils.rename_arg(
+        {"freq" : "smoothing_parameter"},
+        "'freq' will be deprecated in "
+        "pyrato 1.1.0 in favor of 'smoothing_parameter'")
 def energy_decay_curve_truncation(
         data,
         smoothing_parameter='broadband',
@@ -353,6 +357,10 @@ def energy_decay_curve_truncation(
     return edc
 
 
+@pf._utils.rename_arg(
+        {"freq" : "smoothing_parameter"},
+        "'freq' will be deprecated in "
+        "pyrato 1.1.0 in favor of 'smoothing_parameter'")
 def energy_decay_curve_lundeby(
         data,
         smoothing_parameter='broadband',
@@ -659,6 +667,10 @@ def energy_decay_curve_chu(
     return edc
 
 
+@pf._utils.rename_arg(
+        {"freq" : "smoothing_parameter"},
+        "'freq' will be deprecated in "
+        "pyrato 1.1.0 in favor of 'smoothing_parameter'")
 def energy_decay_curve_chu_lundeby(
         data,
         smoothing_parameter='broadband',
@@ -833,6 +845,10 @@ def energy_decay_curve_chu_lundeby(
     return edc
 
 
+@pf._utils.rename_arg(
+        {"freq" : "smoothing_parameter"},
+        "'freq' will be deprecated in "
+        "pyrato 1.1.0 in favor of 'smoothing_parameter'")
 def intersection_time_lundeby(
         data,
         smoothing_parameter='broadband',
