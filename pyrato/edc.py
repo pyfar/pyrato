@@ -187,9 +187,13 @@ def _schroeder_integration(impulse_response, is_energy=False):
     return energy_decay_curve
 
 
+@pf._utils.rename_arg(
+        {"freq" : "smoothing_parameter"},
+        "'freq' will be deprecated in "
+        "pyrato 1.1.0 in favor of 'smoothing_parameter'")
 def energy_decay_curve_truncation(
         data,
-        freq='broadband',
+        smoothing_parameter='broadband',
         noise_level='auto',
         is_energy=False,
         time_shift=True,
@@ -218,10 +222,13 @@ def energy_decay_curve_truncation(
     ----------
     data : pyfar.Signal
         The room impulse response.
-    freq: integer OR string
-        The frequency band. If set to 'broadband',
-        the time window of the Lundeby-algorithm will not be set in dependence
-        of frequency.
+    smoothing_parameter : int or array_like of int or {'broadband'}
+        Used to determine the smoothing time window in the Lundeby
+        algorithm. It should represent the center frequency (in Hz) of the
+        frequency band(s) in which the RIR data was computed.
+        If set to 'broadband', the smoothing time window will not be set
+        in dependence of frequency and a fixed time window of 30 ms
+        is used.
     noise_level: ndarray, double OR string
         If not specified, the noise level is calculated based on the last 10
         percent of the RIR. Otherwise specify manually for each channel
@@ -301,7 +308,7 @@ def energy_decay_curve_truncation(
 
     intersection_time = intersection_time_lundeby(
         energy_data,
-        freq=freq,
+        smoothing_parameter=smoothing_parameter,
         initial_noise_power=noise_level,
         is_energy=True,
         time_shift=False,
@@ -350,9 +357,13 @@ def energy_decay_curve_truncation(
     return edc
 
 
+@pf._utils.rename_arg(
+        {"freq" : "smoothing_parameter"},
+        "'freq' will be deprecated in "
+        "pyrato 1.1.0 in favor of 'smoothing_parameter'")
 def energy_decay_curve_lundeby(
         data,
-        freq='broadband',
+        smoothing_parameter='broadband',
         noise_level='auto',
         is_energy=False,
         time_shift=True,
@@ -381,10 +392,13 @@ def energy_decay_curve_lundeby(
     ----------
     data : pyfar.Signal
         The room impulse response.
-    freq: integer OR string
-        The frequency band. If set to 'broadband',
-        the time window of the Lundeby-algorithm will not be set in dependence
-        of frequency.
+    smoothing_parameter : int or array_like of int or {'broadband'}
+        Used to determine the smoothing time window in the Lundeby
+        algorithm. It should represent the center frequency (in Hz) of the
+        frequency band(s) in which the RIR data was computed.
+        If set to 'broadband', the smoothing time window will not be set
+        in dependence of frequency and a fixed time window of 30 ms
+        is used.
     noise_level: ndarray, double OR string
         If not specified, the noise level is calculated based on the last 10
         percent of the RIR. Otherwise specify manually for each channel
@@ -462,7 +476,7 @@ def energy_decay_curve_lundeby(
     intersection_time, late_reverberation_time, noise_estimation = \
         intersection_time_lundeby(
             energy_data,
-            freq=freq,
+            smoothing_parameter=smoothing_parameter,
             initial_noise_power=noise_level,
             is_energy=True,
             time_shift=False,
@@ -653,9 +667,13 @@ def energy_decay_curve_chu(
     return edc
 
 
+@pf._utils.rename_arg(
+        {"freq" : "smoothing_parameter"},
+        "'freq' will be deprecated in "
+        "pyrato 1.1.0 in favor of 'smoothing_parameter'")
 def energy_decay_curve_chu_lundeby(
         data,
-        freq='broadband',
+        smoothing_parameter='broadband',
         noise_level='auto',
         is_energy=False,
         time_shift=True,
@@ -686,10 +704,13 @@ def energy_decay_curve_chu_lundeby(
     ----------
     data : pyfar.Signal
         The room impulse response.
-    freq: integer OR string
-        The frequency band. If set to 'broadband',
-        the time window of the Lundeby-algorithm will not be set in dependence
-        of frequency.
+    smoothing_parameter : int or array_like of int or {'broadband'}
+        Used to determine the smoothing time window in the Lundeby
+        algorithm. It should represent the center frequency (in Hz) of the
+        frequency band(s) in which the RIR data was computed.
+        If set to 'broadband', the smoothing time window will not be set
+        in dependence of frequency and a fixed time window of 30 ms
+        is used.
     noise_level: ndarray, double OR string
         If not specified, the noise level is calculated based on the last 10
         percent of the RIR. Otherwise specify manually for each channel
@@ -770,7 +791,7 @@ def energy_decay_curve_chu_lundeby(
     intersection_time, late_reverberation_time, noise_level = \
         intersection_time_lundeby(
             energy_data,
-            freq=freq,
+            smoothing_parameter=smoothing_parameter,
             initial_noise_power=noise_level,
             is_energy=True,
             time_shift=False,
@@ -824,9 +845,13 @@ def energy_decay_curve_chu_lundeby(
     return edc
 
 
+@pf._utils.rename_arg(
+        {"freq" : "smoothing_parameter"},
+        "'freq' will be deprecated in "
+        "pyrato 1.1.0 in favor of 'smoothing_parameter'")
 def intersection_time_lundeby(
         data,
-        freq='broadband',
+        smoothing_parameter='broadband',
         initial_noise_power='auto',
         is_energy=False,
         time_shift=False,
@@ -843,10 +868,15 @@ def intersection_time_lundeby(
     ----------
     data : pyfar.Signal
         The room impulse response
-    freq: integer OR string
-        The frequency band. If set to 'broadband',
-        the time window of the Lundeby-algorithm will not be set in dependence
-        of frequency.
+    smoothing_parameter : scalar or array_like of scalar or {'broadband'}
+        Used to determine the smoothing time window in the Lundeby
+        algorithm. It should represent the center frequency (in Hz) of the
+        frequency band(s) in which the RIR data was computed.
+        If set to 'broadband', the smoothing time window will not be set
+        in dependence of frequency and a fixed time window of 30 ms
+        is used.
+        If set to an array_like, the length of the array must match
+        the number of frequency bands in the RIR data, i.e., data.cshape[0].
     initial_noise_power: ndarray, double OR string
         If ``'auto'``, the noise level is calculated based on the last 10
         percent of the RIR. Otherwise specify manually for each channel
@@ -942,11 +972,30 @@ def intersection_time_lundeby(
         sampling_rate = np.round(1/np.diff(data.times).mean(), decimals=4)
     energy_data = energy_data.time
 
-    if freq == "broadband":
+    # number of frequency bands given by first channel axis
+    n_bands = data.cshape[0]
+    if smoothing_parameter == "broadband":
         # broadband: use 30 ms windows sizes
-        freq_dependent_window_time = 0.03
+        freq_dependent_window_time = np.atleast_1d([0.03] * n_bands)
+    elif isinstance(smoothing_parameter, (int, float, list,
+                                           tuple, np.ndarray)):
+        smoothing_parameter = np.atleast_1d(smoothing_parameter)
+        if smoothing_parameter.size == 1:
+            smoothing_parameter = np.tile(smoothing_parameter, n_bands)
+        elif smoothing_parameter.size != n_bands:
+            raise ValueError(
+                "The size of smoothing_parameter must match the number of "
+                "frequency bands.")
+        freq_dependent_window_time = (800 / smoothing_parameter + 10) / 1000
     else:
-        freq_dependent_window_time = (800/freq+10) / 1000
+        raise TypeError(
+            "smoothing_parameter must be an int or float, an array_like"
+            " of int or float, or 'broadband'")
+
+    freq_dependent_window_time = np.broadcast_to(
+        freq_dependent_window_time.reshape(
+            n_bands, *([1] * (len(data.cshape) - 1))),
+        data.cshape).copy()
 
     # (1) SMOOTH
     time_window_data, time_vector_window, time_vector = dsp._smooth_rir(
@@ -965,12 +1014,12 @@ def intersection_time_lundeby(
     noise_peak_level = np.zeros(data.cshape, data.time.dtype)
 
     for ch in np.ndindex(data.cshape):
-
         output = _intersection_time_lundby(
-            time_window_data[ch], noise_estimation[ch], energy_data[ch],
-            time_vector_window, dB_above_noise, n_intervals_per_10dB,
-            use_dyn_range_for_regression, sampling_rate, ch, failure_policy)
-
+        time_window_data[ch], noise_estimation[ch], energy_data[ch],
+        np.squeeze(np.atleast_2d(time_vector_window)[ch]),
+        dB_above_noise, n_intervals_per_10dB,
+        use_dyn_range_for_regression, sampling_rate,
+        ch, failure_policy)
         if output is None:
             reverberation_time[ch] = np.nan
             noise_level[ch] = np.nan

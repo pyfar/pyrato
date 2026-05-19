@@ -100,24 +100,24 @@ substracted_1D = pyrato.edc.subtract_noise_from_squared_rir(rir_array[0]**2)
 substracted_2D = pyrato.edc.subtract_noise_from_squared_rir(rir_array**2)
 
 edc_truncation_1D = pyrato.energy_decay_curve_truncation(
-    rir_array[0], freq='broadband', is_energy=False, time_shift=True,
+    rir_array[0], smoothing_parameter='broadband', is_energy=False, time_shift=True,
     channel_independent=False, normalize=True)
 edc_truncation_2D = pyrato.energy_decay_curve_truncation(
-    rir_array, freq='broadband', is_energy=False, time_shift=True,
+    rir_array, smoothing_parameter='broadband', is_energy=False, time_shift=True,
     channel_independent=False, normalize=True)
 
 edc_lundeby_1D = pyrato.energy_decay_curve_lundeby(
-    rir_array[0], freq='broadband', is_energy=False, time_shift=True,
+    rir_array[0], smoothing_parameter='broadband', is_energy=False, time_shift=True,
     channel_independent=False, normalize=True, plot=False)
 edc_lundeby_2D = pyrato.energy_decay_curve_lundeby(
-    rir_array, freq='broadband', is_energy=False, time_shift=True,
+    rir_array, smoothing_parameter='broadband', is_energy=False, time_shift=True,
     channel_independent=False, normalize=True, plot=False)
 
 edc_lundeby_chu_1D = pyrato.energy_decay_curve_chu_lundeby(
-    rir_array[0], freq='broadband', is_energy=False, time_shift=True,
+    rir_array[0], smoothing_parameter='broadband', is_energy=False, time_shift=True,
     channel_independent=False, normalize=True, plot=False)
 edc_lundeby_chu_2D = pyrato.energy_decay_curve_chu_lundeby(
-    rir_array, freq='broadband', is_energy=False, time_shift=True,
+    rir_array, smoothing_parameter='broadband', is_energy=False, time_shift=True,
     channel_independent=False, normalize=True, plot=False)
 
 edc_chu_1D = pyrato.energy_decay_curve_chu(
@@ -128,10 +128,10 @@ edc_chu_2D = pyrato.energy_decay_curve_chu(
     channel_independent=False, normalize=True, plot=False)
 
 intersection_time_1D = pyrato.intersection_time_lundeby(
-    rir_array[0], freq='broadband', is_energy=False, time_shift=True,
+    rir_array[0], smoothing_parameter='broadband', is_energy=False, time_shift=True,
     channel_independent=False, plot=False)
 intersection_time_2D = pyrato.intersection_time_lundeby(
-    rir_array, freq='broadband', is_energy=False, time_shift=True,
+    rir_array, smoothing_parameter='broadband', is_energy=False, time_shift=True,
     channel_independent=False, plot=False)
 
 # noise_energy_from_edc_1D = pyrato.edc.estimate_noise_energy_from_edc(

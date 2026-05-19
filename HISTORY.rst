@@ -2,6 +2,14 @@
 History
 =======
 
+1.1.0 (2026-05-19)
+------------------
+
+Changed:
+^^^^^^^^
+- Replaced the `freq` parameter with `smoothing_parameter` in the edc functions, added deprecation warnings and deprecation tests (PR #152)
+
+
 1.0.1 (2026-05-05)
 ------------------
 
