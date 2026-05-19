@@ -42,10 +42,10 @@ def test_deprecation_find_impulse_response_start():
 
 # deprecate in 1.1.0 ----------------------------------------------------------
 @pytest.mark.parametrize("function",
-        [("pyrato.edc.energy_decay_curve_truncation(data=rir,freq='broadband')"),
-        ("pyrato.edc.energy_decay_curve_chu_lundeby(data=rir,freq='broadband')"),
-        ("pyrato.edc.energy_decay_curve_lundeby(data=rir,freq='broadband')"),
-        ("pyrato.edc.intersection_time_lundeby(data=rir,freq='broadband')")])
+        [(pyrato.edc.energy_decay_curve_truncation),
+        (pyrato.edc.energy_decay_curve_chu_lundeby),
+        (pyrato.edc.energy_decay_curve_lundeby),
+        (pyrato.edc.intersection_time_lundeby)])
 def test_deprecation_edc_freq_parameter(function):
     """Test deprecation of the 'freq' parameter in the edc functions."""
 
@@ -54,14 +54,14 @@ def test_deprecation_edc_freq_parameter(function):
                   'analytic_rir_psnr50_1D.csv'), delimiter=','), 3000)
     if version.parse(pyrato.__version__) >= version.parse('1.1.0'):
          with pytest.raises(AttributeError):
-            eval(function)
+            function(rir, freq='broadband')
 
 
 @pytest.mark.parametrize("function",
-        [("pyrato.edc.energy_decay_curve_truncation(data=rir,freq='broadband')"),
-        ("pyrato.edc.energy_decay_curve_chu_lundeby(data=rir,freq='broadband')"),
-        ("pyrato.edc.energy_decay_curve_lundeby(data=rir,freq='broadband')"),
-        ("pyrato.edc.intersection_time_lundeby(data=rir,freq='broadband')")])
+        [(pyrato.edc.energy_decay_curve_truncation),
+        (pyrato.edc.energy_decay_curve_chu_lundeby),
+        (pyrato.edc.energy_decay_curve_lundeby),
+        (pyrato.edc.intersection_time_lundeby)])
 def test_deprecation_warning_edc_freq_parameter(function):
     """
     Test whether deprecation warnings are raised for the 'freq' parameter in
@@ -75,4 +75,4 @@ def test_deprecation_warning_edc_freq_parameter(function):
     with pytest.warns(
         PyfarDeprecationWarning, match="'freq' will be deprecated in "
         "pyrato 1.1.0 in favor of 'smoothing_parameter'"):
-            eval(function)
+            function(data=rir, freq='broadband')
