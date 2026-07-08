@@ -101,10 +101,15 @@ def test_sabine_zero_absorption_area():
     )
 
 
-def test_reflection_density():
+@pytest.mark.parametrize(
+    'times', [
+        np.linspace(0, 1, 100),
+        [0, 1, 2, 3, 4, 5],
+    ],
+)
+def test_reflection_density(times):
     """Test if average reflection density returns correct values."""
     volume = 100
-    times = np.linspace(0, 1, 100)
     speed_of_sound = 343
 
     density = pyrato.parametric.average_reflection_density(
@@ -113,7 +118,8 @@ def test_reflection_density():
         speed_of_sound,
     )
 
-    reference = 4 * np.pi * speed_of_sound**3 * times**2 / volume
+    times_array = np.asarray(times, dtype=float)
+    reference = 4 * np.pi * speed_of_sound**3 * times_array**2 / volume
 
     np.testing.assert_allclose(
         np.squeeze(density.time),
@@ -144,10 +150,15 @@ def test_reflection_density_errors():
         )
 
 
-def test_reflection_number():
+@pytest.mark.parametrize(
+    'times', [
+        np.linspace(0, 1, 100),
+        [0, 1, 2, 3, 4, 5],
+    ],
+)
+def test_reflection_number(times):
     """Test if function returns correct values."""
     volume = 100
-    times = np.linspace(0, 1, 100)
     speed_of_sound = 343
 
     number_of_reflections = pyrato.parametric.average_number_of_reflections(
@@ -156,7 +167,8 @@ def test_reflection_number():
         speed_of_sound,
     )
 
-    reference = 4 * np.pi * speed_of_sound**3 * times**3 / volume / 3
+    times_array = np.asarray(times, dtype=float)
+    reference = 4 * np.pi * speed_of_sound**3 * times_array**3 / volume / 3
 
     np.testing.assert_allclose(
         np.squeeze(number_of_reflections.time),
