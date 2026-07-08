@@ -4,7 +4,7 @@ Parametric room acoustics calculations using simple geometric considerations
 such as Sabine's theory of sound in rooms.
 """
 import numpy as np
-from typing import Union
+from typing import Union, List
 import pyfar as pf
 
 
