@@ -306,7 +306,7 @@ def reverberation_time_sabine(
 
 def average_reflection_density(
         volume: float,
-        times: np.ndarray,
+        times: np.ndarray | List,
         speed_of_sound: float | None = None,
     ) -> pf.TimeData:
     r"""Calculate the time dependent average reflection density in a room.
@@ -323,7 +323,7 @@ def average_reflection_density(
     ----------
     volume : float
         Volume of the room :math:`V` in :math:`m^3`.
-    times : numpy.ndarray
+    times : numpy.ndarray, list
         Time vector in seconds.
     speed_of_sound : float, None, optional
         Speed of sound in the room. By default, the
@@ -343,11 +343,14 @@ def average_reflection_density(
         >>> import pyrato
         >>> import numpy as np
         >>> import pyfar as pf
+        ...
         >>> n_samples = 2**10
         >>> sampling_rate = 16e3
         >>> times = np.arange(n_samples)/sampling_rate
         >>> density = pyrato.parametric.average_reflection_density(
         ...     volume=100, times=times)
+        ...
+        >>> plt.figure(figsize=(8, 4))
         >>> ax = pf.plot.time(density)
         >>> ax.set_yscale("log")
         >>> ax.set_ylabel("Reflection density in 1/s")
@@ -377,7 +380,7 @@ def average_reflection_density(
 
 def average_number_of_reflections(
         volume: float,
-        times: np.ndarray,
+        times: np.ndarray | List,
         speed_of_sound: float | None = None,
     ) -> pf.TimeData:
     r"""Calculate the time dependent average number of reflections in a room.
@@ -394,7 +397,7 @@ def average_number_of_reflections(
     ----------
     volume : float
         Volume of the room :math:`V` in :math:`m^3`.
-    times : numpy.ndarray
+    times : numpy.ndarray, list
         Time vector in seconds.
     speed_of_sound : float, None, optional
         Speed of sound in the room. By default, the
