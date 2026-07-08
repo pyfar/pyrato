@@ -6,6 +6,7 @@ import pytest
 import pyrato.parametric as parametric
 from pyrato.parametric import mean_free_path
 import pyrato as ra
+import pyrato
 
 
 @pytest.mark.parametrize(("volume","reverberation_time","expected_critical_distance"),
@@ -98,3 +99,89 @@ def test_sabine_zero_absorption_area():
             volume, surface_area, mean_absorption),
         np.inf,
     )
+
+
+def test_reflection_density():
+    """Test if average reflection density returns correct values."""
+    volume = 100
+    times = np.linspace(0, 1, 100)
+    speed_of_sound = 343
+
+    density = pyrato.parametric.average_reflection_density(
+        volume,
+        times,
+        speed_of_sound,
+    )
+
+    reference = 4 * np.pi * speed_of_sound**3 * times**2 / volume
+
+    np.testing.assert_allclose(
+        np.squeeze(density.time),
+        reference,
+    )
+
+
+def test_reflection_density_errors():
+    """Test if all errors are raised correctly."""
+
+    with pytest.raises(ValueError, match="must be positive"):
+        pyrato.parametric.average_reflection_density(
+            volume=-1,
+            times=np.linspace(0, 1, 10),
+        )
+
+    with pytest.raises(ValueError, match="must be positive"):
+        pyrato.parametric.average_reflection_density(
+            volume=100,
+            times=np.linspace(-1, 1, 10),
+        )
+
+    with pytest.raises(ValueError, match="must be positive"):
+        pyrato.parametric.average_reflection_density(
+            volume=100,
+            times=np.linspace(0, 1, 10),
+            speed_of_sound=-300,
+        )
+
+
+def test_reflection_number():
+    """Test if function returns correct values."""
+    volume = 100
+    times = np.linspace(0, 1, 100)
+    speed_of_sound = 343
+
+    density = pyrato.parametric.average_number_of_reflections(
+        volume,
+        times,
+        speed_of_sound,
+    )
+
+    reference = 4 * np.pi * speed_of_sound**3 * times**3 / volume / 3
+
+    np.testing.assert_allclose(
+        np.squeeze(density.time),
+        reference,
+    )
+
+
+def test_reflection_number_errors():
+    """Test if all errors are raised correctly."""
+
+    with pytest.raises(ValueError, match="must be positive"):
+        pyrato.parametric.average_number_of_reflections(
+            volume=-1,
+            times=np.linspace(0, 1, 10),
+        )
+
+    with pytest.raises(ValueError, match="must be positive"):
+        pyrato.parametric.average_number_of_reflections(
+            volume=100,
+            times=np.linspace(-1, 1, 10),
+        )
+
+    with pytest.raises(ValueError, match="must be positive"):
+        pyrato.parametric.average_number_of_reflections(
+            volume=100,
+            times=np.linspace(0, 1, 10),
+            speed_of_sound=-300,
+        )
