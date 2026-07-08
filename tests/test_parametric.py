@@ -150,7 +150,7 @@ def test_reflection_number():
     times = np.linspace(0, 1, 100)
     speed_of_sound = 343
 
-    density = pyrato.parametric.average_number_of_reflections(
+    number_of_reflections = pyrato.parametric.average_number_of_reflections(
         volume,
         times,
         speed_of_sound,
@@ -159,7 +159,7 @@ def test_reflection_number():
     reference = 4 * np.pi * speed_of_sound**3 * times**3 / volume / 3
 
     np.testing.assert_allclose(
-        np.squeeze(density.time),
+        np.squeeze(number_of_reflections.time),
         reference,
     )
 

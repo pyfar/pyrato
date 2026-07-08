@@ -358,6 +358,8 @@ def average_reflection_density(
 
     """
 
+    times = np.asarray(times)
+
     if speed_of_sound is None:
         speed_of_sound = pf.constants.reference_speed_of_sound
     if speed_of_sound <= 0:
@@ -406,7 +408,7 @@ def average_number_of_reflections(
     Examples
     --------
     Calculate the time dependent average number of reflections in a room
-    with a volume of with a volume of 100 :math:`m^3`.
+    with a volume of 100 :math:`m^3`.
 
     .. plot::
 
