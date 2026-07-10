@@ -5,6 +5,7 @@ simulated or experimental data.
 import re
 import numpy as np
 import pyfar as pf
+from math import erfc
 import warnings
 
 def reverberation_time_linear_regression(
@@ -660,6 +661,170 @@ def sound_strength(energy_decay_curve_room,
     return 10*np.log10(_energy_ratio(limits,
                                      energy_decay_curve_free_field,
                                      energy_decay_curve_room))
+
+
+def mixing_time(rir, window_length=None, lindau_regression=False,
+                onset_threshold_db=-30.0, peak_secure_margin=100):
+    r"""Estimate the perceptual mixing time using the echo density.
+
+    The mixing time is estimated from the echo density profile according to
+    criterion I of Abel and Huang [#abel]_, optionally followed by the
+    perceptual regression of Lindau et al. [#lindau]_.
+
+    The direct-sound onset is detected per channel as the first sample
+    exceeding ``onset_threshold_db`` below the peak, and the impulse response
+    is cut from ``onset - peak_secure_margin``, the margin dropping to zero if
+    the onset falls inside it. Multichannel input is cut at the earliest onset
+    across channels, which preserves inter-channel time differences: a channel
+    is then measured from the first arrival across all channels, so its
+    transition time includes its propagation delay relative to the earliest
+    channel. Pass channels individually to measure each from its own onset.
+
+    The echo density counts the samples with :math:`|h| > \sigma` inside a
+    rectangular window (growing at the start, of length ``N`` in the middle,
+    shrinking at the end), divided by ``N`` in every case and by the Gaussian
+    expectation :math:`\mathrm{erfc}(1/\sqrt{2}) \approx 0.317`. Here
+    :math:`\sigma` is the sample standard deviation of the window. The
+    transition time is
+
+    .. math::
+
+        t_\mathrm{Abel} = (d - \mathrm{margin}) / f_s,
+
+    where :math:`d` is the first sample at which the echo density exceeds
+    unity, i.e. the field is statistically diffuse. If ``lindau_regression``
+    is ``True``, the perceptual mixing time follows from the regression
+
+    .. math::
+
+        t_\mathrm{mp50} = 0.8 \cdot t_\mathrm{Abel} - 8\,\mathrm{ms},
+
+    with negative results clipped to 1 ms.
+
+    Parameters
+    ----------
+    rir : pyfar.Signal
+        Room impulse response.
+    window_length : float, optional
+        Sliding window length in seconds, rounded down to an even number of
+        samples and at least 4. The default ``None`` uses 1024 samples (about
+        21 ms at 48 kHz), matching the window recommended by Abel and Huang
+        [#abel]_.
+    lindau_regression : bool, optional
+        If ``True``, apply the Lindau et al. [#lindau]_ ``tmp50`` regression
+        to obtain the perceptual mixing time. If ``False``, return the raw
+        transition time :math:`t_\mathrm{Abel}`. The default is ``False``.
+    onset_threshold_db : float, optional
+        Peak criterion for onset detection, in dB below the peak. The default
+        is ``-30.0``.
+    peak_secure_margin : int, optional
+        Safety margin in samples kept before the detected onset, and
+        subtracted from the transition time so it is onset-relative. The
+        default is ``100``.
+
+    Returns
+    -------
+    mixing_time : numpy.ndarray
+        Estimated mixing time in seconds, of shape ``rir.cshape`` with one
+        value per channel.
+
+    Raises
+    ------
+    TypeError
+        If ``rir`` is not a :py:class:`pyfar.Signal`.
+    ValueError
+        If a channel is silent, if the impulse response is shorter than the
+        analysis window, or if the echo density never exceeds unity.
+
+    References
+    ----------
+    .. [#abel] J. S. Abel and P. Huang, "A simple, robust measure of
+        reverberation echo density," in Proc. of the 121st AES Convention,
+        San Francisco, 2006.
+    .. [#lindau] A. Lindau, L. Kosanke, and S. Weinzierl, "Perceptual
+        evaluation of model- and signal-based predictors of the mixing time
+        in binaural room impulse responses," J. Audio Eng. Soc., vol. 60,
+        no. 11, pp. 887-898, 2012.
+
+    Examples
+    --------
+    Estimate the perceptual mixing time of a measured room impulse response:
+
+    >>> import pyfar as pf
+    >>> import pyrato as ra
+    ...
+    >>> rir = pf.signals.files.room_impulse_response(sampling_rate=48000)
+    >>> t_mix = ra.parameters.mixing_time(rir, lindau_regression=True)
+    """
+    if not isinstance(rir, pf.Signal):
+        raise TypeError("Input data must be a pyfar.Signal.")
+
+    fs = rir.sampling_rate
+    cshape = rir.cshape
+    data = rir.time.reshape(-1, rir.n_samples)
+    n_channels = data.shape[0]
+
+    if window_length is None:
+        N = 1024
+    else:
+        # Must be even: the window holds 2 * (N // 2) samples, normalised by N.
+        N = round(window_length * float(fs))
+        N = max(4, N - N % 2)
+    half = N // 2
+
+    peaks = np.max(np.abs(data), axis=-1)
+    if np.any(peaks <= 0.0):
+        raise ValueError("cannot detect an onset: a channel is silent")
+    threshold = 10.0 ** (onset_threshold_db / 20.0)
+    # No onset guard needed: the peak sample always clears the criterion.
+    above = np.abs(data) > peaks[:, np.newaxis] * threshold
+    min_onset = int(np.argmax(above, axis=-1).min())
+    # Margin is all-or-nothing, and decoupled from the one subtracted from
+    # t_abel below, which is always peak_secure_margin.
+    cut_margin = (
+        0 if (min_onset + 1) <= peak_secure_margin else peak_secure_margin)
+    data = data[:, min_onset - cut_margin:]
+    L = data.shape[-1]
+    if L < N:
+        raise ValueError(
+            f"IR shorter than analysis window length ({N} samples). "
+            "Provide at least an IR of some 100 msec.")
+
+    # Normalises the outlier fraction so Gaussian noise gives echo density 1.
+    p_gauss_norm = 1.0 / erfc(1.0 / np.sqrt(2.0))
+
+    out = np.empty(n_channels)
+    for c in range(n_channels):
+        x = data[c]
+        d = None
+        for k in range(1, L + 1):                  # 1-based window centre
+            if k <= half + 1:                      # growing window
+                window = x[0 : k + half - 1]
+            elif k <= L - half + 1:                # constant window (length N)
+                window = x[k - half - 1 : k + half - 1]
+            else:                                  # shrinking window
+                window = x[k - half - 1 : L]
+            sigma = np.std(window, ddof=1)
+            n_out = np.count_nonzero(np.abs(window) > sigma)
+            echo_dens = n_out / N * p_gauss_norm
+            if echo_dens > 1.0:
+                d = k
+                break
+
+        if d is None:
+            raise ValueError(
+                "Mixing time not found within given temporal limits. "
+                "Try again with extended stopping criterion.")
+
+        t_abel_I = (d - peak_secure_margin) / float(fs)   # onset-relative
+
+        if lindau_regression:
+            t_abel_I = 0.8 * t_abel_I - 0.008
+            if t_abel_I < 0:
+                t_abel_I = 0.001
+        out[c] = t_abel_I
+
+    return out.reshape(cshape)
 
 
 def speech_transmission_index_indirect(
