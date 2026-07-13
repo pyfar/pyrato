@@ -7,6 +7,7 @@ import pyrato.parametric as parametric
 from pyrato.parametric import mean_free_path
 import pyrato as ra
 import pyrato
+import pyfar as pf
 from scipy import stats
 
 
@@ -200,6 +201,54 @@ def test_reflection_number_errors():
         )
 
 
+# ======================================================================
+# _start_time_of_arrival_poisson_process
+# ======================================================================
+
+def test_start_time_of_arrival_correct_value():
+    """Return value matches the closed-form expression."""
+    volume = 100
+    speed_of_sound = 343
+    result = parametric._start_time_of_arrival_poisson_process(
+        volume, speed_of_sound)
+    expected = (
+        2 * volume * np.log(2) / (4 * np.pi * speed_of_sound**3)
+    ) ** (1 / 3)
+    npt.assert_allclose(result, expected)
+
+
+def test_start_time_of_arrival_positive():
+    """Result is always positive."""
+    result = parametric._start_time_of_arrival_poisson_process(100, 343)
+    assert result > 0
+
+
+def test_start_time_of_arrival_default_speed_of_sound():
+    """Omitting speed_of_sound uses the pyfar reference value."""
+    volume = 100
+    result_default = parametric._start_time_of_arrival_poisson_process(
+        volume)
+    result_explicit = parametric._start_time_of_arrival_poisson_process(
+        volume, pf.constants.reference_speed_of_sound)
+    npt.assert_allclose(result_default, result_explicit)
+
+
+@pytest.mark.parametrize('volume', [0, -1])
+def test_start_time_of_arrival_invalid_volume(volume):
+    with pytest.raises(ValueError, match="'volume' must be positive"):
+        parametric._start_time_of_arrival_poisson_process(volume, 343)
+
+
+@pytest.mark.parametrize('speed_of_sound', [0, -343])
+def test_start_time_of_arrival_invalid_speed_of_sound(speed_of_sound):
+    with pytest.raises(ValueError, match="speed_of_sound must be positive"):
+        parametric._start_time_of_arrival_poisson_process(100, speed_of_sound)
+
+
+# ======================================================================
+# time_of_arrival_poisson_process
+# ======================================================================
+
 def test_poisson_process_toa_kolmogorov_smirnov_statistic():
     """
     Test if the time of arrival intervals are drawn according to the
@@ -229,3 +278,135 @@ def test_poisson_process_toa_kolmogorov_smirnov_statistic():
         alternative='less',
     )
     assert ks_test.pvalue < 0.01
+
+def test_toa_poisson_seed_reproducibility():
+    """Same seed must yield identical arrival arrays."""
+    volume = 100
+    times = np.linspace(0, 0.1, 100)
+    toa1 = parametric.time_of_arrival_poisson_process(
+        volume, times, seed=42)
+    toa2 = parametric.time_of_arrival_poisson_process(
+        volume, times, seed=42)
+    npt.assert_array_equal(toa1, toa2)
+
+
+def test_toa_poisson_arrivals_ge_t_start():
+    """All returned arrivals must be >= the Poisson-process start time."""
+    volume = 100
+    speed_of_sound = 343
+    times = np.linspace(0, 0.1, 100)
+    t_start = parametric._start_time_of_arrival_poisson_process(
+        volume, speed_of_sound)
+    toa = parametric.time_of_arrival_poisson_process(
+        volume, times, speed_of_sound, seed=0)
+    assert np.all(toa >= t_start)
+
+
+def test_toa_poisson_arrivals_within_time_range():
+    """All returned arrivals must lie within the supplied time vector."""
+    volume = 100
+    times = np.linspace(0, 0.1, 100)
+    toa = parametric.time_of_arrival_poisson_process(volume, times, seed=0)
+    assert np.all(toa <= times[-1])
+
+
+def test_toa_poisson_reflection_rate_limit_reduces_events():
+    """A low reflection rate limit must produce fewer events than no limit."""
+    volume = 100
+    speed_of_sound = 343
+    times = np.linspace(0, 0.1, 100)
+    seed = 0
+    toa_unlimited = parametric.time_of_arrival_poisson_process(
+        volume, times, speed_of_sound, seed=seed)
+    toa_limited = parametric.time_of_arrival_poisson_process(
+        volume, times, speed_of_sound, reflection_rate_limit=1, seed=seed)
+    assert len(toa_limited) < len(toa_unlimited)
+
+
+def test_toa_poisson_invalid_volume():
+    with pytest.raises(ValueError, match="'volume' must be positive"):
+        parametric.time_of_arrival_poisson_process(-1, np.linspace(0, 1, 10))
+
+
+def test_toa_poisson_invalid_speed_of_sound():
+    with pytest.raises(ValueError, match="speed_of_sound must be positive"):
+        parametric.time_of_arrival_poisson_process(
+            100, np.linspace(0, 1, 10), speed_of_sound=0)
+
+
+# ======================================================================
+# ternary_reflection_sequence
+# ======================================================================
+
+def test_ternary_reflection_sequence_returns_signal():
+    arrivals = np.asarray([0.1, 0.3, 0.35])
+    seq = parametric.ternary_reflection_sequence(
+        arrivals, n_samples=50, sampling_rate=100)
+    assert isinstance(seq, pf.Signal)
+
+
+def test_ternary_reflection_sequence_length():
+    arrivals = np.asarray([0.1, 0.3, 0.35])
+    n_samples = 50
+    seq = parametric.ternary_reflection_sequence(
+        arrivals, n_samples=n_samples, sampling_rate=100)
+    assert seq.n_samples == n_samples
+
+
+def test_ternary_reflection_sequence_sampling_rate():
+    arrivals = np.asarray([0.1, 0.3])
+    sampling_rate = 44100
+    seq = parametric.ternary_reflection_sequence(
+        arrivals, n_samples=100, sampling_rate=sampling_rate)
+    assert seq.sampling_rate == sampling_rate
+
+
+def test_ternary_reflection_sequence_values():
+    """Every sample value must be in {-1, 0, 1}."""
+    arrivals = np.asarray([0.1, 0.2, 0.3, 0.4, 0.5])
+    seq = parametric.ternary_reflection_sequence(
+        arrivals, n_samples=100, sampling_rate=100, seed=0)
+    assert np.all(np.isin(np.squeeze(seq.time), [-1, 0, 1]))
+
+
+def test_ternary_reflection_sequence_seed_reproducibility():
+    arrivals = np.asarray([0.1, 0.3, 0.35, 0.41])
+    seq1 = parametric.ternary_reflection_sequence(
+        arrivals, n_samples=50, sampling_rate=100, seed=42)
+    seq2 = parametric.ternary_reflection_sequence(
+        arrivals, n_samples=50, sampling_rate=100, seed=42)
+    npt.assert_array_equal(seq1.time, seq2.time)
+
+
+def test_ternary_reflection_sequence_arrivals_out_of_range():
+    """Arrivals whose sample index >= n_samples must be ignored."""
+    # 1.0 * 100 = 100 == n_samples, so it must be excluded
+    arrivals = np.asarray([0.1, 1.0])
+    n_samples = 100
+    seq = parametric.ternary_reflection_sequence(
+        arrivals, n_samples=n_samples, sampling_rate=100, seed=0)
+    signal = np.squeeze(seq.time)
+    assert np.count_nonzero(signal) == 1
+    assert signal[10] != 0
+
+
+def test_ternary_reflection_sequence_unique_samples():
+    """Two arrivals mapping to the same sample yield exactly one non-zero."""
+    # 0.1 and 0.1001 both round to sample index 10 at fs=100
+    arrivals = np.asarray([0.1, 0.1001])
+    seq = parametric.ternary_reflection_sequence(
+        arrivals, n_samples=50, sampling_rate=100, seed=0)
+    assert np.count_nonzero(np.squeeze(seq.time)) == 1
+
+
+def test_ternary_reflection_sequence_nonzero_positions():
+    """Non-zero positions must equal the rounded arrival sample indices."""
+    arrivals = np.asarray([0.1, 0.3, 0.35, 0.41])
+    n_samples = 50
+    sampling_rate = 100
+    seq = parametric.ternary_reflection_sequence(
+        arrivals, n_samples=n_samples, sampling_rate=sampling_rate, seed=0)
+    expected_indices = np.round(arrivals * sampling_rate).astype(int)
+    nonzero_indices = np.flatnonzero(np.squeeze(seq.time))
+    npt.assert_array_equal(
+        np.sort(nonzero_indices), np.sort(expected_indices))
