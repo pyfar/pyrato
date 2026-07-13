@@ -6,6 +6,7 @@ such as Sabine's theory of sound in rooms.
 import numpy as np
 from typing import Union, List
 import pyfar as pf
+from scipy.integrate import cumulative_trapezoid
 
 
 def energy_decay_curve(
@@ -441,3 +442,230 @@ def average_number_of_reflections(
     number_of_reflections = density.time * times / 3
     return pf.TimeData(number_of_reflections, times)
 
+
+def _start_time_of_arrival_poisson_process(
+        volume : float,
+        speed_of_sound: float | None = None,
+    ):
+    """
+    The earliest time of arrival approximated as a Poisson process.
+
+    Calculated according to [#]_.
+
+    Parameters
+    ----------
+    volume : float
+        Volume of the room in m³.
+    speed_of_sound : float, None, optional
+        Speed of sound in the room. By default,
+        the :py:attr:`~pyfar.constants.reference_speed_of_sound` is used
+        which corresponds to the speed of sound in air at 20 °C.
+
+    References
+    ----------
+    .. [#] D. Schröder, “Physically based real-time auralization of
+           interactive virtual environments,” PhD Thesis, Logos-Verlag,
+           Berlin, 2011. [Online].
+           Available: https://publications.rwth-aachen.de/record/50580
+
+    """
+
+    if speed_of_sound is None:
+        speed_of_sound = pf.constants.reference_speed_of_sound
+    if speed_of_sound <= 0:
+        raise ValueError("speed_of_sound must be positive.")
+
+    if volume <= 0:
+        raise ValueError("'volume' must be positive.")
+
+    return (2*volume*np.log(2)/ (4*np.pi*speed_of_sound**3))**(1/3)
+
+
+def time_of_arrival_poisson_process(
+        volume: float,
+        times: np.ndarray,
+        speed_of_sound: float | None = None,
+        reflection_rate_limit: float = np.inf,
+        seed: None | np.random.RandomState = None,
+    ) -> np.ndarray:
+    """Generate a time of arrival sequence based on a Poisson process.
+
+    The reflection rate is calculated using the average reflection density
+    in a diffuse sound field.
+    Note that the reflection rate increases with time, yielding a
+    non-homogeneous Poisson process. Optionally, the reflection rate can
+    be limited using the ``reflection_rate_limit`` parameter.
+    In [#]_, a maximum of 10000 reflections per second is suggested.
+
+    The implementation of the non-homogeneous Poisson process is based on
+    the transform method described in chap 5 of [#]_.
+
+    Parameters
+    ----------
+    volume : float
+        Volume of the room in m³.
+    times : numpy.ndarray
+        Time vector in seconds.
+    speed_of_sound : float, None, optional
+        Speed of sound in the room. By default, the
+        :py:attr:`~pyfar.constants.reference_speed_of_sound` is used.
+    reflection_rate_limit : float, None, optional
+        Maximum reflection rate in 1/s. If ``np.inf``, no limit is applied.
+        Default is ``np.inf``.
+    seed : int, None, optional
+        Seed for the random number generator. If None, a random seed is used.
+        Default is None.
+
+    Returns
+    -------
+    numpy.ndarray
+        Array of arrival times in seconds.
+
+    Examples
+    --------
+    Simulate the time of arrival of reflections in a room with a volume
+    of 100 m³ and compare the cumulative histogram to the model prediction.
+
+    .. plot::
+
+        >>> import pyrato
+        >>> import numpy as np
+        >>> import pyfar as pf
+        >>> import matplotlib.pyplot as plt
+        ...
+        >>> volume = 100
+        >>> times = np.linspace(0, .5, 200)
+        >>> toa = pyrato.parametric.time_of_arrival_poisson_process(
+        >>>     volume, times)
+        ...
+        >>> plt.figure(figsize=(8, 4))
+        >>> plt.hist(
+        ...     toa, density=False, bins=50, cumulative=True, histtype='step',
+        ...     linewidth=1.5, color='C0', label='Simulation')
+        >>> ax = pf.plot.time(
+        ...     pyrato.parametric.average_number_of_reflections(
+        ...         volume, times),
+        ...     label='Model', linestyle='--',
+        ...     color='grey', linewidth=1.5)
+        >>> ax.set_ylabel('Number of reflections')
+        >>> ax.set_yscale('log')
+        >>> ax.legend(loc='lower right')
+        >>> ax.grid()
+
+    References
+    ----------
+    .. [#] D. Schröder, “Physically based real-time auralization of
+           interactive virtual environments,” PhD Thesis, Logos-Verlag,
+           Berlin, 2011. [Online].
+           Available: https://publications.rwth-aachen.de/record/50580
+    .. [#] S. M. Ross, Simulation, Sixth edition. London, United Kingdom:
+           Academic Press, 2023.
+
+    """
+
+    if speed_of_sound is None:
+        speed_of_sound = pf.constants.reference_speed_of_sound
+
+    if speed_of_sound <= 0:
+        raise ValueError("speed_of_sound must be positive.")
+
+    if volume <= 0:
+        raise ValueError("'volume' must be positive.")
+
+    rng = np.random.default_rng(seed=seed)
+
+    reflection_density = average_reflection_density(
+        volume, times, speed_of_sound,
+    )
+
+    mu_values = np.minimum(
+        np.squeeze(reflection_density.time),
+        reflection_rate_limit,
+    )
+
+    mu_times = reflection_density.times
+
+    t_start = _start_time_of_arrival_poisson_process(volume, speed_of_sound)
+
+    # Cumulative intensity F(t) via numerical integration
+    cumulative_intensity = cumulative_trapezoid(mu_values, mu_times, initial=0)
+
+    # Interpolate the cumulative intensity to find the warped time values
+    F_start = np.interp(t_start, mu_times, cumulative_intensity)
+    F_end = cumulative_intensity[-1]
+
+    # expected number of arrivals
+    total_events = F_end - F_start
+
+    # Draw the total count, then place events uniformly in warped time
+    n_events = rng.poisson(total_events)
+    warped = rng.uniform(F_start, F_end, size=n_events)
+    warped.sort()
+
+    # Invert the warped time to get the arrival times by interpolation
+    arrivals = np.interp(warped, cumulative_intensity, mu_times)
+
+    return arrivals[arrivals >= t_start]
+
+
+def ternary_reflection_sequence(
+        arrivals : np.ndarray,
+        n_samples : int,
+        sampling_rate : float,
+        seed : np.random.RandomState | None = None,
+    ) -> pf.Signal:
+    r"""Generate a ternary reflection sequence from arrival times.
+
+    The reflection sequence is generated by mapping the arrival times to
+    uniform time samples. The amplitude is randomly assigned to either
+    -1 or 1 for each unique sample index.
+    Duplicate time samples are removed, which results in a maximum of one
+    reflection per time sample.
+
+    Parameters
+    ----------
+    arrivals : numpy.ndarray
+        Array of arrival times in seconds.
+    n_samples : int
+        Number of samples in the output sequence.
+    sampling_rate : float
+        Sampling rate in Hz.
+    seed : int, None, optional
+        Seed for the random number generator. If None, a random seed is used.
+
+    Returns
+    -------
+    pyfar.Signal
+        Ternary reflection sequence with a maximum of one reflection per time
+        sample. The sequence has a length of `n_samples` and a sampling rate of
+        `sampling_rate`.
+
+    Examples
+    --------
+    Create a reflection sequence from a set of arrival times
+    and plot the result.
+
+    .. plot::
+
+        >>> import pyrato
+        >>> import numpy as np
+        >>> import pyfar as pf
+        ...
+        >>> times_of_arrival = np.asarray([.1, .3, .35, .41])
+        >>> sequence = pyrato.parametric.ternary_reflection_sequence(
+        ...     times_of_arrival, n_samples=50, sampling_rate=100, seed=10)
+        >>> pf.plot.time(sequence, marker='o', linewidth=0.5)
+
+    """
+
+    rng = np.random.default_rng(seed=seed)
+
+    sample_indices = np.round(arrivals * sampling_rate).astype(int)
+    sample_indices = sample_indices[sample_indices < n_samples]
+    signs = rng.choice([-1, 1], p=[0.5, 0.5], size=len(sample_indices))
+
+    sequence = np.zeros(n_samples)
+    unique_samples, unique_idx = np.unique(sample_indices, return_index=True)
+    sequence[unique_samples] = signs[unique_idx]
+
+    return pf.Signal(sequence, sampling_rate)
