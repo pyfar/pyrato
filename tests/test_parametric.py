@@ -7,6 +7,7 @@ import pyrato.parametric as parametric
 from pyrato.parametric import mean_free_path
 import pyrato as ra
 import pyrato
+from scipy import stats
 
 
 @pytest.mark.parametrize(("volume","reverberation_time","expected_critical_distance"),
@@ -197,3 +198,34 @@ def test_reflection_number_errors():
             times=np.linspace(0, 1, 10),
             speed_of_sound=-300,
         )
+
+
+def test_poisson_process_toa_kolmogorov_smirnov_statistic():
+    """
+    Test if the time of arrival intervals are drawn according to the
+    expected distribution of reflections in a room with a given volume and
+    speed of sound.
+
+    The test uses the Kolmogorov-Smirnov test to compare the empirical
+    distribution of the time of arrival intervals with the expected cumulative
+    distribution from room acoustics theory.
+    """
+    volume = 100
+    speed_of_sound = 343
+
+    times = np.linspace(0, 1, 100)
+    toa = pyrato.parametric.time_of_arrival_poisson_process(
+        volume,
+        times,
+        speed_of_sound,
+    )
+
+    def cumulative_reflections_callable(x):
+        return 4*np.pi/3 * x**3*speed_of_sound/volume
+
+    ks_test = stats.kstest(
+        toa,
+        cumulative_reflections_callable,
+        alternative='less',
+    )
+    assert ks_test.pvalue < 0.01
