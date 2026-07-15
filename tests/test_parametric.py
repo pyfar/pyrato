@@ -474,7 +474,7 @@ def test_reflection_sequence_invalid_distribution():
 
 @pytest.mark.parametrize('distribution', ['normal', 'uniform', 'binary'])
 def test_reflection_sequence_negative_arrivals_ignored(distribution):
-    """Negative arrival times must not write to the output via index wrap-around."""
+    """Negative arrival times must not wrap-around array boundaries."""
     arrivals = np.asarray([-0.1, 0.1])
     seq = parametric.random_reflection_sequence(
         arrivals, n_samples=50, sampling_rate=100, seed=0,
