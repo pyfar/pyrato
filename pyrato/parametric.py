@@ -491,7 +491,7 @@ def time_of_arrival_poisson_process(
         times: np.ndarray,
         speed_of_sound: float | None = None,
         reflection_rate_limit: float = np.inf,
-        seed: None | np.random.RandomState = None,
+        seed: int | None = None,
     ) -> np.ndarray:
     """Generate a time of arrival sequence based on a Poisson process.
 
@@ -514,7 +514,7 @@ def time_of_arrival_poisson_process(
     speed_of_sound : float, None, optional
         Speed of sound in the room. By default, the
         :py:attr:`~pyfar.constants.reference_speed_of_sound` is used.
-    reflection_rate_limit : float, None, optional
+    reflection_rate_limit : float, optional
         Maximum reflection rate in 1/s. If ``np.inf``, no limit is applied.
         Default is ``np.inf``.
     seed : int, None, optional
@@ -541,7 +541,7 @@ def time_of_arrival_poisson_process(
         >>> volume = 100
         >>> times = np.linspace(0, .5, 200)
         >>> toa = pyrato.parametric.time_of_arrival_poisson_process(
-        >>>     volume, times)
+        ...     volume, times)
         ...
         >>> plt.figure(figsize=(8, 4))
         >>> plt.hist(
@@ -624,7 +624,7 @@ def random_reflection_sequence(
 
     The amplitude is randomly sampled according to the chosen distribution
     function. `'normal'` and `'uniform'` yield continuous amplitude values and
-    are suitable to encode random amplitude and phase phase of reflections.
+    are suitable to encode random amplitude and phase of reflections.
     In contrast, `'binary'` yields only -1 and 1, and hence is only suitable
     to encode random phase.
 
@@ -674,7 +674,8 @@ def random_reflection_sequence(
     rng = np.random.default_rng(seed=seed)
 
     sample_indices = np.round(arrivals * sampling_rate).astype(int)
-    sample_indices = sample_indices[sample_indices < n_samples]
+    sample_indices = sample_indices[
+        (sample_indices >= 0) & (sample_indices < n_samples)]
 
     if distribution == "normal":
         amplitude = rng.normal(
