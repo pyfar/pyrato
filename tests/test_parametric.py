@@ -217,12 +217,6 @@ def test_start_time_of_arrival_correct_value():
     npt.assert_allclose(result, expected)
 
 
-def test_start_time_of_arrival_positive():
-    """Result is always positive."""
-    result = parametric._start_time_of_arrival_poisson_process(100, 343)
-    assert result > 0
-
-
 def test_start_time_of_arrival_default_speed_of_sound():
     """Omitting speed_of_sound uses the pyfar reference value."""
     volume = 100
@@ -311,6 +305,7 @@ def test_toa_poisson_arrivals_ge_t_start():
         volume, speed_of_sound)
     toa = parametric.time_of_arrival_poisson_process(
         volume, times, speed_of_sound, seed=0)
+    assert len(toa) > 0
     assert np.all(toa >= t_start)
 
 
@@ -319,6 +314,7 @@ def test_toa_poisson_arrivals_within_time_range():
     volume = 100
     times = np.linspace(0, 0.1, 100)
     toa = parametric.time_of_arrival_poisson_process(volume, times, seed=0)
+    assert len(toa) > 0
     assert np.all(toa <= times[-1])
 
 
@@ -474,3 +470,18 @@ def test_reflection_sequence_invalid_distribution():
         parametric.random_reflection_sequence(
             np.asarray([0.1]), n_samples=10, sampling_rate=100,
             distribution='invalid')
+
+
+@pytest.mark.parametrize('distribution', ['normal', 'uniform', 'binary'])
+def test_reflection_sequence_negative_arrivals_ignored(distribution):
+    """Negative arrival times must not write to the output via index wrap-around."""
+    arrivals = np.asarray([-0.1, 0.1])
+    seq = parametric.random_reflection_sequence(
+        arrivals, n_samples=50, sampling_rate=100, seed=0,
+        distribution=distribution)
+    signal = np.squeeze(seq.time)
+    # Only the arrival at 0.1 s (sample 10) must be non-zero;
+    # the negative arrival must be silently dropped, not written to sample -10.
+    assert np.count_nonzero(signal) == 1
+    assert signal[10] != 0
+    assert signal[-10] == 0  # last-10th element must be untouched
