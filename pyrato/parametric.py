@@ -446,7 +446,7 @@ def average_number_of_reflections(
 def _start_time_of_arrival_poisson_process(
         volume : float,
         speed_of_sound: float | None = None,
-    ):
+    ) -> float:
     """
     The earliest time of arrival approximated as a Poisson process.
 
@@ -460,6 +460,11 @@ def _start_time_of_arrival_poisson_process(
         Speed of sound in the room. By default,
         the :py:attr:`~pyfar.constants.reference_speed_of_sound` is used
         which corresponds to the speed of sound in air at 20 °C.
+
+    Returns
+    -------
+    float
+        Earliest expected time of arrival in seconds.
 
     References
     ----------
