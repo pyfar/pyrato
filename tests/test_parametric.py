@@ -235,12 +235,14 @@ def test_start_time_of_arrival_default_speed_of_sound():
 
 @pytest.mark.parametrize('volume', [0, -1])
 def test_start_time_of_arrival_invalid_volume(volume):
+    """Non-positive volume must raise a ValueError."""
     with pytest.raises(ValueError, match="'volume' must be positive"):
         parametric._start_time_of_arrival_poisson_process(volume, 343)
 
 
 @pytest.mark.parametrize('speed_of_sound', [0, -343])
 def test_start_time_of_arrival_invalid_speed_of_sound(speed_of_sound):
+    """Non-positive speed of sound must raise a ValueError."""
     with pytest.raises(ValueError, match="speed_of_sound must be positive"):
         parametric._start_time_of_arrival_poisson_process(100, speed_of_sound)
 
@@ -323,15 +325,20 @@ def test_toa_poisson_reflection_rate_limit_reduces_events():
     assert len(toa_limited) < len(toa_unlimited)
 
 
-def test_toa_poisson_invalid_volume():
+@pytest.mark.parametrize('volume', [0, -1])
+def test_toa_poisson_invalid_volume(volume):
+    """Non-positive volume must raise a ValueError."""
     with pytest.raises(ValueError, match="'volume' must be positive"):
-        parametric.time_of_arrival_poisson_process(-1, np.linspace(0, 1, 10))
+        parametric.time_of_arrival_poisson_process(
+            volume, np.linspace(0, 1, 10))
 
 
-def test_toa_poisson_invalid_speed_of_sound():
+@pytest.mark.parametrize('speed_of_sound', [0, -343])
+def test_toa_poisson_invalid_speed_of_sound(speed_of_sound):
+    """Non-positive speed of sound must raise a ValueError."""
     with pytest.raises(ValueError, match="speed_of_sound must be positive"):
         parametric.time_of_arrival_poisson_process(
-            100, np.linspace(0, 1, 10), speed_of_sound=0)
+            100, np.linspace(0, 1, 10), speed_of_sound=speed_of_sound)
 
 
 # ======================================================================
