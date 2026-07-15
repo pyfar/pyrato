@@ -335,78 +335,125 @@ def test_toa_poisson_invalid_speed_of_sound():
 
 
 # ======================================================================
-# ternary_reflection_sequence
+# random_reflection_sequence
 # ======================================================================
 
-def test_ternary_reflection_sequence_returns_signal():
+@pytest.mark.parametrize('distribution', ['normal', 'uniform', 'binary'])
+def test_reflection_sequence_returns_signal(distribution):
+    """Return type must be a pyfar Signal."""
     arrivals = np.asarray([0.1, 0.3, 0.35])
-    seq = parametric.ternary_reflection_sequence(
-        arrivals, n_samples=50, sampling_rate=100)
+    seq = parametric.random_reflection_sequence(
+        arrivals, n_samples=50, sampling_rate=100, distribution=distribution)
     assert isinstance(seq, pf.Signal)
 
 
-def test_ternary_reflection_sequence_length():
+@pytest.mark.parametrize('distribution', ['normal', 'uniform', 'binary'])
+def test_reflection_sequence_length(distribution):
+    """Output signal must have exactly n_samples samples."""
     arrivals = np.asarray([0.1, 0.3, 0.35])
     n_samples = 50
-    seq = parametric.ternary_reflection_sequence(
-        arrivals, n_samples=n_samples, sampling_rate=100)
+    seq = parametric.random_reflection_sequence(
+        arrivals, n_samples=n_samples, sampling_rate=100,
+        distribution=distribution)
     assert seq.n_samples == n_samples
 
 
-def test_ternary_reflection_sequence_sampling_rate():
+@pytest.mark.parametrize('distribution', ['normal', 'uniform', 'binary'])
+def test_reflection_sequence_sampling_rate(distribution):
+    """Output signal must carry the requested sampling rate."""
     arrivals = np.asarray([0.1, 0.3])
     sampling_rate = 44100
-    seq = parametric.ternary_reflection_sequence(
-        arrivals, n_samples=100, sampling_rate=sampling_rate)
+    seq = parametric.random_reflection_sequence(
+        arrivals, n_samples=100, sampling_rate=sampling_rate,
+        distribution=distribution)
     assert seq.sampling_rate == sampling_rate
 
 
-def test_ternary_reflection_sequence_values():
-    """Every sample value must be in {-1, 0, 1}."""
-    arrivals = np.asarray([0.1, 0.2, 0.3, 0.4, 0.5])
-    seq = parametric.ternary_reflection_sequence(
-        arrivals, n_samples=100, sampling_rate=100, seed=0)
-    assert np.all(np.isin(np.squeeze(seq.time), [-1, 0, 1]))
-
-
-def test_ternary_reflection_sequence_seed_reproducibility():
+@pytest.mark.parametrize('distribution', ['normal', 'uniform', 'binary'])
+def test_reflection_sequence_seed_reproducibility(distribution):
+    """Same seed must yield an identical output signal."""
     arrivals = np.asarray([0.1, 0.3, 0.35, 0.41])
-    seq1 = parametric.ternary_reflection_sequence(
-        arrivals, n_samples=50, sampling_rate=100, seed=42)
-    seq2 = parametric.ternary_reflection_sequence(
-        arrivals, n_samples=50, sampling_rate=100, seed=42)
+    seq1 = parametric.random_reflection_sequence(
+        arrivals, n_samples=50, sampling_rate=100, seed=42,
+        distribution=distribution)
+    seq2 = parametric.random_reflection_sequence(
+        arrivals, n_samples=50, sampling_rate=100, seed=42,
+        distribution=distribution)
     npt.assert_array_equal(seq1.time, seq2.time)
 
 
-def test_ternary_reflection_sequence_arrivals_out_of_range():
+@pytest.mark.parametrize('distribution', ['normal', 'uniform', 'binary'])
+def test_reflection_sequence_arrivals_out_of_range(distribution):
     """Arrivals whose sample index >= n_samples must be ignored."""
     # 1.0 * 100 = 100 == n_samples, so it must be excluded
     arrivals = np.asarray([0.1, 1.0])
     n_samples = 100
-    seq = parametric.ternary_reflection_sequence(
-        arrivals, n_samples=n_samples, sampling_rate=100, seed=0)
+    seq = parametric.random_reflection_sequence(
+        arrivals, n_samples=n_samples, sampling_rate=100, seed=0,
+        distribution=distribution)
     signal = np.squeeze(seq.time)
     assert np.count_nonzero(signal) == 1
     assert signal[10] != 0
 
 
-def test_ternary_reflection_sequence_unique_samples():
+@pytest.mark.parametrize('distribution', ['normal', 'uniform', 'binary'])
+def test_reflection_sequence_unique_samples(distribution):
     """Two arrivals mapping to the same sample yield exactly one non-zero."""
     # 0.1 and 0.1001 both round to sample index 10 at fs=100
     arrivals = np.asarray([0.1, 0.1001])
-    seq = parametric.ternary_reflection_sequence(
-        arrivals, n_samples=50, sampling_rate=100, seed=0)
+    seq = parametric.random_reflection_sequence(
+        arrivals, n_samples=50, sampling_rate=100, seed=0,
+        distribution=distribution)
     assert np.count_nonzero(np.squeeze(seq.time)) == 1
 
 
-def test_ternary_reflection_sequence_nonzero_positions():
+@pytest.mark.parametrize('distribution', ['normal', 'uniform', 'binary'])
+def test_reflection_sequence_nonzero_positions(distribution):
     """Non-zero positions must equal the rounded arrival sample indices."""
     arrivals = np.asarray([0.1, 0.3, 0.35, 0.41])
     n_samples = 50
     sampling_rate = 100
-    seq = parametric.ternary_reflection_sequence(
-        arrivals, n_samples=n_samples, sampling_rate=sampling_rate, seed=0)
+    seq = parametric.random_reflection_sequence(
+        arrivals, n_samples=n_samples, sampling_rate=sampling_rate, seed=0,
+        distribution=distribution)
     expected_indices = np.round(arrivals * sampling_rate).astype(int)
     nonzero_indices = np.flatnonzero(np.squeeze(seq.time))
     npt.assert_array_equal(
         np.sort(nonzero_indices), np.sort(expected_indices))
+
+
+def test_reflection_sequence_binary_values():
+    """Binary distribution must produce values only in {-1, 0, 1}."""
+    arrivals = np.asarray([0.1, 0.2, 0.3, 0.4, 0.5])
+    seq = parametric.random_reflection_sequence(
+        arrivals, n_samples=100, sampling_rate=100,
+        distribution='binary', seed=0)
+    assert np.all(np.isin(np.squeeze(seq.time), [-1, 0, 1]))
+
+
+def test_reflection_sequence_normal_values():
+    """Normal distribution must produce continuous (non-binary) amplitudes."""
+    arrivals = np.asarray([0.1, 0.2, 0.3, 0.4, 0.5])
+    seq = parametric.random_reflection_sequence(
+        arrivals, n_samples=100, sampling_rate=100,
+        distribution='normal', seed=0)
+    nonzero = np.squeeze(seq.time)[np.squeeze(seq.time) != 0]
+    assert not np.all(np.abs(nonzero) == 1)
+
+
+def test_reflection_sequence_uniform_values():
+    """Uniform distribution must stay within [-sqrt(3), sqrt(3)]."""
+    arrivals = np.linspace(0, 0.99, 50)
+    seq = parametric.random_reflection_sequence(
+        arrivals, n_samples=100, sampling_rate=100,
+        distribution='uniform', seed=0)
+    nonzero = np.squeeze(seq.time)[np.squeeze(seq.time) != 0]
+    assert np.all(np.abs(nonzero) <= np.sqrt(3))
+
+
+def test_reflection_sequence_invalid_distribution():
+    """An unrecognised distribution name must raise a ValueError."""
+    with pytest.raises(ValueError, match="Unknown distribution"):
+        parametric.random_reflection_sequence(
+            np.asarray([0.1]), n_samples=10, sampling_rate=100,
+            distribution='invalid')
