@@ -577,8 +577,12 @@ def time_of_arrival_poisson_process(
     if volume <= 0:
         raise ValueError("'volume' must be positive.")
 
-    if (not np.isinf(reflection_rate_limit) and np.isnan(reflection_rate_limit)) or reflection_rate_limit < 0:
-        raise ValueError("'reflection_rate_limit' must be non-negative and not NaN.")
+    if (
+        not np.isinf(reflection_rate_limit) and np.isnan(reflection_rate_limit)
+    ) or reflection_rate_limit < 0:
+        raise ValueError(
+            "'reflection_rate_limit' must be non-negative and not NaN.",
+        )
     rng = np.random.default_rng(seed=seed)
 
     reflection_density = average_reflection_density(
