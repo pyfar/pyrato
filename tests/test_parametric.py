@@ -272,14 +272,24 @@ def test_poisson_process_toa_kolmogorov_smirnov_statistic():
     )
 
     def cumulative_reflections_callable(x):
-        return 4*np.pi/3 * x**3*speed_of_sound/volume
+        """Normalized to fall in the range [0, 1].
+
+        All constant parameters are not relevant after normalization,
+        only the time dependency remains, which is cubic in time.
+        """
+        return (x / times[-1])**3
 
     ks_test = stats.kstest(
         toa,
         cumulative_reflections_callable,
-        alternative='less',
+        alternative='two-sided',
     )
-    assert ks_test.pvalue < 0.01
+
+    # p-value < 0.01 reject null hypothesis that the samples are drawn from
+    # the expected distribution.
+    # p-value > 0.01 fail to reject the null hypothesis that the data are not
+    # drawn from the expected distribution.
+    assert ks_test.pvalue > 0.01
 
 def test_toa_poisson_seed_reproducibility():
     """Same seed must yield identical arrival arrays."""
