@@ -263,6 +263,7 @@ def test_poisson_process_toa_kolmogorov_smirnov_statistic():
         volume,
         times,
         speed_of_sound,
+        seed=42,
     )
 
     def cumulative_reflections_callable(x):
