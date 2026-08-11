@@ -138,6 +138,12 @@ def test_reflection_density_errors():
 
     with pytest.raises(ValueError, match="must be positive"):
         pyrato.parametric.average_reflection_density(
+            volume=0,
+            times=np.linspace(0, 1, 10),
+        )
+
+    with pytest.raises(ValueError, match="must be positive"):
+        pyrato.parametric.average_reflection_density(
             volume=100,
             times=np.linspace(-1, 1, 10),
         )
@@ -178,6 +184,12 @@ def test_reflection_number(times):
 
 def test_reflection_number_errors():
     """Test if all errors are raised correctly."""
+
+    with pytest.raises(ValueError, match="must be positive"):
+        pyrato.parametric.average_number_of_reflections(
+            volume=0,
+            times=np.linspace(0, 1, 10),
+        )
 
     with pytest.raises(ValueError, match="must be positive"):
         pyrato.parametric.average_number_of_reflections(
