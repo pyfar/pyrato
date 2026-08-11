@@ -311,7 +311,8 @@ def average_reflection_density(
     ) -> pf.TimeData:
     r"""Calculate the time dependent average reflection density in a room.
 
-    The reflection density is calculated as the following ratio [#]_
+    The reflection density is calculated as the following ratio
+    (see chap 4.2 of Ref. [#]_)
 
     .. math::
         \frac{d N(t)}{dt} = \frac{4 \pi c^3 t^2}{V},
@@ -385,7 +386,8 @@ def average_number_of_reflections(
     ) -> pf.TimeData:
     r"""Calculate the time dependent average number of reflections in a room.
 
-    The average number of reflections is calculated as the following ratio [#]_
+    The average number of reflections is calculated as the following ratio
+    (see chap 4.2 of Ref. [#]_)
 
     .. math::
         N(t) = \frac{4 \pi c^3 t^3}{3 V},
