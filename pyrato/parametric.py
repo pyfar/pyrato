@@ -442,4 +442,3 @@ def average_number_of_reflections(
     density = average_reflection_density(volume, times, speed_of_sound)
     number_of_reflections = density.time * times / 3
     return pf.TimeData(number_of_reflections, times)
-
