@@ -326,8 +326,8 @@ def average_reflection_density(
     times : numpy.ndarray, list
         Time vector in seconds.
     speed_of_sound : float, None, optional
-        Speed of sound in the room. By default, the
-        :py:attr:`~pyfar.constants.reference_speed_of_sound` is used.
+        Speed of sound in the room. By default (`None`), the
+        :py:data:`~pyfar.constants.reference_speed_of_sound` is used.
 
     Returns
     -------
@@ -400,8 +400,8 @@ def average_number_of_reflections(
     times : numpy.ndarray, list
         Time vector in seconds.
     speed_of_sound : float, None, optional
-        Speed of sound in the room. By default, the
-        :py:attr:`~pyfar.constants.reference_speed_of_sound` is used.
+        Speed of sound in the room. By default (`None`), the
+        :py:data:`~pyfar.constants.reference_speed_of_sound` is used.
 
     Returns
     -------
