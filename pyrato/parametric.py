@@ -4,7 +4,7 @@ Parametric room acoustics calculations using simple geometric considerations
 such as Sabine's theory of sound in rooms.
 """
 import numpy as np
-from typing import Union
+from typing import Union, List
 import pyfar as pf
 
 
@@ -302,3 +302,143 @@ def reverberation_time_sabine(
         reverberation_time = factor * volume / (surface_area * mean_absorption)
 
     return reverberation_time
+
+
+def average_reflection_density(
+        volume: float,
+        times: np.ndarray | List,
+        speed_of_sound: float | None = None,
+    ) -> pf.TimeData:
+    r"""Calculate the time dependent average reflection density in a room.
+
+    The reflection density is calculated as the following ratio
+    (see chap 4.2 of Ref. [#]_)
+
+    .. math::
+        \frac{d N(t)}{dt} = \frac{4 \pi c^3 t^2}{V},
+
+    where :math:`V` is the room volume in :math:`m^3`, :math:`c` is the
+    speed of sound in the room, and :math:`t` is the time vector in seconds.
+
+    Parameters
+    ----------
+    volume : float
+        Volume of the room :math:`V` in :math:`m^3`.
+    times : numpy.ndarray, list
+        Time vector in seconds.
+    speed_of_sound : float, None, optional
+        Speed of sound in the room. By default (`None`), the
+        :py:data:`~pyfar.constants.reference_speed_of_sound` is used.
+
+    Returns
+    -------
+    reflection_density : pyfar.TimeData
+        The reflection density in :math:`1/s` as a function of time.
+
+    Examples
+    --------
+    Calculate the reflection density for a room with a volume of 100 m³.
+
+    .. plot::
+
+        >>> import pyrato
+        >>> import numpy as np
+        >>> import pyfar as pf
+        ...
+        >>> n_samples = 2**10
+        >>> sampling_rate = 16e3
+        >>> times = np.arange(n_samples)/sampling_rate
+        >>> density = pyrato.parametric.average_reflection_density(
+        ...     volume=100, times=times)
+        ...
+        >>> plt.figure(figsize=(8, 4))
+        >>> ax = pf.plot.time(density)
+        >>> ax.set_yscale("log")
+        >>> ax.set_ylabel("Reflection density in 1/s")
+
+    References
+    ----------
+    .. [#] H. Kuttruff, Room acoustics, 7th Ed. Taylor & Francis, 2024.
+
+    """
+
+    times = np.asarray(times)
+
+    if speed_of_sound is None:
+        speed_of_sound = pf.constants.reference_speed_of_sound
+    if speed_of_sound <= 0:
+        raise ValueError("speed_of_sound must be positive.")
+
+    if np.any(times < 0):
+        raise ValueError("'times' must be positive.")
+
+    if volume <= 0:
+        raise ValueError("'volume' must be positive.")
+
+    density = 4 * np.pi * speed_of_sound**3 * times**2 / volume
+    return pf.TimeData(density, times)
+
+
+def average_number_of_reflections(
+        volume: float,
+        times: np.ndarray | List,
+        speed_of_sound: float | None = None,
+    ) -> pf.TimeData:
+    r"""Calculate the time dependent average number of reflections in a room.
+
+    The average number of reflections is calculated as the following ratio
+    (see chap 4.2 of Ref. [#]_)
+
+    .. math::
+        N(t) = \frac{4 \pi c^3 t^3}{3 V},
+
+    where :math:`V` is the room volume in :math:`m^3`, :math:`c` is the
+    speed of sound in the room, and :math:`t` is the time vector in seconds.
+
+    Parameters
+    ----------
+    volume : float
+        Volume of the room :math:`V` in :math:`m^3`.
+    times : numpy.ndarray, list
+        Time vector in seconds.
+    speed_of_sound : float, None, optional
+        Speed of sound in the room. By default (`None`), the
+        :py:data:`~pyfar.constants.reference_speed_of_sound` is used.
+
+    Returns
+    -------
+    pyfar.TimeData
+        The average number of reflections as a function of time.
+
+    Examples
+    --------
+    Calculate the time dependent average number of reflections in a room
+    with a volume of 100 :math:`m^3`.
+
+    .. plot::
+
+        >>> from pyrato.parametric import average_number_of_reflections
+        >>> import numpy as np
+        >>> import pyfar as pf
+        >>> import matplotlib.pyplot as plt
+        ...
+        >>> n_samples = 2**10
+        >>> sampling_rate = 16e3
+        >>> times = np.arange(n_samples)/sampling_rate
+        >>> number_of_reflections = average_number_of_reflections(
+        ...     volume=100, times=times)
+        ...
+        >>> plt.figure(figsize=(8, 4))
+        >>> ax = pf.plot.time(number_of_reflections)
+        >>> ax.set_yscale("log")
+        >>> ax.set_ylabel("Average number of reflections")
+
+    References
+    ----------
+    .. [#] H. Kuttruff, Room acoustics, 7th Ed. Taylor & Francis, 2024.
+
+    """
+
+    density = average_reflection_density(volume, times, speed_of_sound)
+    number_of_reflections = density.time * times / 3
+    return pf.TimeData(number_of_reflections, times)

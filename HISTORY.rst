@@ -2,6 +2,14 @@
 History
 =======
 
+unreleased
+----------
+
+Added:
+^^^^^^
+- Added functions to calculate the average total number of reflections in a room and their density. (PR #174)
+
+
 1.0.1 (2026-05-05)
 ------------------
 
