@@ -948,17 +948,6 @@ def intersection_time_lundeby(
     else:
         freq_dependent_window_time = (800/freq+10) / 1000
 
-    # (1) SMOOTH
-    time_window_data, time_vector_window, time_vector = dsp._smooth_rir(
-        energy_data, sampling_rate, freq_dependent_window_time)
-
-    # (2) ESTIMATE NOISE
-    if initial_noise_power == 'auto':
-        noise_estimation = dsp._estimate_noise_energy(energy_data)
-    else:
-        noise_estimation = initial_noise_power.copy()
-
-    # (3) REGRESSION
     reverberation_time = np.zeros(data.cshape, data.time.dtype)
     noise_level = np.zeros(data.cshape, data.time.dtype)
     intersection_time = np.zeros(data.cshape, data.time.dtype)
@@ -966,8 +955,19 @@ def intersection_time_lundeby(
 
     for ch in np.ndindex(data.cshape):
 
+        # (1) SMOOTH
+        time_window_data, time_vector_window, time_vector = dsp._smooth_rir(
+            energy_data[ch], sampling_rate, freq_dependent_window_time)
+
+        # (2) ESTIMATE NOISE
+        if initial_noise_power == 'auto':
+            noise_estimation = dsp._estimate_noise_energy(energy_data[ch])
+        else:
+            noise_estimation = initial_noise_power.copy()
+
+        # (3) REGRESSION
         output = _intersection_time_lundby(
-            time_window_data[ch], noise_estimation[ch], energy_data[ch],
+            time_window_data, noise_estimation, energy_data[ch],
             time_vector_window, dB_above_noise, n_intervals_per_10dB,
             use_dyn_range_for_regression, sampling_rate, ch, failure_policy)
 
