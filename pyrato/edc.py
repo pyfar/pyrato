@@ -951,7 +951,7 @@ def intersection_time_lundeby(
     energy_data = energy_data.time
 
     # compute window time
-    if smoothing_parameter == "broadband":
+    if type(smoothing_parameter) is str and smoothing_parameter == "broadband":
         # broadband: use 30 ms windows sizes
         freq_dependent_window_time = np.atleast_1d([0.03])
     else:
@@ -963,8 +963,8 @@ def intersection_time_lundeby(
         freq_dependent_window_time = \
             freq_dependent_window_time * np.ones(data.cshape[0])
     elif freq_dependent_window_time.size != data.cshape[0]:
-        raise ValueError('freq must be a number or an array like '
-                         'of size data.cshape[0]')
+        raise ValueError('smoothing_parameter must be a number or '
+                         'an array like of size data.cshape[0]')
 
     reverberation_time = np.zeros(data.cshape, data.time.dtype)
     noise_level = np.zeros(data.cshape, data.time.dtype)

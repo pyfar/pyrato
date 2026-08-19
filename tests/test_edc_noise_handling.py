@@ -335,6 +335,39 @@ def test_intersection_time_failure_handling_from_calling_functions(
         calling_function(rir)
 
 
+# test rirs with one and multidimensional cshape
+@pytest.mark.parametrize('cshape', [(2, ), (2, 3)])
+# test different array likes for smoothing paramter
+@pytest.mark.parametrize('smoothing_parameter',
+                         [[64, 8e3], (64, 8e3), np.array([64, 8e3])])
+def test_intersection_time_lundeby_frequency_dependent(
+        cshape, smoothing_parameter):
+    """Test frequency dependent handling of the smoothing parameter."""
+    rirs = pf.signals.files.room_impulse_response()
+    rirs.time = np.tile(rirs.time, cshape + (1, ))
+
+    one = enh.intersection_time_lundeby(rirs, 64)
+    two = enh.intersection_time_lundeby(rirs, 8e3)
+    one_two = enh.intersection_time_lundeby(rirs, smoothing_parameter)
+
+    for o, t, o_t in zip(one, two, one_two, strict=True):
+        # results for different parameters must be different
+        assert np.all(o != t)
+        # results for same parameters must be identical in frequency-dependent
+        # and independent case
+        assert np.all(o[0] == o_t[0])
+        assert np.all(t[1] == o_t[1])
+
+
+def test_intersection_time_lundeby_frequency_dependent_error():
+    """Test frequency dependent error handling of the smoothing parameter."""
+    rirs = pf.signals.files.room_impulse_response()
+
+    with pytest.raises(ValueError, match="smoothing_parameter must be"):
+        # single channel RIR with two channel smoothing paramter raises error
+        enh.intersection_time_lundeby(rirs, [64, 125])
+
+
 def test__threshold_energy_decay_curve():
 
     t_60 = 1
