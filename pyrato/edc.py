@@ -942,22 +942,35 @@ def intersection_time_lundeby(
         sampling_rate = np.round(1/np.diff(data.times).mean(), decimals=4)
     energy_data = energy_data.time
 
+    # compute window time
     if freq == "broadband":
         # broadband: use 30 ms windows sizes
-        freq_dependent_window_time = 0.03
+        freq_dependent_window_time = np.atleast_1d([0.03])
     else:
-        freq_dependent_window_time = (800/freq+10) / 1000
+        freq_dependent_window_time = \
+            (800/np.atleast_1d(freq).flatten()+10) / 1000
+
+    # check and broadcast shape of window time
+    if freq_dependent_window_time.size == 1:
+        freq_dependent_window_time = \
+            freq_dependent_window_time * np.ones(data.cshape[0])
+    elif freq_dependent_window_time.size != data.cshape[0]:
+        raise ValueError('freq must be a number or an array like '
+                         'of size data.cshape[0]')
 
     reverberation_time = np.zeros(data.cshape, data.time.dtype)
     noise_level = np.zeros(data.cshape, data.time.dtype)
     intersection_time = np.zeros(data.cshape, data.time.dtype)
     noise_peak_level = np.zeros(data.cshape, data.time.dtype)
 
+    # channel wise processing required to
+    # - apply frequency dependent window times in dsp._smooth_rir and
+    # - channel dependent error handling
     for ch in np.ndindex(data.cshape):
 
         # (1) SMOOTH
         time_window_data, time_vector_window, time_vector = dsp._smooth_rir(
-            energy_data[ch], sampling_rate, freq_dependent_window_time)
+            energy_data[ch], sampling_rate, freq_dependent_window_time[ch[0]])
 
         # (2) ESTIMATE NOISE
         if initial_noise_power == 'auto':
