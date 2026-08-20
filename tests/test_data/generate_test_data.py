@@ -71,9 +71,9 @@ rir_array = pf.Signal(np.genfromtxt(
 pf.plot.time(rir_array, dB=True, alpha=0.5)
 # %%
 
-noise_energy_1D = pyrato.estimate_noise_energy(
+noise_energy_1D = pyrato.dsp.estimate_noise_energy(
     rir_array[0], interval=[0.9, 1.0], is_energy=False)
-noise_energy_2D = pyrato.estimate_noise_energy(
+noise_energy_2D = pyrato.dsp.estimate_noise_energy(
     rir_array, interval=[0.9, 1.0], is_energy=False)
 
 preprocessing_1D = pyrato.dsp._preprocess_rir(
@@ -99,38 +99,38 @@ smoothed_rir_2D = pyrato.dsp._smooth_rir(
 substracted_1D = pyrato.edc.subtract_noise_from_squared_rir(rir_array[0]**2)
 substracted_2D = pyrato.edc.subtract_noise_from_squared_rir(rir_array**2)
 
-edc_truncation_1D = pyrato.energy_decay_curve_truncation(
+edc_truncation_1D = pyrato.edc.energy_decay_curve_truncation(
     rir_array[0], freq='broadband', is_energy=False, time_shift=True,
     channel_independent=False, normalize=True)
-edc_truncation_2D = pyrato.energy_decay_curve_truncation(
+edc_truncation_2D = pyrato.edc.energy_decay_curve_truncation(
     rir_array, freq='broadband', is_energy=False, time_shift=True,
     channel_independent=False, normalize=True)
 
-edc_lundeby_1D = pyrato.energy_decay_curve_lundeby(
+edc_lundeby_1D = pyrato.edc.energy_decay_curve_lundeby(
     rir_array[0], freq='broadband', is_energy=False, time_shift=True,
     channel_independent=False, normalize=True, plot=False)
-edc_lundeby_2D = pyrato.energy_decay_curve_lundeby(
+edc_lundeby_2D = pyrato.edc.energy_decay_curve_lundeby(
     rir_array, freq='broadband', is_energy=False, time_shift=True,
     channel_independent=False, normalize=True, plot=False)
 
-edc_lundeby_chu_1D = pyrato.energy_decay_curve_chu_lundeby(
+edc_lundeby_chu_1D = pyrato.edc.energy_decay_curve_chu_lundeby(
     rir_array[0], freq='broadband', is_energy=False, time_shift=True,
     channel_independent=False, normalize=True, plot=False)
-edc_lundeby_chu_2D = pyrato.energy_decay_curve_chu_lundeby(
+edc_lundeby_chu_2D = pyrato.edc.energy_decay_curve_chu_lundeby(
     rir_array, freq='broadband', is_energy=False, time_shift=True,
     channel_independent=False, normalize=True, plot=False)
 
-edc_chu_1D = pyrato.energy_decay_curve_chu(
+edc_chu_1D = pyrato.edc.energy_decay_curve_chu(
     rir_array[0], is_energy=False, time_shift=True,
     channel_independent=False, normalize=True, plot=False)
-edc_chu_2D = pyrato.energy_decay_curve_chu(
+edc_chu_2D = pyrato.edc.energy_decay_curve_chu(
     rir_array, is_energy=False, time_shift=True,
     channel_independent=False, normalize=True, plot=False)
 
-intersection_time_1D = pyrato.intersection_time_lundeby(
+intersection_time_1D = pyrato.edc.intersection_time_lundeby(
     rir_array[0], freq='broadband', is_energy=False, time_shift=True,
     channel_independent=False, plot=False)
-intersection_time_2D = pyrato.intersection_time_lundeby(
+intersection_time_2D = pyrato.edc.intersection_time_lundeby(
     rir_array, freq='broadband', is_energy=False, time_shift=True,
     channel_independent=False, plot=False)
 
@@ -156,25 +156,25 @@ np.savetxt(
 np.savetxt("noise_energy_1D.csv", noise_energy_1D, delimiter=",")
 np.savetxt("noise_energy_2D.csv", noise_energy_2D, delimiter=",")
 
-np.savetxt("preprocessing_1D.csv", preprocessing_1D[0], delimiter=",")
-np.savetxt("preprocessing_2D.csv", preprocessing_2D[0], delimiter=",")
+np.savetxt("preprocessing_1D.csv", preprocessing_1D.time[0], delimiter=",")
+np.savetxt("preprocessing_2D.csv", preprocessing_2D.time[0], delimiter=",")
 
 np.savetxt(
     "preprocessing_time_shift_1D.csv",
-    preprocessing_time_shift_1D[0],
+    preprocessing_time_shift_1D.time[0],
     delimiter=",")
 np.savetxt(
     "preprocessing_time_shift_2D.csv",
-    preprocessing_time_shift_2D[0],
+    preprocessing_time_shift_2D.time[0],
     delimiter=",")
 
 np.savetxt(
     "preprocessing_time_shift_channel_independent_1D.csv",
-    preprocessing_time_shift_channel_independent_1D[0],
+    preprocessing_time_shift_channel_independent_1D.time[0],
     delimiter=",")
 np.savetxt(
     "preprocessing_time_shift_channel_independent_2D.csv",
-    preprocessing_time_shift_channel_independent_2D[0], delimiter=",")
+    preprocessing_time_shift_channel_independent_2D.time[0], delimiter=",")
 
 np.savetxt("smoothed_rir_1D.csv", smoothed_rir_1D[0], delimiter=",")
 np.savetxt("smoothed_rir_2D.csv", smoothed_rir_2D[0], delimiter=",")
