@@ -50,7 +50,7 @@ def test_edc_truncation_1D():
 
     actual = enh.energy_decay_curve_truncation(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=False,
@@ -63,7 +63,7 @@ def test_edc_truncation_1D():
 
     actual = enh.energy_decay_curve_truncation(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=False,
@@ -88,7 +88,7 @@ def test_edc_truncation_2D():
 
     actual = enh.energy_decay_curve_truncation(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=True,
@@ -107,7 +107,7 @@ def test_edc_lundeby_1D():
 
     actual = enh.energy_decay_curve_lundeby(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=False,
@@ -126,7 +126,7 @@ def test_edc_lundeby_2D():
 
     actual = enh.energy_decay_curve_lundeby(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=True,
@@ -145,7 +145,7 @@ def test_edc_lundeby_chu_1D():
 
     actual = enh.energy_decay_curve_chu_lundeby(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=False,
@@ -164,7 +164,7 @@ def test_edc_lundeby_chu_2D():
 
     actual = enh.energy_decay_curve_chu_lundeby(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=True,
@@ -243,7 +243,7 @@ def test_intersection_time_lundeby_single():
 
     actual = enh.intersection_time_lundeby(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=False,
         channel_independent=False,
@@ -264,7 +264,7 @@ def test_intersection_time_lundeby_multichannel():
 
     actual = enh.intersection_time_lundeby(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=False,
         channel_independent=False,
@@ -288,7 +288,7 @@ def test_intersection_time_lundeby_multi_dimensional():
 
     actual = enh.intersection_time_lundeby(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=False,
         channel_independent=False,
