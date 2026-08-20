@@ -8,6 +8,11 @@ unreleased
 Added:
 ^^^^^^
 - Added functions to calculate the average total number of reflections in a room and their density. (PR #174)
+- All Lundeby related EDC processing in the `pyrato.edc` module now supports frequency dependent smoothing parameters (PR #177)
+
+Deprecated:
+^^^^^^^^^^^
+- The `freq` parameter in the `pyrato.edc` module was renamed to `smoothing_parameter` and will be deprecated in pyrato v1.3.0
 
 
 1.0.1 (2026-05-05)
