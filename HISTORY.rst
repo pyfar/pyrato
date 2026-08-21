@@ -7,9 +7,18 @@ unreleased
 
 Added:
 ^^^^^^
-- Added functions to calculat the average total number of reflections in a room and their density. (PR #174)
 - Added a function to sample times of arrivals of reflections based on a Poisson process (PR #176)
 - Added a function to sample the amplitude or sign of reflections (PR #176)
+- Added functions to calculate the average total number of reflections in a room and their density. (PR #174)
+
+
+1.0.1 (2026-05-05)
+------------------
+
+Fixed:
+^^^^^^
+- ``pyrato.edc.intersection_time_lundeby`` now works for multi-dimensional Signals (PR #170)
+
 
 1.0.0 (2026-03-19)
 ------------------
