@@ -226,9 +226,9 @@ def energy_decay_curve_truncation(
         Used to determine the smoothing time window in the Lundeby
         algorithm. It should represent the center frequency (in Hz) of the
         frequency band(s) in which the RIR data was computed.
-        If set to 'broadband', the smoothing time window will not be set
+        If set to ``'broadband'``, the smoothing time window will not be set
         in dependence of frequency and a fixed time window of 30 ms
-        is used.
+        is used. The default is ``'broadband'``.
     noise_level: ndarray, double OR string
         If not specified, the noise level is calculated based on the last 10
         percent of the RIR. Otherwise specify manually for each channel
@@ -396,9 +396,9 @@ def energy_decay_curve_lundeby(
         Used to determine the smoothing time window in the Lundeby
         algorithm. It should represent the center frequency (in Hz) of the
         frequency band(s) in which the RIR data was computed.
-        If set to 'broadband', the smoothing time window will not be set
+        If set to ``'broadband'``, the smoothing time window will not be set
         in dependence of frequency and a fixed time window of 30 ms
-        is used.
+        is used. The default is ``'broadband'``.
     noise_level: ndarray, double OR string
         If not specified, the noise level is calculated based on the last 10
         percent of the RIR. Otherwise specify manually for each channel
@@ -708,9 +708,9 @@ def energy_decay_curve_chu_lundeby(
         Used to determine the smoothing time window in the Lundeby
         algorithm. It should represent the center frequency (in Hz) of the
         frequency band(s) in which the RIR data was computed.
-        If set to 'broadband', the smoothing time window will not be set
+        If set to ``'broadband'``, the smoothing time window will not be set
         in dependence of frequency and a fixed time window of 30 ms
-        is used.
+        is used. The default is ``'broadband'``.
     noise_level: ndarray, double OR string
         If not specified, the noise level is calculated based on the last 10
         percent of the RIR. Otherwise specify manually for each channel
@@ -873,9 +873,9 @@ def intersection_time_lundeby(
         Used to determine the smoothing time window in the Lundeby
         algorithm. It should represent the center frequency (in Hz) of the
         frequency band(s) in which the RIR data was computed.
-        If set to 'broadband', the smoothing time window will not be set
+        If set to ``'broadband'``, the smoothing time window will not be set
         in dependence of frequency and a fixed time window of 30 ms
-        is used.
+        is used. The default is ``'broadband'``.
     initial_noise_power: ndarray, double OR string
         If ``'auto'``, the noise level is calculated based on the last 10
         percent of the RIR. Otherwise specify manually for each channel
@@ -981,8 +981,8 @@ def intersection_time_lundeby(
 
     # check and broadcast shape of window time
     if freq_dependent_window_time.size == 1:
-        freq_dependent_window_time = \
-            freq_dependent_window_time * np.ones(data.cshape[0])
+        freq_dependent_window_time = np.tile(
+            freq_dependent_window_time, data.cshape[0])
     elif freq_dependent_window_time.size != data.cshape[0]:
         raise ValueError('smoothing_parameter must be a number or '
                          'an array like of size data.cshape[0]')
