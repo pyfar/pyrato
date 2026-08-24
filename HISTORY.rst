@@ -11,7 +11,7 @@ Added:
 - ``center_time`` to compute the room-acoustic center time (:math:`T_s`) from an energy decay curve (PR #170).
 
 Changed:
-^^^^^^^
+^^^^^^^^
 - Updated minimum required dependency version to scipy>=1.11.0 (PR #170)
 
 
