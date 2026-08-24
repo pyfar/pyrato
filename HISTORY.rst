@@ -8,6 +8,8 @@ unreleased
 Added:
 ^^^^^^
 - Added functions to calculate the average total number of reflections in a room and their density. (PR #174)
+-  Dependencies: Limit to SciPy < 1.11 
+- ``center_time`` to compute the room-acoustic center time (:math:`T_s`) from an energy decay curve (PR #170).
 
 
 1.0.1 (2026-05-05)
@@ -16,8 +18,6 @@ Added:
 Fixed:
 ^^^^^^
 - ``pyrato.edc.intersection_time_lundeby`` now works for multi-dimensional Signals (PR #170)
--  Dependencies: Limit to SciPy < 1.11 
-- ``center_time`` to compute the room-acoustic center time (:math:`T_s`) from an energy decay curve (PR #170).
 
 
 1.0.0 (2026-03-19)
