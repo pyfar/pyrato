@@ -460,7 +460,7 @@ def _start_time_of_arrival_poisson_process(
         Volume of the room in m³.
     speed_of_sound : float, None, optional
         Speed of sound in the room. By default,
-        the :py:attr:`~pyfar.constants.reference_speed_of_sound` is used
+        the :py:data:`~pyfar.constants.reference_speed_of_sound` is used
         which corresponds to the speed of sound in air at 20 °C.
 
     Returns
@@ -515,7 +515,7 @@ def time_of_arrival_poisson_process(
         Time vector in seconds.
     speed_of_sound : float, None, optional
         Speed of sound in the room. By default, the
-        :py:attr:`~pyfar.constants.reference_speed_of_sound` is used.
+        :py:data:`~pyfar.constants.reference_speed_of_sound` is used.
     reflection_rate_limit : float, optional
         Maximum reflection rate in 1/s. If ``np.inf``, no limit is applied.
         Default is ``np.inf``.
@@ -548,11 +548,11 @@ def time_of_arrival_poisson_process(
         >>> plt.figure(figsize=(8, 4))
         >>> plt.hist(
         ...     toa, density=False, bins=50, cumulative=True, histtype='step',
-        ...     linewidth=1.5, color='C0', label='Simulation')
+        ...     linewidth=1.5, color='C0', label='Stochastic simulation')
         >>> ax = pf.plot.time(
         ...     pyrato.parametric.average_number_of_reflections(
         ...         volume, times),
-        ...     label='Model', linestyle='--',
+        ...     label='Reference', linestyle='--',
         ...     color='grey', linewidth=1.5)
         >>> ax.set_ylabel('Number of reflections')
         >>> ax.set_yscale('log')
@@ -579,6 +579,9 @@ def time_of_arrival_poisson_process(
     if volume <= 0:
         raise ValueError("'volume' must be positive.")
 
+    if np.any(np.diff(times) <= 0):
+        raise ValueError("'times' must be strictly increasing.")
+
     if (
         not np.isinf(reflection_rate_limit) and np.isnan(reflection_rate_limit)
     ) or reflection_rate_limit < 0:
@@ -597,8 +600,6 @@ def time_of_arrival_poisson_process(
     )
 
     mu_times = reflection_density.times
-    if np.any(np.diff(mu_times) <= 0):
-        raise ValueError("'times' must be strictly increasing.")
     t_start = _start_time_of_arrival_poisson_process(volume, speed_of_sound)
 
     # Cumulative intensity F(t) via numerical integration
