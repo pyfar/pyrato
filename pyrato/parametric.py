@@ -583,7 +583,7 @@ def time_of_arrival_poisson_process(
         not np.isinf(reflection_rate_limit) and np.isnan(reflection_rate_limit)
     ) or reflection_rate_limit < 0:
         raise ValueError(
-            "'reflection_rate_limit' must be non-negative and not NaN.",
+            "'reflection_rate_limit' must be non-negative number.",
         )
     rng = np.random.default_rng(seed=seed)
 

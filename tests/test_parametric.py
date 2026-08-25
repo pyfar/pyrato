@@ -219,7 +219,7 @@ def test_reflection_number_errors():
 # ======================================================================
 
 def test_start_time_of_arrival_correct_value():
-    """Return value matches the closed-form expression."""
+    """Return value matching the closed-form expression."""
     volume = 100
     speed_of_sound = 343
     result = parametric._start_time_of_arrival_poisson_process(
