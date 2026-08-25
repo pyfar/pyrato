@@ -679,6 +679,59 @@ def random_reflection_sequence(
         ...     distribution='normal', seed=10)
         >>> pf.plot.time(sequence, marker='o', linewidth=0.5)
 
+    Synthesize a room impulse response based on parametric description of the
+    room acoustics, i.e. room geometry and average absorption.
+
+    .. plot::
+
+        >>> import numpy as np
+        >>> import matplotlib.pyplot as plt
+        >>> import pyrato
+        >>> import pyfar as pf
+        ...
+        >>> sampling_rate = 8000
+        >>> absorption_coefficient = 0.5
+        >>> L = [4, 3, 2.5]
+        >>> volume = np.prod(L)
+        >>> surface_area = 2 * (L[0] * L[1] + L[0] * L[2] + L[1] * L[2])
+        ...
+        >>> # Calculate the reverberation time using Sabine's formula
+        >>> reverberation_time = pyrato.parametric.reverberation_time_sabine(
+        ...     volume, surface_area, absorption_coefficient)
+        >>> times = np.arange(0, 1.25*reverberation_time, 1/sampling_rate)
+        >>> energy_decay_curve = pyrato.parametric.energy_decay_curve(
+        ...     times, reverberation_time)
+        ...
+        >>> # Simulate the times of arrival of reflections
+        >>> times_of_arrival = (
+        ...     pyrato.parametric.time_of_arrival_poisson_process(
+        ...     volume,
+        ...     times,
+        ...     reflection_rate_limit=sampling_rate/2))
+        ...
+        >>> # Generate a random reflection sequence
+        >>> reflection_sequence = (
+        ...     pyrato.parametric.random_reflection_sequence(
+        ...     times_of_arrival,
+        ...     n_samples=energy_decay_curve.n_samples,
+        ...     sampling_rate=sampling_rate,
+        ...     distribution='normal'))
+        ...
+        >>> # Synthesize the room impulse response by multiplying with
+        >>> # the square root of the energy decay curve
+        >>> room_impulse_response = pf.Signal(
+        ...     reflection_sequence.time
+        ...     * np.sqrt(energy_decay_curve.time),
+        ...     sampling_rate)
+        >>> ax = pf.plot.time(
+        ...     room_impulse_response, dB=True, label='Synthesized RIR')
+        >>> pf.plot.time(
+        ...     energy_decay_curve, dB=True, log_prefix=10, ax=ax, label='EDC')
+        # >>> ax.set_xlim((0, 0.1))
+        >>> ax.set_ylim((-65, 5))
+        >>> ax.legend()
+        >>> plt.show()
+
     """
 
     rng = np.random.default_rng(seed=seed)
