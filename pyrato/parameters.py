@@ -1087,7 +1087,7 @@ def _sti_calc(mtf):
 
 def center_time(energy_decay_curve):
     r"""
-    Calculate the room-acoustic center time (:math:`T_s`).
+    Calculate the center time (:math:`T_s`) from the energy decay curve.
 
     The center time :math:`T_s` is the time of the centroid of the squared
     impulse response. It quantifies the balance between early and late
