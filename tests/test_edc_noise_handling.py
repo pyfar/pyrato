@@ -359,13 +359,26 @@ def test_intersection_time_lundeby_frequency_dependent(
         assert np.all(t[1] == o_t[1])
 
 
-def test_intersection_time_lundeby_frequency_dependent_error():
+def test_intersection_time_lundeby_frequency_dependent_value_error():
     """Test frequency dependent error handling of the smoothing parameter."""
     rirs = pf.signals.files.room_impulse_response()
+    message = re.escape("smoothing_parameter must be a number or an "
+                        "array like of size data.cshape[0]")
 
-    with pytest.raises(ValueError, match="smoothing_parameter must be"):
+    with pytest.raises(ValueError, match=message):
         # single channel RIR with two channel smoothing paramter raises error
         enh.intersection_time_lundeby(rirs, [64, 125])
+@pytest.mark.parametrize('smoothing_parameter',
+                         [np.nan, np.inf, 'not broadband', '1', 1+1j])
+def test_intersection_time_lundeby_frequency_dependent_type_error(
+    smoothing_parameter):
+    """Test type error handling of the smoothing parameter."""
+    rirs = pf.signals.files.room_impulse_response()
+    message = ("smoothing_parameter must be 'broadband', a finite float or "
+               "int, or an array-like thereof")
+
+    with pytest.raises(TypeError, match=message):
+        enh.intersection_time_lundeby(rirs, smoothing_parameter)
 
 
 def test__threshold_energy_decay_curve():

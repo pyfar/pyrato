@@ -976,8 +976,14 @@ def intersection_time_lundeby(
         # broadband: use 30 ms windows sizes
         freq_dependent_window_time = np.atleast_1d([0.03])
     else:
-        freq_dependent_window_time = \
-            (800/np.atleast_1d(smoothing_parameter).flatten()+10) / 1000
+        smoothing_parameter = np.atleast_1d(smoothing_parameter).flatten()
+        if smoothing_parameter.dtype.kind not in ['f', 'i'] or \
+                np.any(~np.isfinite(smoothing_parameter)):
+                    raise TypeError(
+                        "smoothing_parameter must be 'broadband', a finite "
+                        "float or int, or an array-like thereof")
+
+        freq_dependent_window_time = (800 / smoothing_parameter + 10) / 1000
 
     # check and broadcast shape of window time
     if freq_dependent_window_time.size == 1:
