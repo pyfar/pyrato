@@ -10,6 +10,11 @@ Added:
 - Added a function to sample times of arrivals of reflections based on a Poisson process (PR #176)
 - Added a function to sample the amplitude or sign of reflections (PR #176)
 - Added functions to calculate the average total number of reflections in a room and their density. (PR #174)
+- ``center_time`` to compute the room-acoustic center time (:math:`T_s`) from an energy decay curve (PR #170).
+
+Changed:
+^^^^^^^^
+- Updated minimum required dependency version to scipy>=1.11.0 (PR #170)
 
 
 1.0.1 (2026-05-05)
