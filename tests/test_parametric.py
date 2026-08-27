@@ -454,7 +454,7 @@ def test_reflection_sequence_binary_values():
     arrivals = np.asarray([0.1, 0.2, 0.3, 0.4, 0.5])
     seq = parametric.random_reflection_sequence(
         arrivals, n_samples=100, sampling_rate=100,
-        distribution='binary', seed=0)
+        distribution='binary', seed=0, compensate_sparsity=False)
     assert np.all(np.isin(np.squeeze(seq.time), [-1, 0, 1]))
 
 
@@ -473,9 +473,32 @@ def test_reflection_sequence_uniform_values():
     arrivals = np.linspace(0, 0.99, 50)
     seq = parametric.random_reflection_sequence(
         arrivals, n_samples=100, sampling_rate=100,
-        distribution='uniform', seed=0)
+        distribution='uniform', seed=0, compensate_sparsity=False)
     nonzero = np.squeeze(seq.time)[np.squeeze(seq.time) != 0]
     assert np.all(np.abs(nonzero) <= np.sqrt(3))
+
+
+@pytest.mark.parametrize('distribution', ['normal', 'uniform', 'binary'])
+def test_reflection_sequence_compensate_sparsity_flag(distribution):
+    """compensate_sparsity=False must disable the sqrt(delta_t*fs) weighting."""
+    arrivals = np.asarray([0.1, 0.3, 0.35])
+    sampling_rate = 100
+    n_samples = 50
+
+    seq_corrected = parametric.random_reflection_sequence(
+        arrivals, n_samples=n_samples, sampling_rate=sampling_rate,
+        distribution=distribution, seed=7, compensate_sparsity=True)
+    seq_raw = parametric.random_reflection_sequence(
+        arrivals, n_samples=n_samples, sampling_rate=sampling_rate,
+        distribution=distribution, seed=7, compensate_sparsity=False)
+
+    # Forward inter-arrival times for [0.1, 0.3, 0.35]: [0.2, 0.05, 0.05]
+    weights = np.sqrt(np.array([0.2, 0.05, 0.05]) * sampling_rate)
+    nonzero = np.squeeze(seq_raw.time) != 0
+    npt.assert_allclose(
+        np.squeeze(seq_corrected.time)[nonzero],
+        np.squeeze(seq_raw.time)[nonzero] * weights,
+    )
 
 
 def test_reflection_sequence_invalid_distribution():
@@ -499,3 +522,25 @@ def test_reflection_sequence_negative_arrivals_ignored(distribution):
     assert np.count_nonzero(signal) == 1
     assert signal[10] != 0
     assert signal[-10] == 0  # last-10th element must be untouched
+
+
+def test_reflection_sequence_toa_weight():
+    """Amplitudes are weighted by sqrt(delta_t * fs) from inter-arrival times."""
+    arrivals = np.asarray([0.1, 0.3, 0.35])
+    sampling_rate = 100
+    n_samples = 50
+
+    seq = parametric.random_reflection_sequence(
+        arrivals, n_samples=n_samples, sampling_rate=sampling_rate, seed=7)
+
+    # Replicate weight: forward inter-arrival times [0.2, 0.05, 0.05]
+    # (last extrapolated from its predecessor)
+    delta_t = np.array([0.2, 0.05, 0.05])
+    weights = np.sqrt(delta_t * sampling_rate)
+
+    # Replicate raw amplitude with same seed
+    rng = np.random.default_rng(7)
+    raw_amps = rng.normal(0, 1, size=len(arrivals))
+
+    signal = np.squeeze(seq.time)
+    npt.assert_allclose(signal[signal != 0], raw_amps * weights)
