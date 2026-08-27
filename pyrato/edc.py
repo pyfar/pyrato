@@ -221,14 +221,17 @@ def energy_decay_curve_truncation(
     Parameters
     ----------
     data : pyfar.Signal
-        The room impulse response.
-    smoothing_parameter : int or array_like of int or {'broadband'}
-        Used to determine the smoothing time window in the Lundeby
-        algorithm. It should represent the center frequency (in Hz) of the
-        frequency band(s) in which the RIR data was computed.
-        If set to ``'broadband'``, the smoothing time window will not be set
-        in dependence of frequency and a fixed time window of 30 ms
-        is used. The default is ``'broadband'``.
+        The room impulse response. For computing the EDC in (fractional) octave
+        bands, `data` must have a cshape of ``(number_of_bands, ...)``.
+    smoothing_parameter : float or array_like of float or {'broadband'}
+        Determines the window length for smoothing the room impulse response
+        in the Lundeby algorithm. The default ``'broadband'`` uses 30 ms, which
+        is the mean of the 10 to 50 ms recommended by Lundeby. To process
+        room impulse responses in (fractional) octave bands, this should
+        represent the corresponding center frequencies (in Hz) from which the
+        smoothing time in ms is computed as :math:`800 / f + 10`. If passing an
+        array like, the number of vales must match the number of (fractional)
+        octave bands of the room impulse response.
     noise_level: ndarray, double OR string
         If not specified, the noise level is calculated based on the last 10
         percent of the RIR. Otherwise specify manually for each channel
@@ -391,14 +394,17 @@ def energy_decay_curve_lundeby(
     Parameters
     ----------
     data : pyfar.Signal
-        The room impulse response.
-    smoothing_parameter : int or array_like of int or {'broadband'}
-        Used to determine the smoothing time window in the Lundeby
-        algorithm. It should represent the center frequency (in Hz) of the
-        frequency band(s) in which the RIR data was computed.
-        If set to ``'broadband'``, the smoothing time window will not be set
-        in dependence of frequency and a fixed time window of 30 ms
-        is used. The default is ``'broadband'``.
+        The room impulse response. For computing the EDC in (fractional) octave
+        bands, `data` must have a cshape of ``(number_of_bands, ...)``.
+    smoothing_parameter : float or array_like of float or {'broadband'}
+        Determines the window length for smoothing the room impulse response
+        in the Lundeby algorithm. The default ``'broadband'`` uses 30 ms, which
+        is the mean of the 10 to 50 ms recommended by Lundeby. To process
+        room impulse responses in (fractional) octave bands, this should
+        represent the corresponding center frequencies (in Hz) from which the
+        smoothing time in ms is computed as :math:`800 / f + 10`. If passing an
+        array like, the number of vales must match the number of (fractional)
+        octave bands of the room impulse response.
     noise_level: ndarray, double OR string
         If not specified, the noise level is calculated based on the last 10
         percent of the RIR. Otherwise specify manually for each channel
@@ -703,14 +709,17 @@ def energy_decay_curve_chu_lundeby(
     Parameters
     ----------
     data : pyfar.Signal
-        The room impulse response.
-    smoothing_parameter : int or array_like of int or {'broadband'}
-        Used to determine the smoothing time window in the Lundeby
-        algorithm. It should represent the center frequency (in Hz) of the
-        frequency band(s) in which the RIR data was computed.
-        If set to ``'broadband'``, the smoothing time window will not be set
-        in dependence of frequency and a fixed time window of 30 ms
-        is used. The default is ``'broadband'``.
+        The room impulse response. For computing the EDC in (fractional) octave
+        bands, `data` must have a cshape of ``(number_of_bands, ...)``.
+    smoothing_parameter : float or array_like of float or {'broadband'}
+        Determines the window length for smoothing the room impulse response
+        in the Lundeby algorithm. The default ``'broadband'`` uses 30 ms, which
+        is the mean of the 10 to 50 ms recommended by Lundeby. To process
+        room impulse responses in (fractional) octave bands, this should
+        represent the corresponding center frequencies (in Hz) from which the
+        smoothing time in ms is computed as :math:`800 / f + 10`. If passing an
+        array like, the number of vales must match the number of (fractional)
+        octave bands of the room impulse response.
     noise_level: ndarray, double OR string
         If not specified, the noise level is calculated based on the last 10
         percent of the RIR. Otherwise specify manually for each channel
@@ -868,14 +877,17 @@ def intersection_time_lundeby(
     Parameters
     ----------
     data : pyfar.Signal
-        The room impulse response
-    smoothing_parameter : int or array_like of int or {'broadband'}
-        Used to determine the smoothing time window in the Lundeby
-        algorithm. It should represent the center frequency (in Hz) of the
-        frequency band(s) in which the RIR data was computed.
-        If set to ``'broadband'``, the smoothing time window will not be set
-        in dependence of frequency and a fixed time window of 30 ms
-        is used. The default is ``'broadband'``.
+        The room impulse response. For computing the EDC in (fractional) octave
+        bands, `data` must have a cshape of ``(number_of_bands, ...)``.
+    smoothing_parameter : float or array_like of float or {'broadband'}
+        Determines the window length for smoothing the room impulse response
+        in the Lundeby algorithm. The default ``'broadband'`` uses 30 ms, which
+        is the mean of the 10 to 50 ms recommended by Lundeby. To process
+        room impulse responses in (fractional) octave bands, this should
+        represent the corresponding center frequencies (in Hz) from which the
+        smoothing time in ms is computed as :math:`800 / f + 10`. If passing an
+        array like, the number of vales must match the number of (fractional)
+        octave bands of the room impulse response.
     initial_noise_power: ndarray, double OR string
         If ``'auto'``, the noise level is calculated based on the last 10
         percent of the RIR. Otherwise specify manually for each channel
