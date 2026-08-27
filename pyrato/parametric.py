@@ -671,8 +671,9 @@ def random_reflection_sequence(
 
     Examples
     --------
-    Create a reflection sequence from a set of arrival times
-    and plot the result.
+    Create a binary reflection sequence from a set of arrival times
+    and plot the result. Note that the compensated sequence shows much larger
+    amplitudes due to the high temporal sparsity.
 
     .. plot::
 
@@ -681,7 +682,7 @@ def random_reflection_sequence(
         >>> import pyfar as pf
         ...
         >>> times_of_arrival = np.asarray([.1, .3, .35, .41])
-        >>> sequence_normal = pyrato.parametric.random_reflection_sequence(
+        >>> sequence = pyrato.parametric.random_reflection_sequence(
         ...     times_of_arrival, n_samples=50, sampling_rate=100,
         ...     distribution='binary', seed=10, compensate_sparsity=False)
         >>> sequence_comp = pyrato.parametric.random_reflection_sequence(
@@ -695,6 +696,8 @@ def random_reflection_sequence(
 
     Synthesize a room impulse response based on parametric description of the
     room acoustics, i.e. room geometry and average absorption.
+    The energy decay curve and energy time curve are based on the assumption
+    of a strictly exponentially decaying sound field.
 
     .. plot::
 
