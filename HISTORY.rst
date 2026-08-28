@@ -2,6 +2,14 @@
 History
 =======
 
+unreleased
+----------
+
+Changed:
+^^^^^^^^
+- Constrain Sphinx to versions >=v8.0.0 and <v9.0.0 (PR #168)
+
+
 1.0.0 (2026-03-19)
 ------------------
 
