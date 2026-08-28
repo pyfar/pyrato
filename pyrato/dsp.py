@@ -155,6 +155,7 @@ def _smooth_rir(
         The time vector fitting the original data.
 
     """
+    cshape = data.shape[:-1]
     data = np.atleast_2d(data)
     n_samples = data.shape[-1]
     n_samples_nan = np.count_nonzero(np.isnan(data), axis=-1)
@@ -164,11 +165,12 @@ def _smooth_rir(
         np.floor((n_samples-n_samples_nan)/n_samples_per_block),
         dtype=int)
 
+    # average data in blocks
     n_blocks_min = int(np.min(n_blocks))
     n_samples_actual = int(n_blocks_min*n_samples_per_block)
     reshaped_array = np.reshape(
         data[..., :n_samples_actual],
-        (-1, n_blocks_min, n_samples_per_block))
+        (*cshape, n_blocks_min, n_samples_per_block))
     time_window_data = np.mean(reshaped_array, axis=-1)
 
     # Use average time instances corresponding to the average energy level

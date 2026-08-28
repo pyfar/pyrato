@@ -222,7 +222,7 @@ def test_smoothed_rir_1D():
         rir,
         sampling_rate=3000,
         smooth_block_length=0.075)[0]
-    npt.assert_allclose(actual, expected)
+    npt.assert_allclose(np.atleast_2d(actual), expected)
 
 
 def test_smoothed_rir_2D():
