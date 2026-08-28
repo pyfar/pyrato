@@ -15,6 +15,7 @@ Added:
 Changed:
 ^^^^^^^^
 - Updated minimum required dependency version to scipy>=1.11.0 (PR #170)
+- Constrain Sphinx to versions >=v8.0.0 and <v9.0.0 (PR #168)
 
 
 1.0.1 (2026-05-05)
