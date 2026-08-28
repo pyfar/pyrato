@@ -480,7 +480,7 @@ def test_reflection_sequence_uniform_values():
 
 @pytest.mark.parametrize('distribution', ['normal', 'uniform', 'binary'])
 def test_reflection_sequence_compensate_sparsity_flag(distribution):
-    """compensate_sparsity=False must disable the sqrt(delta_t*fs) weighting."""
+    """compensate_sparsity=False must disable sqrt(delta_t*fs) weighting."""
     arrivals = np.asarray([0.1, 0.3, 0.35])
     sampling_rate = 100
     n_samples = 50
@@ -525,7 +525,7 @@ def test_reflection_sequence_negative_arrivals_ignored(distribution):
 
 
 def test_reflection_sequence_toa_weight():
-    """Amplitudes are weighted by sqrt(delta_t * fs) from inter-arrival times."""
+    """Amplitudes are weighted by sqrt(delta_t*fs) from inter-arrival times."""
     arrivals = np.asarray([0.1, 0.3, 0.35])
     sampling_rate = 100
     n_samples = 50
