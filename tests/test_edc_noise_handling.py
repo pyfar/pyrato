@@ -50,7 +50,7 @@ def test_edc_truncation_1D():
 
     actual = enh.energy_decay_curve_truncation(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=False,
@@ -63,7 +63,7 @@ def test_edc_truncation_1D():
 
     actual = enh.energy_decay_curve_truncation(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=False,
@@ -88,7 +88,7 @@ def test_edc_truncation_2D():
 
     actual = enh.energy_decay_curve_truncation(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=True,
@@ -107,7 +107,7 @@ def test_edc_lundeby_1D():
 
     actual = enh.energy_decay_curve_lundeby(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=False,
@@ -126,7 +126,7 @@ def test_edc_lundeby_2D():
 
     actual = enh.energy_decay_curve_lundeby(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=True,
@@ -145,7 +145,7 @@ def test_edc_lundeby_chu_1D():
 
     actual = enh.energy_decay_curve_chu_lundeby(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=False,
@@ -164,7 +164,7 @@ def test_edc_lundeby_chu_2D():
 
     actual = enh.energy_decay_curve_chu_lundeby(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=True,
         channel_independent=True,
@@ -243,7 +243,7 @@ def test_intersection_time_lundeby_single():
 
     actual = enh.intersection_time_lundeby(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=False,
         channel_independent=False,
@@ -264,7 +264,7 @@ def test_intersection_time_lundeby_multichannel():
 
     actual = enh.intersection_time_lundeby(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=False,
         channel_independent=False,
@@ -288,7 +288,7 @@ def test_intersection_time_lundeby_multi_dimensional():
 
     actual = enh.intersection_time_lundeby(
         rir,
-        freq='broadband',
+        smoothing_parameter='broadband',
         is_energy=False,
         time_shift=False,
         channel_independent=False,
@@ -333,6 +333,52 @@ def test_intersection_time_failure_handling_from_calling_functions(
     # are raised depending on the tested function
     with pytest.warns(UserWarning, match='SNR'):
         calling_function(rir)
+
+
+# test rirs with one and multidimensional cshape
+@pytest.mark.parametrize('cshape', [(2, ), (2, 3)])
+# test different array likes for smoothing paramter
+@pytest.mark.parametrize('smoothing_parameter',
+                         [[64, 8e3], (64, 8e3), np.array([64, 8e3])])
+def test_intersection_time_lundeby_frequency_dependent(
+        cshape, smoothing_parameter):
+    """Test frequency dependent handling of the smoothing parameter."""
+    rirs = pf.signals.files.room_impulse_response()
+    rirs.time = np.tile(rirs.time, cshape + (1, ))
+
+    one = enh.intersection_time_lundeby(rirs, 64)
+    two = enh.intersection_time_lundeby(rirs, 8e3)
+    one_two = enh.intersection_time_lundeby(rirs, smoothing_parameter)
+
+    for o, t, o_t in zip(one, two, one_two, strict=True):
+        # results for different parameters must be different
+        assert np.all(o != t)
+        # results for same parameters must be identical in frequency-dependent
+        # and independent case
+        assert np.all(o[0] == o_t[0])
+        assert np.all(t[1] == o_t[1])
+
+
+def test_intersection_time_lundeby_frequency_dependent_value_error():
+    """Test frequency dependent error handling of the smoothing parameter."""
+    rirs = pf.signals.files.room_impulse_response()
+    message = re.escape("smoothing_parameter must be a number or an "
+                        "array like of size data.cshape[0]")
+
+    with pytest.raises(ValueError, match=message):
+        # single channel RIR with two channel smoothing paramter raises error
+        enh.intersection_time_lundeby(rirs, [64, 125])
+@pytest.mark.parametrize('smoothing_parameter',
+                         [np.nan, np.inf, 'not broadband', '1', 1+1j])
+def test_intersection_time_lundeby_frequency_dependent_type_error(
+    smoothing_parameter):
+    """Test type error handling of the smoothing parameter."""
+    rirs = pf.signals.files.room_impulse_response()
+    message = ("smoothing_parameter must be 'broadband', a finite float or "
+               "int, or an array-like thereof")
+
+    with pytest.raises(TypeError, match=message):
+        enh.intersection_time_lundeby(rirs, smoothing_parameter)
 
 
 def test__threshold_energy_decay_curve():

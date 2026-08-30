@@ -4,8 +4,9 @@ Parametric room acoustics calculations using simple geometric considerations
 such as Sabine's theory of sound in rooms.
 """
 import numpy as np
-from typing import Union
+from typing import Literal, Union, List
 import pyfar as pf
+from scipy.integrate import cumulative_trapezoid
 
 
 def energy_decay_curve(
@@ -302,3 +303,512 @@ def reverberation_time_sabine(
         reverberation_time = factor * volume / (surface_area * mean_absorption)
 
     return reverberation_time
+
+
+def average_reflection_density(
+        volume: float,
+        times: np.ndarray | List,
+        speed_of_sound: float | None = None,
+    ) -> pf.TimeData:
+    r"""Calculate the time dependent average reflection density in a room.
+
+    The reflection density is calculated as the following ratio
+    (see chap 4.2 of Ref. [#]_)
+
+    .. math::
+        \frac{d N(t)}{dt} = \frac{4 \pi c^3 t^2}{V},
+
+    where :math:`V` is the room volume in :math:`m^3`, :math:`c` is the
+    speed of sound in the room, and :math:`t` is the time vector in seconds.
+
+    Parameters
+    ----------
+    volume : float
+        Volume of the room :math:`V` in :math:`m^3`.
+    times : numpy.ndarray, list
+        Time vector in seconds.
+    speed_of_sound : float, None, optional
+        Speed of sound in the room. By default (`None`), the
+        :py:data:`~pyfar.constants.reference_speed_of_sound` is used.
+
+    Returns
+    -------
+    reflection_density : pyfar.TimeData
+        The reflection density in :math:`1/s` as a function of time.
+
+    Examples
+    --------
+    Calculate the reflection density for a room with a volume of 100 m³.
+
+    .. plot::
+
+        >>> import pyrato
+        >>> import numpy as np
+        >>> import pyfar as pf
+        ...
+        >>> n_samples = 2**10
+        >>> sampling_rate = 16e3
+        >>> times = np.arange(n_samples)/sampling_rate
+        >>> density = pyrato.parametric.average_reflection_density(
+        ...     volume=100, times=times)
+        ...
+        >>> plt.figure(figsize=(8, 4))
+        >>> ax = pf.plot.time(density)
+        >>> ax.set_yscale("log")
+        >>> ax.set_ylabel("Reflection density in 1/s")
+
+    References
+    ----------
+    .. [#] H. Kuttruff, Room acoustics, 7th Ed. Taylor & Francis, 2024.
+
+    """
+
+    times = np.asarray(times)
+
+    if speed_of_sound is None:
+        speed_of_sound = pf.constants.reference_speed_of_sound
+    if speed_of_sound <= 0:
+        raise ValueError("speed_of_sound must be positive.")
+
+    if np.any(times < 0):
+        raise ValueError("'times' must be positive.")
+
+    if volume <= 0:
+        raise ValueError("'volume' must be positive.")
+
+    density = 4 * np.pi * speed_of_sound**3 * times**2 / volume
+    return pf.TimeData(density, times)
+
+
+def average_number_of_reflections(
+        volume: float,
+        times: np.ndarray | List,
+        speed_of_sound: float | None = None,
+    ) -> pf.TimeData:
+    r"""Calculate the time dependent average number of reflections in a room.
+
+    The average number of reflections is calculated as the following ratio
+    (see chap 4.2 of Ref. [#]_)
+
+    .. math::
+        N(t) = \frac{4 \pi c^3 t^3}{3 V},
+
+    where :math:`V` is the room volume in :math:`m^3`, :math:`c` is the
+    speed of sound in the room, and :math:`t` is the time vector in seconds.
+
+    Parameters
+    ----------
+    volume : float
+        Volume of the room :math:`V` in :math:`m^3`.
+    times : numpy.ndarray, list
+        Time vector in seconds.
+    speed_of_sound : float, None, optional
+        Speed of sound in the room. By default (`None`), the
+        :py:data:`~pyfar.constants.reference_speed_of_sound` is used.
+
+    Returns
+    -------
+    pyfar.TimeData
+        The average number of reflections as a function of time.
+
+    Examples
+    --------
+    Calculate the time dependent average number of reflections in a room
+    with a volume of 100 :math:`m^3`.
+
+    .. plot::
+
+        >>> from pyrato.parametric import average_number_of_reflections
+        >>> import numpy as np
+        >>> import pyfar as pf
+        >>> import matplotlib.pyplot as plt
+        ...
+        >>> n_samples = 2**10
+        >>> sampling_rate = 16e3
+        >>> times = np.arange(n_samples)/sampling_rate
+        >>> number_of_reflections = average_number_of_reflections(
+        ...     volume=100, times=times)
+        ...
+        >>> plt.figure(figsize=(8, 4))
+        >>> ax = pf.plot.time(number_of_reflections)
+        >>> ax.set_yscale("log")
+        >>> ax.set_ylabel("Average number of reflections")
+
+    References
+    ----------
+    .. [#] H. Kuttruff, Room acoustics, 7th Ed. Taylor & Francis, 2024.
+
+    """
+
+    density = average_reflection_density(volume, times, speed_of_sound)
+    number_of_reflections = density.time * times / 3
+    return pf.TimeData(number_of_reflections, times)
+
+
+def _start_time_of_arrival_poisson_process(
+        volume : float,
+        speed_of_sound: float | None = None,
+    ) -> float:
+    """
+    The earliest time of arrival approximated as a Poisson process.
+
+    Calculated according to [#]_.
+
+    Parameters
+    ----------
+    volume : float
+        Volume of the room in m³.
+    speed_of_sound : float, None, optional
+        Speed of sound in the room. By default,
+        the :py:data:`~pyfar.constants.reference_speed_of_sound` is used
+        which corresponds to the speed of sound in air at 20 °C.
+
+    Returns
+    -------
+    float
+        Earliest expected time of arrival in seconds.
+
+    References
+    ----------
+    .. [#] D. Schröder, “Physically based real-time auralization of
+           interactive virtual environments,” PhD Thesis, Logos-Verlag,
+           Berlin, 2011. [Online].
+           Available: https://publications.rwth-aachen.de/record/50580
+
+    """
+
+    if speed_of_sound is None:
+        speed_of_sound = pf.constants.reference_speed_of_sound
+    if speed_of_sound <= 0:
+        raise ValueError("speed_of_sound must be positive.")
+
+    if volume <= 0:
+        raise ValueError("'volume' must be positive.")
+
+    return (2*volume*np.log(2)/ (4*np.pi*speed_of_sound**3))**(1/3)
+
+
+def time_of_arrival_poisson_process(
+        volume: float,
+        times: np.ndarray,
+        speed_of_sound: float | None = None,
+        reflection_rate_limit: float = np.inf,
+        seed: int | None = None,
+    ) -> np.ndarray:
+    """Generate a time of arrival sequence based on a Poisson process.
+
+    The reflection rate is calculated using the average reflection density
+    in a diffuse sound field.
+    Note that the reflection rate increases with time, yielding a
+    non-homogeneous Poisson process. Optionally, the reflection rate can
+    be limited using the ``reflection_rate_limit`` parameter.
+    In [#]_, a maximum of 10000 reflections per second is suggested.
+
+    The implementation of the non-homogeneous Poisson process is based on
+    the transform method described in chap 5 of [#]_.
+
+    Parameters
+    ----------
+    volume : float
+        Volume of the room in m³.
+    times : numpy.ndarray
+        Time vector in seconds.
+    speed_of_sound : float, None, optional
+        Speed of sound in the room. By default, the
+        :py:data:`~pyfar.constants.reference_speed_of_sound` is used.
+    reflection_rate_limit : float, optional
+        Maximum reflection rate in 1/s. If ``np.inf``, no limit is applied.
+        Default is ``np.inf``.
+    seed : int, None, optional
+        Seed for the random number generator. If None, a random seed is used.
+        Default is None.
+
+    Returns
+    -------
+    numpy.ndarray
+        Array of arrival times in seconds.
+
+    Examples
+    --------
+    Simulate the time of arrival of reflections in a room with a volume
+    of 100 m³ and compare the cumulative histogram to the model prediction.
+
+    .. plot::
+
+        >>> import pyrato
+        >>> import numpy as np
+        >>> import pyfar as pf
+        >>> import matplotlib.pyplot as plt
+        ...
+        >>> volume = 100
+        >>> times = np.linspace(0, .5, 200)
+        >>> toa = pyrato.parametric.time_of_arrival_poisson_process(
+        ...     volume, times)
+        ...
+        >>> plt.figure(figsize=(8, 4))
+        >>> plt.hist(
+        ...     toa, density=False, bins=50, cumulative=True, histtype='step',
+        ...     linewidth=1.5, color='C0', label='Stochastic simulation')
+        >>> ax = pf.plot.time(
+        ...     pyrato.parametric.average_number_of_reflections(
+        ...         volume, times),
+        ...     label='Reference', linestyle='--',
+        ...     color='grey', linewidth=1.5)
+        >>> ax.set_ylabel('Number of reflections')
+        >>> ax.set_yscale('log')
+        >>> ax.legend(loc='lower right')
+        >>> ax.grid()
+
+    References
+    ----------
+    .. [#] D. Schröder, “Physically based real-time auralization of
+           interactive virtual environments,” PhD Thesis, Logos-Verlag,
+           Berlin, 2011. [Online].
+           Available: https://publications.rwth-aachen.de/record/50580
+    .. [#] S. M. Ross, Simulation, Sixth edition. London, United Kingdom:
+           Academic Press, 2023.
+
+    """
+
+    if speed_of_sound is None:
+        speed_of_sound = pf.constants.reference_speed_of_sound
+
+    if speed_of_sound <= 0:
+        raise ValueError("speed_of_sound must be positive.")
+
+    if volume <= 0:
+        raise ValueError("'volume' must be positive.")
+
+    if np.any(np.diff(times) <= 0):
+        raise ValueError("'times' must be strictly increasing.")
+
+    if (
+        not np.isinf(reflection_rate_limit) and np.isnan(reflection_rate_limit)
+    ) or reflection_rate_limit < 0:
+        raise ValueError(
+            "'reflection_rate_limit' must be non-negative number.",
+        )
+    rng = np.random.default_rng(seed=seed)
+
+    reflection_density = average_reflection_density(
+        volume, times, speed_of_sound,
+    )
+
+    mu_values = np.minimum(
+        np.squeeze(reflection_density.time),
+        reflection_rate_limit,
+    )
+
+    mu_times = reflection_density.times
+    t_start = _start_time_of_arrival_poisson_process(volume, speed_of_sound)
+
+    # Cumulative intensity F(t) via numerical integration
+    cumulative_intensity = cumulative_trapezoid(mu_values, mu_times, initial=0)
+
+    # Interpolate the cumulative intensity to find the warped time values
+    F_start = np.interp(t_start, mu_times, cumulative_intensity)
+    F_end = cumulative_intensity[-1]
+
+    # expected number of arrivals
+    total_events = F_end - F_start
+
+    # Draw the total count, then place events uniformly in warped time
+    n_events = rng.poisson(total_events)
+    warped = rng.uniform(F_start, F_end, size=n_events)
+    warped.sort()
+
+    # Invert the warped time to get the arrival times by interpolation
+    arrivals = np.interp(warped, cumulative_intensity, mu_times)
+
+    return arrivals[arrivals >= t_start]
+
+
+def random_reflection_sequence(
+        arrivals : np.ndarray,
+        n_samples : int,
+        sampling_rate : float,
+        distribution : Literal['uniform', 'binary', 'normal'] = "normal",
+        seed : int | None = None,
+        compensate_sparsity : bool = True,
+    ) -> pf.Signal:
+    r"""Generate reflection sequence from arrival times with random amplitudes.
+
+    The amplitude is randomly sampled according to the chosen distribution
+    function. `'normal'` and `'uniform'` yield continuous amplitude values and
+    are suitable to encode random amplitude and phase of reflections.
+    In contrast, `'binary'` draws signs of -1 or +1, and hence is only suitable
+    to encode random phase.
+
+    The final reflection sequence is generated by mapping the arrival times to
+    uniform time samples. Duplicate time samples are removed, which results in
+    a maximum of one reflection per time sample.
+
+    Parameters
+    ----------
+    arrivals : numpy.ndarray
+        Array of arrival times in seconds.
+    n_samples : int
+        Number of samples in the output sequence.
+    sampling_rate : float
+        Sampling rate in Hz.
+    distribution : Literal['uniform', 'binary', 'normal'], optional
+        Distribution of the reflection amplitudes. Default is 'normal'.
+    seed : int, None, optional
+        Seed for the random number generator. If None, a random seed is used.
+    compensate_sparsity : bool, optional
+        When ``compensate_sparsity`` is ``True`` (default), each amplitude is
+        weighted by ``sqrt(delta_t * sampling_rate)``, where ``delta_t`` is the
+        inter-arrival time of the corresponding reflections. This compensates
+        for the temporal sparsity of the reflection sequence: isolated arrivals
+        receive a larger weight than arrivals in dense clusters.
+
+    Returns
+    -------
+    pyfar.Signal
+        Reflection sequence with a maximum of one reflection per time sample.
+        The sequence has a length of ``n_samples`` and a sampling rate of
+        ``sampling_rate``.
+
+    Examples
+    --------
+    Create a binary reflection sequence from a set of arrival times
+    and plot the result. Note that the compensated sequence shows much larger
+    amplitudes due to the high temporal sparsity.
+
+    .. plot::
+
+        >>> import pyrato
+        >>> import numpy as np
+        >>> import pyfar as pf
+        ...
+        >>> times_of_arrival = np.asarray([.1, .3, .35, .41])
+        >>> sequence = pyrato.parametric.random_reflection_sequence(
+        ...     times_of_arrival, n_samples=50, sampling_rate=100,
+        ...     distribution='binary', seed=10, compensate_sparsity=False)
+        >>> sequence_comp = pyrato.parametric.random_reflection_sequence(
+        ...     times_of_arrival, n_samples=50, sampling_rate=100,
+        ...     distribution='binary', seed=10, compensate_sparsity=True)
+        >>> ax = pf.plot.time(
+        ...     sequence, marker='o', linewidth=0.5, label='Not compensated')
+        >>> pf.plot.time(
+        ...     sequence_comp, marker='v', linewidth=0.5, label='Compensated')
+        >>> ax.legend()
+
+    Synthesize a room impulse response based on parametric description of the
+    room acoustics, i.e. room geometry and average absorption.
+    The energy decay curve and energy time curve are based on the assumption
+    of a strictly exponentially decaying sound field.
+
+    .. plot::
+
+        >>> import numpy as np
+        >>> import matplotlib.pyplot as plt
+        >>> import pyrato
+        >>> import pyfar as pf
+        ...
+        >>> sampling_rate = 8000
+        >>> absorption_coefficient = 0.5
+        >>> L = [4, 3, 2.5]
+        >>> volume = np.prod(L)
+        >>> surface_area = 2 * (L[0] * L[1] + L[0] * L[2] + L[1] * L[2])
+        ...
+        >>> # Calculate the reverberation time using Sabine's formula
+        >>> T_60 = pyrato.parametric.reverberation_time_sabine(
+        ...     volume, surface_area, absorption_coefficient)
+        >>> times = np.arange(0, 1.25*T_60, 1/sampling_rate)
+        >>> energy_decay_curve = pyrato.parametric.energy_decay_curve(
+        ...     times, T_60)
+        >>> energy_time_curve = energy_decay_curve * 6*np.log(10)/T_60
+        ...
+        >>> # Simulate the times of arrival of reflections
+        >>> times_of_arrival = (
+        ...     pyrato.parametric.time_of_arrival_poisson_process(
+        ...         volume,
+        ...         times,
+        ...         reflection_rate_limit=sampling_rate/2,
+        ...         seed=10)
+        ... )
+        ...
+        >>> # Generate a random reflection sequence
+        >>> reflection_sequence = (
+        ...     pyrato.parametric.random_reflection_sequence(
+        ...         times_of_arrival,
+        ...         n_samples=energy_decay_curve.n_samples,
+        ...         sampling_rate=sampling_rate,
+        ...         distribution='normal',
+        ...         seed=10,
+        ...         compensate_sparsity=True)
+        ... )
+        ...
+        >>> # Synthesize the room impulse response by multiplying with
+        >>> # the square root of the energy time curve
+        >>> room_impulse_response = pf.Signal(
+        ...     reflection_sequence.time
+        ...     * np.sqrt(energy_time_curve.time),
+        ...     sampling_rate)
+        >>> ax = pf.plot.time(
+        ...     room_impulse_response/np.sqrt(sampling_rate), dB=True,
+        ...     label='Synthesized RIR')
+        >>> pf.plot.time(
+        ...     pyrato.edc.schroeder_integration(
+        ...         room_impulse_response, False)/sampling_rate,
+        ...     dB=True, log_prefix=10, ax=ax, label='EDC from RIR')
+        >>> pf.plot.time(
+        ...     energy_decay_curve, dB=True, log_prefix=10, ax=ax,
+        ...     label='Reference EDC', color='grey', linestyle='--')
+        >>> # ax.set_xlim((0, 0.1))
+        >>> ax.legend()
+        >>> plt.show()
+
+    """
+
+    rng = np.random.default_rng(seed=seed)
+
+    # inter-arrival times: delta_t[i] = arrivals[i+1] - arrivals[i].
+    # Last element extrapolated from its predecessor.
+    if len(arrivals) > 1:
+        delta_t = np.empty(len(arrivals))
+        delta_t[:-1] = np.diff(arrivals)
+        delta_t[-1] = delta_t[-2]
+    elif len(arrivals) == 1:
+        delta_t = np.array([1.0 / sampling_rate])
+    else:
+        delta_t = np.array([])
+
+    sample_indices = np.round(arrivals * sampling_rate).astype(int)
+    valid = (sample_indices >= 0) & (sample_indices < n_samples)
+    sample_indices = sample_indices[valid]
+    delta_t = delta_t[valid]
+
+    if distribution == "normal":
+        amplitude = rng.normal(
+            loc=0,
+            scale=1,
+            size=len(sample_indices),
+        )
+    elif distribution == 'uniform':
+        # min and max values are chosen to yield unit variance
+        amplitude = rng.uniform(
+            low=-np.sqrt(3),
+            high=np.sqrt(3),
+            size=len(sample_indices),
+        )
+    elif distribution == 'binary':
+        amplitude = rng.choice(
+            [-1, 1],
+            p=[0.5, 0.5],
+            size=len(sample_indices),
+        )
+    else:
+        raise ValueError(
+            "Unknown distribution type. "
+            "Choose from 'uniform', 'binary', or 'normal'.")
+
+    sequence = np.zeros(n_samples)
+    unique_samples, unique_idx = np.unique(sample_indices, return_index=True)
+    amplitudes = amplitude[unique_idx]
+    if compensate_sparsity:
+        amplitudes = amplitudes * np.sqrt(delta_t[unique_idx] * sampling_rate)
+    sequence[unique_samples] = amplitudes
+
+    return pf.Signal(sequence, sampling_rate)
