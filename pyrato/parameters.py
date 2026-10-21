@@ -36,10 +36,9 @@ def reverberation_time_linear_regression(
 
     References
     ----------
-
-        .. [#] ISO 3382-1:2009 - Acoustics - Measurement of room acoustic
-            parameters - Part 1: Performance spaces. Geneva, Switzerland:
-            International Organization for Standardization.
+    .. [#] ISO 3382-1:2009 - Acoustics - Measurement of room acoustic
+        parameters - Part 1: Performance spaces. Geneva, Switzerland:
+        International Organization for Standardization.
 
     Examples
     --------

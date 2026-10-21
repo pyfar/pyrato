@@ -92,9 +92,9 @@ def schroeder_integration(room_impulse_response, is_energy=False):
     .. [#] M. R. Schroeder, "New Method of Measuring Reverberation Time,"
            The Journal of the Acoustical Society of America, vol. 37, no. 6,
            pp. 1187-1187, 1965.
-        .. [#] ISO 3382-1:2009 - Acoustics - Measurement of room acoustic
-            parameters - Part 1: Performance spaces. Geneva, Switzerland:
-            International Organization for Standardization.
+    .. [#] ISO 3382-1:2009 - Acoustics - Measurement of room acoustic
+           parameters - Part 1: Performance spaces. Geneva, Switzerland:
+           International Organization for Standardization.
 
     Notes
     -----
@@ -263,9 +263,9 @@ def energy_decay_curve_truncation(
 
     References
     ----------
-        .. [#] ISO 3382-1:2009 - Acoustics - Measurement of room acoustic
-            parameters - Part 1: Performance spaces. Geneva, Switzerland:
-            International Organization for Standardization.
+    .. [#] ISO 3382-1:2009 - Acoustics - Measurement of room acoustic
+           parameters - Part 1: Performance spaces. Geneva, Switzerland:
+           International Organization for Standardization.
 
     Examples
     --------
@@ -433,8 +433,8 @@ def energy_decay_curve_lundeby(
     References
     ----------
     .. [#] A. Lundeby, T. E. Vigran, H. Bietz, and M. Vorländer,
-        “Uncertainties of Measurements in Room Acoustics,”
-        Acta Acust. United Ac., vol. 81, no. 4, pp. 344-355, Jul. 1995.
+           “Uncertainties of Measurements in Room Acoustics,”
+           Acta Acust. United Ac., vol. 81, no. 4, pp. 344-355, Jul. 1995.
 
     Examples
     --------
@@ -589,7 +589,6 @@ def energy_decay_curve_chu(
 
     References
     ----------
-
     .. [#] W. T. Chu. “Comparison of reverberation measurements using
            Schroeder's impulse method and decay-curve averaging method”.
            In: Journal of the Acoustical Society of America 63.5 (1978),
