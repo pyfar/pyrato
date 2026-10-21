@@ -92,8 +92,9 @@ def schroeder_integration(room_impulse_response, is_energy=False):
     .. [#] M. R. Schroeder, "New Method of Measuring Reverberation Time,"
            The Journal of the Acoustical Society of America, vol. 37, no. 6,
            pp. 1187-1187, 1965.
-    .. [#] ISO 3382, Acoustics — Measurement of the reverberation
-        time of rooms with reference to other acoustical parameters.
+        .. [#] ISO 3382-1:2009 - Acoustics - Measurement of room acoustic
+            parameters - Part 1: Performance spaces. Geneva, Switzerland:
+            International Organization for Standardization.
 
     Notes
     -----
@@ -262,8 +263,9 @@ def energy_decay_curve_truncation(
 
     References
     ----------
-    .. [#] International Organization for Standardization, “EN ISO 3382-1:2009
-           Acoustics - Measurement of room acoustic parameters,” 2009.
+        .. [#] ISO 3382-1:2009 - Acoustics - Measurement of room acoustic
+            parameters - Part 1: Performance spaces. Geneva, Switzerland:
+            International Organization for Standardization.
 
     Examples
     --------

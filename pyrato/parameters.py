@@ -37,8 +37,9 @@ def reverberation_time_linear_regression(
     References
     ----------
 
-    .. [#] ISO 3382, Acoustics - Measurement of the reverberation time of
-           rooms with reference to other acoustical parameters.
+        .. [#] ISO 3382-1:2009 - Acoustics - Measurement of room acoustic
+            parameters - Part 1: Performance spaces. Geneva, Switzerland:
+            International Organization for Standardization.
 
     Examples
     --------
@@ -154,8 +155,9 @@ def clarity(energy_decay_curve, early_time_limit=80):
 
     References
     ----------
-    .. [#isoClarity] ISO 3382, Acoustics — Measurement of the reverberation
-        time of rooms with reference to other acoustical parameters.
+    .. [#isoClarity] ISO 3382-1:2009 - Acoustics - Measurement of room acoustic
+                     parameters - Part 1: Performance spaces. Geneva, Switzerland:
+                     International Organization for Standardization.
 
     Examples
     --------
@@ -262,8 +264,9 @@ def early_lateral_energy_fraction(energy_decay_curve_omni,
 
     References
     ----------
-    .. [#isoEarlyLat] ISO 3382, Acoustics — Measurement of the reverberation
-        time of rooms with reference to other acoustical parameters.
+    .. [#isoEarlyLat] ISO 3382-1:2009 - Acoustics - Measurement of room acoustic
+                      parameters - Part 1: Performance spaces. Geneva, Switzerland:
+                      International Organization for Standardization.
     """
 
     limits = np.array([0.0, 0.08, 0.005, 0.08])
@@ -321,8 +324,9 @@ def definition(energy_decay_curve, early_time_limit=50):
 
     References
     ----------
-    .. [#isoDefinition] ISO 3382, Acoustics — Measurement of the reverberation
-        time of rooms with reference to other acoustical parameters.
+    .. [#isoDefinition] ISO 3382-1:2009 - Acoustics - Measurement of room acoustic
+                        parameters - Part 1: Performance spaces. Geneva, Switzerland:
+                        International Organization for Standardization.
 
     Examples
     --------
@@ -419,8 +423,9 @@ def _energy_ratio(limits, energy_decay_curve1, energy_decay_curve2):
 
     References
     ----------
-    .. [#iso2] ISO 3382, Acoustics — Measurement of the reverberation time of
-        rooms with reference to other acoustical parameters.
+    .. [#iso2] ISO 3382-1:2009 - Acoustics - Measurement of room acoustic
+               parameters - Part 1: Performance spaces. Geneva, Switzerland:
+               International Organization for Standardization.
     """
 
     # Check input type
@@ -580,9 +585,9 @@ def late_lateral_sound_level(energy_decay_curve_free_field,
 
     References
     ----------
-    .. [#isoLLJ] ISO 3382-1, ISO 3382, Acoustics — Measurement of the
-        reverberation time of rooms with reference to other acoustical
-        parameters.
+    .. [#isoLLJ] ISO 3382-1:2009 - Acoustics - Measurement of room acoustic
+                 parameters - Part 1: Performance spaces. Geneva, Switzerland:
+                 International Organization for Standardization.
     """
 
     limits = np.array([0.0, np.inf, 0.08, np.inf])
@@ -652,8 +657,9 @@ def sound_strength(energy_decay_curve_room,
 
     References
     ----------
-    .. [#isoStrength] ISO 3382, Acoustics — Measurement of the reverberation
-        time of rooms with reference to other acoustical parameters.
+    .. [#isoStrength] ISO 3382-1:2009 - Acoustics - Measurement of room acoustic
+                      parameters - Part 1: Performance spaces. Geneva, Switzerland:
+                      International Organization for Standardization.
     """
 
     limits = np.array([0.0, np.inf, 0.0, np.inf])
@@ -725,9 +731,9 @@ def speech_transmission_index_indirect(
 
     References
     ----------
-    .. [#iec] IEC 60268-16:2020
-     Sound system equipment - Part 16: Objective rating of speech
-     intelligibility by speech transmission index.
+    .. [#iec] IEC 60268-16:2020. Sound system equipment - Part 16:
+            Objective rating of speech intelligibility by speech
+            transmission index.
     """
     # check if input data is a pyfar.Signal
     if not isinstance(rir, pf.Signal):
@@ -847,9 +853,9 @@ def modulation_transfer_function(
 
     References
     ----------
-    .. [#iecMTF] IEC 60268-16:2020
-       Sound system equipment - Part 16: Objective rating of speech
-       intelligibility by speech transmission index.
+    .. [#iecMTF] IEC 60268-16:2020. Sound system equipment - Part 16:
+                 Objective rating of speech intelligibility by speech
+                 transmission index.
     """
     # Check if input data is a pyfar.Signal
     if not isinstance(rir, pf.Signal):
@@ -995,9 +1001,9 @@ def _ambient_noise_correction(mtf, level, snr, rir_type):
 
     References
     ----------
-    .. [#iecANC] IEC 60268-16:2020
-       Sound system equipment - Part 16: Objective rating of speech
-       intelligibility by speech transmission index.
+    .. [#iecANC] IEC 60268-16:2020. Sound system equipment - Part 16:
+                 Objective rating of speech intelligibility by speech
+                 transmission index.
     """
     # Total intensity per octave band: signal + noise
     # (IEC 60268-16:2020, Annex A.2.4)
@@ -1133,11 +1139,12 @@ def center_time(energy_decay_curve):
 
     References
     ----------
-    .. [#isoTs] ISO 3382, Acoustics — Measurement of the reverberation
-        time of rooms with reference to other acoustical parameters.
+    .. [#isoTs] ISO 3382-1:2009 - Acoustics - Measurement of room acoustic
+                parameters - Part 1: Performance spaces. Geneva, Switzerland:
+                International Organization for Standardization.
     .. [#schroeder] M. R. Schroeder, "New Method of Measuring Reverberation
-        Time," J. Acoust. Soc. Am., vol. 37, no. 3, pp. 409-412, 1965.
-        doi:10.1121/1.1909343
+                    Time," J. Acoust. Soc. Am., vol. 37, no. 3, pp. 409-412, 1965.
+                    doi:10.1121/1.1909343
     """
 
     if not isinstance(energy_decay_curve, pf.TimeData):
