@@ -5,6 +5,8 @@ simulated or experimental data.
 import re
 import numpy as np
 import pyfar as pf
+from matplotlib import pyplot as plt
+from math import erfc
 import warnings
 from scipy.integrate import trapezoid
 
@@ -661,6 +663,296 @@ def sound_strength(energy_decay_curve_room,
     return 10*np.log10(_energy_ratio(limits,
                                      energy_decay_curve_free_field,
                                      energy_decay_curve_room))
+
+
+def mixing_time_abel(rir, window_length=1024, onset_threshold_db=-30,
+                     peak_secure_margin=100, plot=False):
+    r"""Estimate the mixing time from the echo density after Abel and Huang.
+
+    The direct-sound onset is detected per channel as the first sample
+    exceeding `onset_threshold_db` below the peak, and the impulse response
+    is cut `peak_secure_margin` samples before the onset, or at its start if
+    fewer samples precede the onset. Multichannel input is cut at the earliest
+    onset across channels, which preserves inter-channel time differences: a
+    channel is then measured from the first arrival across all channels, so
+    its mixing time includes its propagation delay relative to the earliest
+    channel. Pass channels individually to measure each from its own onset.
+
+    The echo density counts the samples with :math:`|h| > \sigma` inside a
+    rectangular window (growing at the start, of length `window_length` in
+    the middle, shrinking at the end), divided by `window_length` in every
+    case and by the Gaussian expectation
+    :math:`\mathrm{erfc}(1/\sqrt{2}) \approx 0.317`. Here :math:`\sigma` is
+    the sample standard deviation of the window. The mixing time is
+
+    .. math::
+
+        t_\mathrm{Abel} = (d - m) / f_s,
+
+    where :math:`d` is the first sample at which the echo density exceeds
+    unity, i.e., criterion I of Abel and Huang [#abel]_, and :math:`m` the
+    number of samples kept before the onset.
+
+    Parameters
+    ----------
+    rir : pyfar.Signal
+        Room impulse response.
+    window_length : int, optional
+        Length of the sliding window in samples. Must be even. The default is
+        ``1024``, which corresponds to about 21 ms at 48 kHz, the window
+        length recommended by Abel and Huang [#abel]_. Scale it for other
+        sampling rates to keep the window length in time.
+    onset_threshold_db : float, optional
+        Peak criterion for onset detection, in dB below the peak. The default
+        is ``-30``.
+    peak_secure_margin : int, optional
+        Number of samples kept before the detected onset, so the echo
+        density window covers the direct sound. The mixing time is measured
+        from the onset regardless of the margin. The default is ``100``.
+    plot : bool, optional
+        If ``True``, plot the impulse response with the detected onset and
+        the echo density with the mixing time. Only possible for single
+        channel input. The default is ``False``.
+
+    Returns
+    -------
+    mixing_time : numpy.ndarray
+        Mixing time in seconds relative to the detected onset, of shape
+        ``rir.cshape``. ``numpy.nan`` with a warning for channels whose echo
+        density never exceeds unity.
+    echo_density : pyfar.TimeData
+        Normalized echo density of shape ``rir.cshape``, starting at the
+        sample where the impulse response was cut. The times refer to the
+        time axis of ``rir``.
+    onset : float
+        Detected onset in seconds on the time axis of ``rir``, the earliest
+        across channels for multichannel input.
+
+    References
+    ----------
+    .. [#abel] J. S. Abel and P. Huang, "A simple, robust measure of
+        reverberation echo density," in Proc. of the 121st AES Convention,
+        San Francisco, 2006.
+
+    Examples
+    --------
+    .. plot::
+
+        >>> import pyfar as pf
+        >>> import pyrato as ra
+        ...
+        >>> rir = pf.signals.files.room_impulse_response(sampling_rate=48000)
+        >>> t_abel, echo_density, onset = ra.parameters.mixing_time_abel(
+        ...     rir, plot=True)
+    """
+    if not isinstance(rir, pf.Signal):
+        raise TypeError("Input data must be a pyfar.Signal.")
+    if (not isinstance(window_length, (int, np.integer))
+            or window_length <= 0 or window_length % 2):
+        raise ValueError(
+            f"window_length is {window_length} but must be a positive even "
+            "integer.")
+    if onset_threshold_db >= 0:
+        raise ValueError(
+            f"onset_threshold_db is {onset_threshold_db} but must be "
+            "negative.")
+    if (not isinstance(peak_secure_margin, (int, np.integer))
+            or peak_secure_margin < 0):
+        raise ValueError(
+            f"peak_secure_margin is {peak_secure_margin} but must be a "
+            "non-negative integer.")
+    if plot and np.prod(rir.cshape) != 1:
+        raise ValueError("The plot can only be done for single channel input.")
+
+    fs = rir.sampling_rate
+    half = window_length // 2
+
+    peaks = np.max(np.abs(rir.time), axis=-1)
+    if np.any(peaks == 0):
+        raise ValueError(
+            "Onset detection failed. At least one channel contained only "
+            "zeros.")
+    threshold = 10 ** (onset_threshold_db / 20)
+    # A negative threshold lets the peak sample clear the criterion, so
+    # argmax always finds an onset.
+    above = np.abs(rir.time) > peaks[..., np.newaxis] * threshold
+    onset = int(np.argmax(above, axis=-1).min())
+    start = max(0, onset - peak_secure_margin)
+    margin = onset - start
+    data = rir.time[..., start:]
+    n_samples = data.shape[-1]
+    if n_samples < window_length:
+        raise ValueError(
+            f"The impulse response is {n_samples} samples long after onset "
+            "detection, which is shorter than the analysis window length of "
+            f"{window_length} samples.")
+
+    # Gaussian noise has a fraction erfc(1/sqrt(2)) of samples beyond sigma.
+    norm = window_length * erfc(1 / np.sqrt(2))
+    # NaN padding gives the growing and shrinking windows at both ends the
+    # full length; nanstd and the comparison ignore it.
+    nan_pad = np.full(half, np.nan)
+    # windows are processed in blocks to bound the memory for long responses
+    block_size = 4096
+
+    mixing_time = np.empty(rir.cshape)
+    echo_density = np.empty(data.shape)
+    for ch in np.ndindex(rir.cshape):
+        windows = np.lib.stride_tricks.sliding_window_view(
+            np.concatenate((nan_pad, data[ch], nan_pad)), window_length)
+        for i0 in range(0, n_samples, block_size):
+            block = windows[i0:min(i0 + block_size, n_samples)]
+            sigma = np.nanstd(block, axis=-1, ddof=1)
+            echo_density[ch][i0:i0 + block.shape[0]] = np.sum(
+                np.abs(block) > sigma[:, np.newaxis], axis=-1) / norm
+
+        exceeds = echo_density[ch] > 1
+        if np.any(exceeds):
+            # 1-based index of the first window exceeding unity
+            d = np.argmax(exceeds) + 1
+            mixing_time[ch] = (d - margin) / fs
+        else:
+            mixing_time[ch] = np.nan
+
+    if np.any(np.isnan(mixing_time)):
+        warnings.warn(
+            "The echo density never exceeds unity in "
+            f"{np.count_nonzero(np.isnan(mixing_time))} channel(s). NaN is "
+            "returned for these channels.", stacklevel=2)
+
+    times = (start + np.arange(n_samples)) / fs
+    echo_density = pf.TimeData(echo_density, times)
+    onset = onset / fs
+
+    if plot:
+        _plot_mixing_time(
+            rir, onset, echo_density, mixing_time, r'$t_\mathrm{Abel}$')
+
+    return mixing_time, echo_density, onset
+
+
+def perceptual_mixing_time_lindau(
+        rir, percentile=50, window_length=1024, onset_threshold_db=-30,
+        peak_secure_margin=100, plot=False):
+    r"""Predict the perceptual mixing time after Lindau et al.
+
+    The perceptual mixing time is predicted from the mixing time
+    :math:`t_\mathrm{Abel}` of :py:func:`mixing_time_abel` by the
+    regressions of Lindau et al. [#lindau]_
+
+    .. math::
+
+        t_\mathrm{mp50} = 0.8 \, t_\mathrm{Abel} - 8\,\mathrm{ms},
+        \quad
+        t_\mathrm{mp95} = 1.77 \, t_\mathrm{Abel} - 38\,\mathrm{ms},
+
+    where :math:`t_\mathrm{mp50}` is the average perceptual mixing time and
+    :math:`t_\mathrm{mp95}` the 95 % point of the distribution of perceptual
+    mixing times across listeners, i.e., a transition into a static tail that
+    is inaudible to at least half, respectively nearly all, of the expert
+    listeners in the study. The slope of 1.77 is the unrounded fit; the
+    paper prints 1.8.
+
+    Parameters
+    ----------
+    rir : pyfar.Signal
+        Room impulse response.
+    percentile : {50, 95}, optional
+        Percentile of the perceptual mixing time distribution predicted by
+        the regression. The default is ``50``.
+    window_length : int, optional
+        See :py:func:`mixing_time_abel`.
+    onset_threshold_db : float, optional
+        See :py:func:`mixing_time_abel`.
+    peak_secure_margin : int, optional
+        See :py:func:`mixing_time_abel`.
+    plot : bool, optional
+        If ``True``, plot the impulse response with the detected onset and
+        the echo density with the perceptual mixing time. Only possible for
+        single channel input. The default is ``False``.
+
+    Returns
+    -------
+    perceptual_mixing_time : numpy.ndarray
+        Perceptual mixing time in seconds relative to the detected onset, of
+        shape ``rir.cshape``. ``numpy.nan`` with a warning where the
+        regression predicts a negative value or no mixing time is found.
+
+    References
+    ----------
+    .. [#lindau] A. Lindau, L. Kosanke, and S. Weinzierl, "Perceptual
+        evaluation of model- and signal-based predictors of the mixing time
+        in binaural room impulse responses," J. Audio Eng. Soc., vol. 60,
+        no. 11, pp. 887-898, 2012.
+
+    Examples
+    --------
+    .. plot::
+
+        >>> import pyfar as pf
+        >>> import pyrato as ra
+        ...
+        >>> rir = pf.signals.files.room_impulse_response(sampling_rate=48000)
+        >>> t_mp95 = ra.parameters.perceptual_mixing_time_lindau(
+        ...     rir, percentile=95, plot=True)
+    """
+    if percentile == 50:
+        slope, intercept = 0.8, -0.008
+    elif percentile == 95:
+        slope, intercept = 1.77, -0.038
+    else:
+        raise ValueError(
+            f"percentile is {percentile} but must be 50 or 95.")
+    if not isinstance(rir, pf.Signal):
+        raise TypeError("Input data must be a pyfar.Signal.")
+    if plot and np.prod(rir.cshape) != 1:
+        raise ValueError("The plot can only be done for single channel input.")
+
+    t_abel, echo_density, onset = mixing_time_abel(
+        rir, window_length, onset_threshold_db, peak_secure_margin)
+
+    perceptual_mixing_time = slope * t_abel + intercept
+    negative = perceptual_mixing_time < 0
+    if np.any(negative):
+        warnings.warn(
+            f"The predicted t_mp{percentile} is negative in "
+            f"{np.count_nonzero(negative)} channel(s), because t_Abel is "
+            "below the range of the regression. NaN is returned for these "
+            "channels.", stacklevel=2)
+        perceptual_mixing_time[negative] = np.nan
+
+    if plot:
+        _plot_mixing_time(
+            rir, onset, echo_density, perceptual_mixing_time,
+            rf'$t_\mathrm{{mp{percentile}}}$')
+
+    return perceptual_mixing_time
+
+
+def _plot_mixing_time(rir, onset, echo_density, mixing_time, label):
+    """Plot the impulse response and the echo density in a 2 by 1 layout."""
+    mixing_time = mixing_time.flat[0]
+
+    with pf.plot.context():
+        fig, ax = plt.subplots(2, 1, sharex=True)
+        # unit is fixed because the markers below are placed in seconds
+        pf.plot.time(rir, dB=True, unit='s', ax=ax[0], label='RIR')
+        ax[0].axvline(onset, color='k', linestyle='--', label='Onset')
+        pf.plot.time(echo_density, unit='s', ax=ax[1], label='Echo density')
+        ax[1].axhline(1, color='k', linestyle=':')
+        ax[1].set_ylabel('Normalized echo density')
+        if not np.isnan(mixing_time):
+            for axis in ax:
+                axis.axvline(
+                    onset + mixing_time, color=pf.plot.color('r'),
+                    label=label)
+            ax[1].set_xlim(
+                max(rir.times[0], onset - 0.01),
+                onset + max(3 * mixing_time, 0.05))
+        ax[0].set_xlabel(None)
+        ax[0].legend()
+        ax[1].legend()
+        fig.align_ylabels()
 
 
 def speech_transmission_index_indirect(
