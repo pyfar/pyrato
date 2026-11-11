@@ -154,9 +154,10 @@ def clarity(energy_decay_curve, early_time_limit=80):
 
     References
     ----------
-    .. [#isoClarity] ISO 3382-1:2009 - Acoustics - Measurement of room acoustic
-                     parameters - Part 1: Performance spaces. Geneva, Switzerland:
-                     International Organization for Standardization.
+    .. [#isoClarity] ISO 3382-1:2009 - Acoustics - Measurement of room
+                     acoustic parameters - Part 1: Performance spaces.
+                     Geneva, Switzerland: International Organization for
+                     Standardization.
 
     Examples
     --------
@@ -263,9 +264,10 @@ def early_lateral_energy_fraction(energy_decay_curve_omni,
 
     References
     ----------
-    .. [#isoEarlyLat] ISO 3382-1:2009 - Acoustics - Measurement of room acoustic
-                      parameters - Part 1: Performance spaces. Geneva, Switzerland:
-                      International Organization for Standardization.
+    .. [#isoEarlyLat] ISO 3382-1:2009 - Acoustics - Measurement of room
+                      acoustic parameters - Part 1: Performance spaces.
+                      Geneva, Switzerland: International Organization for
+                      Standardization.
     """
 
     limits = np.array([0.0, 0.08, 0.005, 0.08])
@@ -323,9 +325,10 @@ def definition(energy_decay_curve, early_time_limit=50):
 
     References
     ----------
-    .. [#isoDefinition] ISO 3382-1:2009 - Acoustics - Measurement of room acoustic
-                        parameters - Part 1: Performance spaces. Geneva, Switzerland:
-                        International Organization for Standardization.
+    .. [#isoDefinition] ISO 3382-1:2009 - Acoustics - Measurement of room
+                        acoustic parameters - Part 1: Performance spaces.
+                        Geneva, Switzerland: International Organization for
+                        Standardization.
 
     Examples
     --------
@@ -656,9 +659,10 @@ def sound_strength(energy_decay_curve_room,
 
     References
     ----------
-    .. [#isoStrength] ISO 3382-1:2009 - Acoustics - Measurement of room acoustic
-                      parameters - Part 1: Performance spaces. Geneva, Switzerland:
-                      International Organization for Standardization.
+    .. [#isoStrength] ISO 3382-1:2009 - Acoustics - Measurement of room
+                      acoustic parameters - Part 1: Performance spaces.
+                      Geneva, Switzerland: International Organization for
+                      Standardization.
     """
 
     limits = np.array([0.0, np.inf, 0.0, np.inf])
@@ -1142,8 +1146,8 @@ def center_time(energy_decay_curve):
                 parameters - Part 1: Performance spaces. Geneva, Switzerland:
                 International Organization for Standardization.
     .. [#schroeder] M. R. Schroeder, "New Method of Measuring Reverberation
-                    Time," J. Acoust. Soc. Am., vol. 37, no. 3, pp. 409-412, 1965.
-                    doi:10.1121/1.1909343
+                    Time," J. Acoust. Soc. Am., vol. 37, no. 3, pp. 409-412,
+                    1965. doi:10.1121/1.1909343
     """
 
     if not isinstance(energy_decay_curve, pf.TimeData):
