@@ -1161,3 +1161,112 @@ def center_time(energy_decay_curve):
     )
 
     return center_time
+
+
+def interaural_cross_correlation(
+        binaural_rir, time_range="early", max_lag=1e-3):
+    r"""
+    Calculate the interaural cross-correlation coefficient (IACC).
+
+    The IACC quantifies the similarity of the signals at the two ears
+    and is related to the perceived spaciousness and apparent source
+    width of a room [#isoIACC]_.
+
+    The interaural cross-correlation function is defined as
+
+    .. math::
+
+        \mathrm{IACF}_{t_1,t_2}(\tau) =
+        \frac{
+            \displaystyle \int_{t_1}^{t_2}
+            p_L(t)\,p_R(t+\tau)\,\mathrm{d}t
+        }{
+            \sqrt{
+                \displaystyle \int_{t_1}^{t_2}p_L^2(t)\,\mathrm{d}t
+                \int_{t_1}^{t_2}p_R^2(t)\,\mathrm{d}t
+            }
+        }
+
+    and the IACC is its maximum absolute value within the lag range
+    :math:`|\tau| \leq \tau_{\max}`:
+
+    .. math::
+
+        \mathrm{IACC}_{t_1,t_2} =
+        \max_{|\tau| \leq \tau_{\max}}
+        |\mathrm{IACF}_{t_1,t_2}(\tau)|
+
+    where :math:`p_L(t)` and :math:`p_R(t)` are the sound pressures at
+    the left and right ear.
+
+    Parameters
+    ----------
+    binaural_rir : pyfar.Signal
+        Binaural room impulse response. The last channel axis must have
+        size 2 (left, right), i.e. ``cshape = (..., 2)``. Frequency
+        filtering must be applied beforehand.
+    time_range : str or tuple, optional
+        Integration interval :math:`[t_1, t_2]` in seconds.
+
+        ``'early'``
+            0 to 80 ms (:math:`\mathrm{IACC}_E`), default.
+        ``'late'``
+            80 ms to the end of the signal
+            (:math:`\mathrm{IACC}_L`). The signal must extend
+            sufficiently beyond the reverberation time.
+        tuple
+            Custom interval ``(t1, t2)``. If ``t2=None``, integration
+            continues to the end of the signal.
+    max_lag : float, optional
+        Maximum lag :math:`|\tau|` in seconds. Defaults to 1 ms.
+
+    Returns
+    -------
+    iacc : numpy.ndarray
+        IACC in the range [0, 1], shaped according to
+        ``binaural_rir.cshape[:-1]``.
+
+    References
+    ----------
+    .. [#isoIACC] ISO 3382-1:2009 - Acoustics - Measurement of room acoustic
+                  parameters - Part 1: Performance spaces. Geneva, Switzerland:
+                  International Organization for Standardization.
+    """
+    if not isinstance(binaural_rir, pf.Signal):
+        raise TypeError("binaural_rir must be a pyfar.Signal.")
+    if binaural_rir.cshape[-1] != 2:
+        raise ValueError("The last channel axis must have size 2.")
+    if not np.isfinite(max_lag) or max_lag < 0:
+        raise ValueError("max_lag must be finite and non-negative.")
+
+    ranges = {"early": (0, 0.08), "late": (0.08, None)}
+    if isinstance(time_range, str):
+        if time_range not in ranges:
+            raise ValueError(f"time_range must be one of {list(ranges)} or a tuple (t1, t2).")
+        t1, t2 = ranges[time_range]
+    elif isinstance(time_range, tuple) and len(time_range) == 2:
+        t1, t2 = time_range
+    else:
+        raise ValueError("Invalid time_range.")
+
+    start = int(np.ceil(t1 * binaural_rir.sampling_rate))
+    stop = binaural_rir.sampling_rate if t2 is None else int(np.ceil(t2 * binaural_rir.sampling_rate))
+    if not 0 <= start < stop <= binaural_rir.n_samples:
+        raise ValueError("Invalid integration interval.")
+
+    left, right = binaural_rir[..., 0], binaural_rir[..., 1]
+    left.time, right.time = left.time[..., start:stop], right.time[..., start:stop]
+
+    corr = pf.dsp.correlate(right, left)
+    lag_mask = np.abs(corr.times) < max_lag
+
+    if not np.any(lag_mask):
+        raise ValueError("No correlation samples within max_lag.")
+
+    iacc = np.max(np.abs(corr.time[..., lag_mask]), axis=-1) / np.sqrt(
+        np.sum(left.time**2, axis=-1) * np.sum(right.time**2, axis=-1))
+
+    if np.any(~np.isfinite(iacc)):
+        raise ValueError("IACC is undefined for zero-energy signals.")
+
+    return np.clip(iacc, 0, 1)
