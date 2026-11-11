@@ -17,6 +17,7 @@ from pyrato.parameters import modulation_transfer_function
 from pyrato.parameters import _sti_calc
 from pyrato.parameters import _ambient_noise_correction
 from pyrato.parameters import center_time
+from pyrato.parameters import interaural_cross_correlation
 # parameter clarity tests
 @pytest.mark.parametrize(
     ("energy", "expected_shape"),
@@ -1504,3 +1505,259 @@ def test_center_time_nan_tail_returns_finite_result(make_edc):
     result = center_time(edc)
 
     assert np.all(np.isfinite(result))
+
+@pytest.mark.parametrize(
+    ("cshape", "expected_shape"),
+    [
+        # single binaural pair
+        ((), ()),
+        # three binaural pairs
+        ((3,), (3,)),
+        # 2x3 binaural pairs
+        ((2, 3), (2, 3)),
+    ],
+)
+def test_iacc_returns_correct_shape_and_range(cshape, expected_shape):
+    """Return shape cshape[:-1] and values within [0, 1]."""
+    brir = pf.signals.noise(
+        4800, rms=np.ones((*cshape, 2)), sampling_rate=48000, seed=0)
+    result = interaural_cross_correlation(brir)
+    assert isinstance(result, (float, np.ndarray))
+    assert np.shape(result) == expected_shape
+    assert np.all((result >= 0) & (result <= 1))
+
+
+def test_iacc_rejects_non_signal_input():
+    """Reject input that is not a pyfar.Signal, e.g. pyfar.TimeData."""
+    brir = pf.TimeData(np.ones((2, 100)), np.arange(100) / 1000)
+    expected_error_message = "binaural_rir must be a pyfar.Signal."
+
+    with pytest.raises(TypeError, match=re.escape(expected_error_message)):
+        interaural_cross_correlation(brir)
+
+
+@pytest.mark.parametrize("n_channels", [1, 3])
+def test_iacc_rejects_wrong_number_of_ears(n_channels):
+    """Reject signals whose last channel axis is not of size 2."""
+    brir = pf.Signal(np.ones((n_channels, 4800)), 48000)
+    expected_error_message = "The last channel axis must have size 2."
+
+    with pytest.raises(ValueError, match=re.escape(expected_error_message)):
+        interaural_cross_correlation(brir)
+
+
+@pytest.mark.parametrize("max_lag", [-1e-3, np.inf, np.nan])
+def test_iacc_rejects_invalid_max_lag(max_lag):
+    """Reject negative and non-finite max_lag."""
+    brir = pf.signals.noise(4800, rms=[1, 1], sampling_rate=48000, seed=0)
+    expected_error_message = "max_lag must be finite and non-negative."
+
+    with pytest.raises(ValueError, match=re.escape(expected_error_message)):
+        interaural_cross_correlation(brir, max_lag=max_lag)
+
+
+def test_iacc_rejects_unknown_time_range_string():
+    """Reject unknown time_range strings."""
+    brir = pf.signals.noise(4800, rms=[1, 1], sampling_rate=48000, seed=0)
+    invalid_time_range = "middle"
+    expected_error_message = "time_range must be one of"
+
+    with pytest.raises(ValueError, match=re.escape(expected_error_message)):
+        interaural_cross_correlation(brir, time_range=invalid_time_range)
+
+
+def test_iacc_rejects_invalid_time_range_type():
+    """Reject time_range that is neither a string nor a tuple (t1, t2)."""
+    brir = pf.signals.noise(4800, rms=[1, 1], sampling_rate=48000, seed=0)
+    invalid_time_range = [0, 0.08]  # list instead of tuple
+    expected_error_message = "Invalid time_range."
+
+    with pytest.raises(ValueError, match=re.escape(expected_error_message)):
+        interaural_cross_correlation(brir, time_range=invalid_time_range)
+
+
+@pytest.mark.parametrize(
+    "time_range",
+    [
+        # end before start
+        (0.05, 0.01),
+        # empty interval
+        (0.05, 0.05),
+        # negative start
+        (-0.01, 0.05),
+        # end beyond signal length (signal is 0.1 s long)
+        (0, 0.2),
+    ],
+)
+def test_iacc_rejects_invalid_integration_interval(time_range):
+    """Reject integration intervals outside the signal or with t1 >= t2."""
+    brir = pf.signals.noise(4800, rms=[1, 1], sampling_rate=48000, seed=0)
+
+    with pytest.raises(ValueError, match="Invalid integration interval."):
+        interaural_cross_correlation(brir, time_range=time_range)
+
+
+def test_iacc_rejects_zero_energy_signal():
+    """Reject zero-energy signals, for which the IACC is undefined."""
+    brir = pf.Signal(np.zeros((2, 4800)), 48000)
+
+    with pytest.raises(ValueError, match="IACC is undefined"):
+        interaural_cross_correlation(brir)
+
+
+@pytest.mark.parametrize(
+    "gain", [1.0, -1.0, 5.0, -0.2],
+    ids=["identical", "inverted", "louder", "quieter_inverted"],
+)
+def test_iacc_returns_one_for_scaled_copy(gain):
+    """
+    p_R = gain * p_L yields IACC = 1, since the IACC is normalized and uses
+    the absolute value.
+    """
+    brir = pf.signals.noise(4800, rms=[1, 1], sampling_rate=48000, seed=0)
+    brir.time[1] = gain * brir.time[0]
+    result = interaural_cross_correlation(brir)
+    npt.assert_allclose(result, 1.0, atol=1e-12)
+
+
+@pytest.mark.parametrize("delay_samples", [-24, -10, 0, 10, 24])
+def test_iacc_finds_delay_within_max_lag(delay_samples):
+    """
+    A delayed copy within |tau| <= 1 ms is found: IACC = 1.
+
+    Delays of up to 24 samples (0.5 ms at 48 kHz) in both directions.
+    The signal is zero outside the integration window to avoid edge effects.
+    """
+    brir = pf.Signal(np.zeros((2, 4800)), 48000)
+    noise = np.random.default_rng(1).standard_normal(1000)
+    brir.time[0, 200:1200] = noise
+    brir.time[1, 200 + delay_samples:1200 + delay_samples] = noise
+
+    result = interaural_cross_correlation(brir)
+    npt.assert_allclose(result, 1.0, atol=1e-12)
+
+
+def test_iacc_ignores_delay_outside_max_lag():
+    """
+    A delayed copy outside max_lag is not detected, but found if max_lag
+    is increased accordingly.
+    """
+    delay_samples = 96  # 2 ms at 48 kHz
+    brir = pf.Signal(np.zeros((2, 4800)), 48000)
+    noise = np.random.default_rng(2).standard_normal(1000)
+    brir.time[0, 200:1200] = noise
+    brir.time[1, 200 + delay_samples:1200 + delay_samples] = noise
+
+    result_default_lag = interaural_cross_correlation(brir)
+    result_large_lag = interaural_cross_correlation(brir, max_lag=3e-3)
+
+    assert result_default_lag < 0.15
+    npt.assert_allclose(result_large_lag, 1.0, atol=1e-12)
+
+
+def test_iacc_with_zero_max_lag_uses_zero_lag_only():
+    """
+    max_lag = 0 is allowed and evaluates only the zero-lag coefficient
+    (|tau| <= tau_max), which equals the normalized inner product.
+    """
+    brir = pf.signals.noise(4800, rms=[1, 1], sampling_rate=48000, seed=0)
+    brir.time[1] = 0.6 * brir.time[0] + 0.8 * brir.time[1]
+    n_early = int(0.08 * brir.sampling_rate)
+    left = brir.time[0, :n_early]
+    right = brir.time[1, :n_early]
+    expected = np.abs(np.sum(left * right)) / np.sqrt(
+        np.sum(left**2) * np.sum(right**2))
+
+    result = interaural_cross_correlation(brir, max_lag=0)
+    npt.assert_allclose(result, expected, rtol=1e-10)
+
+
+def test_iacc_calculates_known_reference_value():
+    r"""
+    Construct simple deterministic ear signals at 1 kHz.
+
+    p_L = delta(t)
+    p_R = delta(t) + delta(t - 10 ms)
+
+    The second impulse is outside max_lag, hence
+    IACC = 1 / sqrt(1 * 2) = 1 / sqrt(2).
+    """
+    brir = pf.Signal(np.zeros((2, 100)), 1000)
+    brir.time[0, 0] = 1
+    brir.time[1, 0] = 1
+    brir.time[1, 10] = 1
+
+    result = interaural_cross_correlation(brir)
+    npt.assert_allclose(result, 1 / np.sqrt(2), atol=1e-12)
+
+
+def test_iacc_early_and_late_time_range():
+    """
+    Early part identical, late part uncorrelated:
+    IACC_E = 1 and IACC_L close to 0.
+
+    The signal length (0.5 s) differs from one second to verify that 'late'
+    integrates up to the end of the signal.
+    """
+    sampling_rate = 48000
+    brir = pf.signals.noise(
+        int(0.5 * sampling_rate), rms=[1, 1], sampling_rate=sampling_rate,
+        seed=0)
+    n_early = int(0.08 * sampling_rate)
+    brir.time[1, :n_early] = brir.time[0, :n_early]
+
+    iacc_early = interaural_cross_correlation(brir, time_range="early")
+    iacc_late = interaural_cross_correlation(brir, time_range="late")
+
+    npt.assert_allclose(iacc_early, 1.0, atol=1e-12)
+    assert iacc_late < 0.1
+
+
+@pytest.mark.parametrize(
+    ("time_range", "equivalent_time_range"),
+    [
+        ((0, 0.08), "early"),
+        ((0.08, None), "late"),
+        # t2 = None integrates up to the end of the 0.5 s signal
+        ((0.01, None), (0.01, 0.5)),
+    ],
+    ids=["tuple_equals_early", "tuple_equals_late", "none_equals_end"],
+)
+def test_iacc_equivalent_time_ranges(time_range, equivalent_time_range):
+    """Equivalent time_range definitions yield identical results."""
+    brir = pf.signals.noise(24000, rms=[1, 1], sampling_rate=48000, seed=0)
+    npt.assert_allclose(
+        interaural_cross_correlation(brir, time_range=time_range),
+        interaural_cross_correlation(
+            brir, time_range=equivalent_time_range))
+
+
+def test_iacc_default_time_range_is_early():
+    """The default time_range is 'early' (0 to 80 ms)."""
+    brir = pf.signals.noise(4800, rms=[1, 1], sampling_rate=48000, seed=0)
+    npt.assert_allclose(
+        interaural_cross_correlation(brir),
+        interaural_cross_correlation(brir, time_range="early"))
+
+
+def test_iacc_multichannel_is_computed_independently():
+    """
+    Each binaural pair is evaluated independently: identical ears yield
+    IACC = 1, independent white noise yields IACC close to 0.
+    """
+    brir = pf.signals.noise(
+        4800, rms=np.ones((2, 2)), sampling_rate=48000, seed=0)
+    brir.time[0, 1] = brir.time[0, 0]
+
+    result = interaural_cross_correlation(brir)
+
+    npt.assert_allclose(result[0], 1.0, atol=1e-12)
+    assert result[1] < 0.15
+
+
+def test_iacc_does_not_modify_input():
+    """The input signal is not modified."""
+    brir = pf.signals.noise(4800, rms=[1, 1], sampling_rate=48000, seed=0)
+    data = brir.time.copy()
+    interaural_cross_correlation(brir, time_range=(0.01, 0.05))
+    npt.assert_array_equal(brir.time, data)
