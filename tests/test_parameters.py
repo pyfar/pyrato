@@ -1600,7 +1600,7 @@ def test_iacc_rejects_one_silent_ear():
 
 def test_iacc_returns_one_for_scaled_copy():
     """
-    p_R = gain * p_L yields IACC = 1
+    p_R = gain * p_L yields IACC = 1.
     """
     gain = -0.2
     brir = pf.signals.noise(4800, rms=[1, 1], sampling_rate=44100, seed=0)
