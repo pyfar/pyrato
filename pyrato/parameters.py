@@ -1239,10 +1239,14 @@ def interaural_cross_correlation(
     if not np.isfinite(max_lag) or max_lag < 0:
         raise ValueError("max_lag must be finite and non-negative.")
 
+    # integration limits [t1, t2] in seconds according to ISO 3382-1,
+    # t2 = None means integration up to the end of the signal
     ranges = {"early": (0, 0.08), "late": (0.08, None)}
     if isinstance(time_range, str):
         if time_range not in ranges:
-            raise ValueError(f"time_range must be one of {list(ranges)} or a tuple (t1, t2).")
+            raise ValueError(
+                f"time_range must be one of {list(ranges)} or a tuple "
+                "(t1, t2).")
         t1, t2 = ranges[time_range]
     elif isinstance(time_range, tuple) and len(time_range) == 2:
         t1, t2 = time_range
@@ -1250,23 +1254,27 @@ def interaural_cross_correlation(
         raise ValueError("Invalid time_range.")
 
     start = int(np.ceil(t1 * binaural_rir.sampling_rate))
-    stop = binaural_rir.sampling_rate if t2 is None else int(np.ceil(t2 * binaural_rir.sampling_rate))
+    stop = (binaural_rir.n_samples if t2 is None
+            else int(np.ceil(t2 * binaural_rir.sampling_rate)))
     if not 0 <= start < stop <= binaural_rir.n_samples:
         raise ValueError("Invalid integration interval.")
 
+    # split into left and right ear and restrict both to [t1, t2]
     left, right = binaural_rir[..., 0], binaural_rir[..., 1]
-    left.time, right.time = left.time[..., start:stop], right.time[..., start:stop]
+    left.time = left.time[..., start:stop]
+    right.time = right.time[..., start:stop]
 
-    corr = pf.dsp.correlate(right, left)
-    lag_mask = np.abs(corr.times) < max_lag
-
-    if not np.any(lag_mask):
-        raise ValueError("No correlation samples within max_lag.")
-
-    iacc = np.max(np.abs(corr.time[..., lag_mask]), axis=-1) / np.sqrt(
-        np.sum(left.time**2, axis=-1) * np.sum(right.time**2, axis=-1))
-
-    if np.any(~np.isfinite(iacc)):
+    # denominator of the IACF: product of the energies of both ears
+    energy = np.sum(left.time**2, axis=-1) * np.sum(right.time**2, axis=-1)
+    if np.any(energy == 0):
         raise ValueError("IACC is undefined for zero-energy signals.")
 
-    return np.clip(iacc, 0, 1)
+    corr = pf.dsp.correlate(right, left)
+
+    # only lags within |tau| <= max_lag are considered (1 ms by default,
+    # which covers the maximum interaural time difference)
+    lag_mask = np.abs(corr.times) <= max_lag
+
+    iacc = np.max(np.abs(corr.time[..., lag_mask]), axis=-1) / np.sqrt(energy)
+
+    return np.clip(iacc, 0, 1).reshape(binaural_rir.cshape[:-1])
