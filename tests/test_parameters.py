@@ -1619,7 +1619,6 @@ def test_iacc_finds_delay_within_max_lag(delay_samples):
     result = interaural_cross_correlation(brir)
     npt.assert_allclose(result, 1.0, atol=1e-12)
 
-
 def test_iacc_ignores_delay_outside_max_lag():
     """
     A copy delayed by 2 ms is outside max_lag = 1 ms (IACC = 0), but within
@@ -1632,7 +1631,6 @@ def test_iacc_ignores_delay_outside_max_lag():
 
     npt.assert_allclose(result_default_lag, 0.0, atol=1e-12)
     npt.assert_allclose(result_large_lag, 1.0, atol=1e-12)
-
 
 def test_iacc_calculates_known_reference_value():
     r"""
@@ -1651,7 +1649,6 @@ def test_iacc_calculates_known_reference_value():
 
     result = interaural_cross_correlation(brir)
     npt.assert_allclose(result, 1 / np.sqrt(2), atol=1e-12)
-
 
 def test_iacc_early_and_late_time_range():
     """
@@ -1673,7 +1670,6 @@ def test_iacc_early_and_late_time_range():
     npt.assert_allclose(iacc_early, 1.0, atol=1e-12)
     npt.assert_allclose(iacc_late, 0.0, atol=1e-12)
 
-
 def test_iacc_late_integrates_up_to_end_of_long_signal():
     """
     'late' integrates up to the end of the signal, also beyond one second.
@@ -1690,7 +1686,6 @@ def test_iacc_late_integrates_up_to_end_of_long_signal():
 
     result = interaural_cross_correlation(brir, time_range="late")
     npt.assert_allclose(result, 0.5, atol=1e-12)
-
 
 def test_iacc_custom_time_range():
     """
@@ -1713,7 +1708,6 @@ def test_iacc_custom_time_range():
 
     npt.assert_allclose(iacc_custom, 1.0, atol=1e-12)
     npt.assert_allclose(iacc_early, 0.5, atol=1e-12)
-
 
 def test_iacc_multichannel():
     """
