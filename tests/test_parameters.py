@@ -1715,7 +1715,7 @@ def test_iacc_custom_time_range():
     npt.assert_allclose(iacc_early, 0.5, atol=1e-12)
 
 
-def test_iacc_multichannel_is_computed_independently():
+def test_iacc_multichannel():
     """
     Each binaural pair is evaluated independently.
     """
