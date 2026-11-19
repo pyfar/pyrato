@@ -20,7 +20,6 @@ operations in room acoustics
         :link: readme.html
         :text-align: center
         :padding: 0 0 3 3
-
         :header: **Getting Started**
 
         .. raw:: html
@@ -33,7 +32,6 @@ operations in room acoustics
         :link-type: ref
         :text-align: center
         :padding: 0 0 3 3
-
         :header: **API Reference**
 
         .. raw:: html
@@ -45,8 +43,7 @@ operations in room acoustics
         :link: contributing.html
         :text-align: center
         :padding: 0 0 3 3
-
-       :header: **Contributing**
+        :header: **Contributing**
 
         .. raw:: html
 
@@ -56,7 +53,6 @@ operations in room acoustics
         :link: history.html
         :text-align: center
         :padding: 0 0 3 3
-
         :header: **History**
 
         .. raw:: html
