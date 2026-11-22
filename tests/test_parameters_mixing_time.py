@@ -13,10 +13,9 @@ from pyrato.parameters import mixing_time_abel, perceptual_mixing_time_lindau
 def _noise_rir(n_samples=20000, onset=500, seed=0, rt=0.25):
     """Exponentially decaying Gaussian noise with a direct sound at ``onset``.
 
-    The samples before ``onset`` are zero, so the onset detection returns
-    ``onset`` rather than an early noise sample. The echo density of Gaussian
-    noise crosses unity shortly after the onset, so the transition time is
-    well defined.
+    The samples before ``onset`` are zero, so the onset detection does not
+    return an early noise sample. The echo density of Gaussian noise crosses
+    unity shortly after the onset, so the transition time is well defined.
     """
     rng = np.random.default_rng(seed)
     n_tail = n_samples - onset
@@ -50,15 +49,16 @@ def test_mixing_time_abel_returns_correct_shapes(cshape):
 
 @pytest.mark.parametrize("cshape", [(1,), (2, 3)])
 def test_perceptual_mixing_time_lindau_returns_correct_shape(cshape):
-    """Return one perceptual mixing time per channel."""
+    """Return one perceptual mixing time per channel and the onset."""
     n_channels = int(np.prod(cshape))
     data = np.stack([_noise_rir(seed=i) for i in range(n_channels)])
     rir = pf.Signal(data.reshape(*cshape, -1), 48000)
 
-    result = perceptual_mixing_time_lindau(rir)
+    result, onset = perceptual_mixing_time_lindau(rir)
 
     assert isinstance(result, np.ndarray)
     assert result.shape == rir.cshape
+    assert isinstance(onset, float)
 
 
 @pytest.mark.parametrize(
@@ -150,15 +150,18 @@ def test_mixing_time_matches_reference_values():
 
     Cross-checked against AKcutIRmixingTime + AKmixingTimeAbel +
     AKdataBasedMixingTime (AKtools, TU Berlin) on the same impulse response.
-    Both implementations agree, so the tolerance is tight.
+    AKtools returns 72.8333 ms with the onset at sample 1404, one sample
+    later than the pyfar onset detection.
     """
     rir = _measured_rir()
 
     mixing_time, _, onset = mixing_time_abel(rir)
-    npt.assert_allclose(mixing_time, 72.8333333333e-3, atol=1e-9)
-    npt.assert_allclose(onset, 1404 / 48000)
-    npt.assert_allclose(
-        perceptual_mixing_time_lindau(rir), 50.2666666667e-3, atol=1e-9)
+    t_mp50, onset_lindau = perceptual_mixing_time_lindau(rir)
+
+    npt.assert_allclose(mixing_time, 72.8541666667e-3, atol=1e-9)
+    npt.assert_allclose(onset, 1403 / 48000)
+    npt.assert_allclose(t_mp50, 50.2833333333e-3, atol=1e-9)
+    npt.assert_allclose(onset_lindau, 1403 / 48000)
 
 
 @pytest.mark.parametrize(
@@ -170,7 +173,7 @@ def test_perceptual_mixing_time_lindau_maps_transition_time(
     rir = _measured_rir()
 
     t_abel, _, _ = mixing_time_abel(rir)
-    t_mp = perceptual_mixing_time_lindau(rir, percentile=percentile)
+    t_mp, _ = perceptual_mixing_time_lindau(rir, percentile=percentile)
 
     assert np.all(slope * t_abel + intercept > 0)  # NaN branch not exercised
     npt.assert_allclose(t_mp, slope * t_abel + intercept, atol=1e-12)
@@ -191,17 +194,17 @@ def test_perceptual_mixing_time_lindau_returns_nan_for_negative_prediction(
 
     match = f"The predicted t_mp{percentile} is negative in 1 channel"
     with pytest.warns(UserWarning, match=match):
-        result = perceptual_mixing_time_lindau(rir, percentile=percentile)
+        result, _ = perceptual_mixing_time_lindau(rir, percentile=percentile)
 
     assert np.isnan(result[0])
 
 
 @pytest.mark.parametrize(
-    ("onset_threshold_db", "expected_onset"), [(-30, 300), (-10, 500)])
+    ("onset_threshold_db", "expected_onset"), [(-30, 299), (-10, 499)])
 def test_mixing_time_abel_onset_follows_threshold(
         onset_threshold_db, expected_onset):
-    """A pre-echo 20 dB below the peak is the onset only for a threshold
-    below -20 dB.
+    """A pre-echo 20 dB below the peak at sample 300 sets the onset only for
+    a threshold below -20 dB.
     """
     time = _noise_rir()
     time[300] = 1.0
@@ -211,6 +214,20 @@ def test_mixing_time_abel_onset_follows_threshold(
         rir, onset_threshold_db=onset_threshold_db)
 
     npt.assert_allclose(onset, expected_onset / 48000)
+
+
+def test_mixing_time_abel_onset_is_not_negative():
+    """The onset is not negative if the first sample already exceeds the
+    threshold ahead of the peak.
+    """
+    time = _noise_rir(onset=10)
+    time[0] = 5.0
+    rir = pf.Signal(time, 48000)
+
+    _, echo_density, onset = mixing_time_abel(rir)
+
+    assert onset == 0
+    assert echo_density.times[0] == 0
 
 
 @pytest.mark.parametrize("peak_secure_margin", [0, 50, 400])
@@ -226,21 +243,22 @@ def test_mixing_time_abel_margin_shifts_cut_but_not_mixing_time(
 
     npt.assert_allclose(
         echo_density.times[0], onset - peak_secure_margin / 48000)
-    npt.assert_allclose(mixing_time, 72.8333333333e-3, atol=1e-9)
+    npt.assert_allclose(mixing_time, 72.8541666667e-3, atol=1e-9)
 
 
 def test_mixing_time_abel_cuts_all_channels_at_earliest_onset():
     """Multichannel input is cut at the earliest onset across channels.
 
     The channel holding the earliest onset keeps its single-channel reference
-    value of 72.83 ms, while the later-onset channel is not aligned to its
+    value of 72.85 ms, while the later-onset channel is not aligned to its
     own direct sound. The delayed channel comes first so that the earliest
     onset is not simply the onset of channel zero.
 
-    The 4.83 ms of the delayed channel is not a meaningful mixing time: the
+    The 4.85 ms of the delayed channel is not a meaningful mixing time: the
     shared cut places its analysis window in the pre-onset noise floor of the
     measured impulse response, whose Gaussian statistics cross unity at once.
-    It pins the cut behaviour, and matches AKtools on the same input.
+    It pins the cut behaviour, and matches AKtools on the same input to
+    within the one sample by which the onset definitions differ.
     """
     time = _measured_rir().time[0]
     delayed = np.concatenate([np.zeros(1500), time[:-1500]])
@@ -248,12 +266,12 @@ def test_mixing_time_abel_cuts_all_channels_at_earliest_onset():
     mixing_time, _, onset = mixing_time_abel(
         pf.Signal(np.stack([delayed, time]), 48000))
 
-    npt.assert_allclose(onset, 1404 / 48000)
+    npt.assert_allclose(onset, 1403 / 48000)
     npt.assert_allclose(
-        mixing_time, [4.8333333333e-3, 72.8333333333e-3], atol=1e-9)
+        mixing_time, [4.8541666667e-3, 72.8541666667e-3], atol=1e-9)
 
 
-@pytest.mark.parametrize("onset", [0, 99, 100, 500])
+@pytest.mark.parametrize("onset", [1, 99, 100, 500])
 def test_mixing_time_abel_is_independent_of_onset_position(onset):
     """The mixing time is measured from the onset wherever the onset lies.
 
@@ -267,7 +285,7 @@ def test_mixing_time_abel_is_independent_of_onset_position(onset):
     tail = _noise_rir(n_samples=19980, onset=0, seed=3)
     rir = pf.Signal(np.concatenate([np.zeros(onset), tail]), 48000)
 
-    npt.assert_allclose(mixing_time_abel(rir)[0], 13.5416666667e-3, atol=1e-9)
+    npt.assert_allclose(mixing_time_abel(rir)[0], 13.5625e-3, atol=1e-9)
 
 
 def test_mixing_time_abel_echo_density_crosses_unity_at_mixing_time():
@@ -294,7 +312,9 @@ def test_mixing_time_abel_echo_density_of_gaussian_noise_is_unity():
     """
     rng = np.random.default_rng(0)
     noise = rng.standard_normal(48000)
-    noise[0] = 10  # onset at the first sample
+    # onset at the first sample, more than 30 dB above the noise so that the
+    # start sample detection does not warn about the SNR
+    noise[0] = 100
 
     _, echo_density, _ = mixing_time_abel(pf.Signal(noise, 48000))
 

@@ -669,15 +669,6 @@ def mixing_time_abel(rir, window_length=1024, onset_threshold_db=-30,
                      peak_secure_margin=100, plot=False):
     r"""Estimate the mixing time from the echo density after Abel and Huang.
 
-    The direct-sound onset is detected per channel as the first sample
-    exceeding `onset_threshold_db` below the peak, and the impulse response
-    is cut `peak_secure_margin` samples before the onset, or at its start if
-    fewer samples precede the onset. Multichannel input is cut at the earliest
-    onset across channels, which preserves inter-channel time differences: a
-    channel is then measured from the first arrival across all channels, so
-    its mixing time includes its propagation delay relative to the earliest
-    channel. Pass channels individually to measure each from its own onset.
-
     The echo density counts the samples with :math:`|h| > \sigma` inside a
     rectangular window (growing at the start, of length `window_length` in
     the middle, shrinking at the end), divided by `window_length` in every
@@ -692,6 +683,15 @@ def mixing_time_abel(rir, window_length=1024, onset_threshold_db=-30,
     where :math:`d` is the first sample at which the echo density exceeds
     unity, i.e., criterion I of Abel and Huang [#abel]_, and :math:`m` the
     number of samples kept before the onset.
+
+    The direct-sound onset is detected per channel with
+    :py:func:`pyfar.dsp.find_impulse_response_start`, and the impulse
+    response is cut `peak_secure_margin` samples before the onset, or at its
+    start if fewer samples precede the onset. Multichannel input is cut at
+    the earliest onset across channels, which preserves inter-channel time
+    differences: a channel is then measured from the first arrival across all
+    channels, so its mixing time includes its propagation delay relative to
+    the earliest channel.
 
     Parameters
     ----------
@@ -772,11 +772,8 @@ def mixing_time_abel(rir, window_length=1024, onset_threshold_db=-30,
         raise ValueError(
             "Onset detection failed. At least one channel contained only "
             "zeros.")
-    threshold = 10 ** (onset_threshold_db / 20)
-    # A negative threshold lets the peak sample clear the criterion, so
-    # argmax always finds an onset.
-    above = np.abs(rir.time) > peaks[..., np.newaxis] * threshold
-    onset = int(np.argmax(above, axis=-1).min())
+    onset = max(0, int(pf.dsp.find_impulse_response_start(
+        rir, threshold=-onset_threshold_db).min()))
     start = max(0, onset - peak_secure_margin)
     margin = onset - start
     data = rir.time[..., start:]
@@ -846,7 +843,7 @@ def perceptual_mixing_time_lindau(
         \quad
         t_\mathrm{mp95} = 1.77 \, t_\mathrm{Abel} - 38\,\mathrm{ms},
 
-    where :math:`t_\mathrm{mp50}` is the average perceptual mixing time and
+    where :math:`t_\mathrm{mp50}` is the median perceptual mixing time and
     :math:`t_\mathrm{mp95}` the 95 % point of the distribution of perceptual
     mixing times across listeners, i.e., a transition into a static tail that
     is inaudible to at least half, respectively nearly all, of the expert
@@ -877,6 +874,9 @@ def perceptual_mixing_time_lindau(
         Perceptual mixing time in seconds relative to the detected onset, of
         shape ``rir.cshape``. ``numpy.nan`` with a warning where the
         regression predicts a negative value or no mixing time is found.
+    onset : float
+        Detected onset in seconds on the time axis of ``rir``, the earliest
+        across channels for multichannel input.
 
     References
     ----------
@@ -893,7 +893,7 @@ def perceptual_mixing_time_lindau(
         >>> import pyrato as ra
         ...
         >>> rir = pf.signals.files.room_impulse_response(sampling_rate=48000)
-        >>> t_mp95 = ra.parameters.perceptual_mixing_time_lindau(
+        >>> t_mp95, onset = ra.parameters.perceptual_mixing_time_lindau(
         ...     rir, percentile=95, plot=True)
     """
     if percentile == 50:
@@ -926,7 +926,7 @@ def perceptual_mixing_time_lindau(
             rir, onset, echo_density, perceptual_mixing_time,
             rf'$t_\mathrm{{mp{percentile}}}$')
 
-    return perceptual_mixing_time
+    return perceptual_mixing_time, onset
 
 
 def _plot_mixing_time(rir, onset, echo_density, mixing_time, label):
