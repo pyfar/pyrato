@@ -663,7 +663,7 @@ def test_JLF_calculates_known_reference_value(make_edc):
 def test_JLF_is_within_ISO3382_range(make_edc):
     """
     Smoke test: J_LF must fall within the empirically observed range
-    reported in ISO 3382 for concert halls: 0.05 to 0.35 (linear).
+    reported in ISO 3382-1 for concert halls: 0.05 to 0.35 (linear).
 
     Signal design:
     - Onset delay of 3 ms applied manually to both EDCs (co-located mics).
@@ -692,9 +692,9 @@ def test_JLF_is_within_ISO3382_range(make_edc):
 
     result = early_lateral_energy_fraction(edc_omni, edc_lateral).item()
 
-    # ISO 3382 typical range: 0.05–0.35
+    # ISO 3382-1 typical range: 0.05–0.35
     assert 0.05 <= result <= 0.35, (
-        f"J_LF = {result:.2f} is outside the ISO 3382 typical range "
+        f"J_LF = {result:.2f} is outside the ISO 3382-1 typical range "
         f"[0.05, 0.35]"
     )
 

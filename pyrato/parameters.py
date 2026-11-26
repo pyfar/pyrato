@@ -13,7 +13,7 @@ def reverberation_time_linear_regression(
     """Estimate the reverberation time from a given energy decay curve.
 
     The linear regression is performed using least squares error minimization
-    according to the ISO standard 3382 [#]_.
+    according to the ISO standard 3382-1 [#]_.
 
     Parameters
     ----------

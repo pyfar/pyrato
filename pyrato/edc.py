@@ -107,7 +107,7 @@ def schroeder_integration(room_impulse_response, is_energy=False):
 
     The full length of the input signal is squared and integrated.
 
-    For measurements in accordance with ISO 3382 [#]_, appropriate
+    For measurements in accordance with ISO 3382-1 [#]_, appropriate
     preprocessing (:func:`pyrato.edc.energy_decay_curve_truncation`) of the
     impulse response
     (time alignment, band-pass filtering, and noise handling) must be
@@ -505,7 +505,7 @@ def energy_decay_curve_lundeby(
             np.abs(time_vector - intersection_time[ch]))
         p_square_at_intersection = noise_estimation[ch]
 
-        # Calculate correction term according to DIN EN ISO 3382
+        # Calculate correction term according to DIN EN ISO 3382-1
         # TO-DO: check reference!
         correction = (p_square_at_intersection
                       * late_reverberation_time[ch]
@@ -826,7 +826,7 @@ def energy_decay_curve_chu_lundeby(
         else:
             p_square_at_intersection = noise_level[ch]
 
-        # calculate correction term according to DIN EN ISO 3382
+        # calculate correction term according to DIN EN ISO 3382-1
         correction = (p_square_at_intersection
                       * late_reverberation_time[ch]
                       * (1 / (6*np.log(10)))
