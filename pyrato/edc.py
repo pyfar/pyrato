@@ -92,8 +92,9 @@ def schroeder_integration(room_impulse_response, is_energy=False):
     .. [#] M. R. Schroeder, "New Method of Measuring Reverberation Time,"
            The Journal of the Acoustical Society of America, vol. 37, no. 6,
            pp. 1187-1187, 1965.
-    .. [#] ISO 3382, Acoustics — Measurement of the reverberation
-        time of rooms with reference to other acoustical parameters.
+    .. [#] ISO 3382-1:2009 - Acoustics - Measurement of room acoustic
+           parameters - Part 1: Performance spaces. Geneva, Switzerland:
+           International Organization for Standardization.
 
     Notes
     -----
@@ -106,7 +107,7 @@ def schroeder_integration(room_impulse_response, is_energy=False):
 
     The full length of the input signal is squared and integrated.
 
-    For measurements in accordance with ISO 3382 [#]_, appropriate
+    For measurements in accordance with ISO 3382-1 [#]_, appropriate
     preprocessing (:func:`pyrato.edc.energy_decay_curve_truncation`) of the
     impulse response
     (time alignment, band-pass filtering, and noise handling) must be
@@ -262,8 +263,9 @@ def energy_decay_curve_truncation(
 
     References
     ----------
-    .. [#] International Organization for Standardization, “EN ISO 3382-1:2009
-           Acoustics - Measurement of room acoustic parameters,” 2009.
+    .. [#] ISO 3382-1:2009 - Acoustics - Measurement of room acoustic
+           parameters - Part 1: Performance spaces. Geneva, Switzerland:
+           International Organization for Standardization.
 
     Examples
     --------
@@ -431,8 +433,8 @@ def energy_decay_curve_lundeby(
     References
     ----------
     .. [#] A. Lundeby, T. E. Vigran, H. Bietz, and M. Vorländer,
-        “Uncertainties of Measurements in Room Acoustics,”
-        Acta Acust. United Ac., vol. 81, no. 4, pp. 344-355, Jul. 1995.
+           “Uncertainties of Measurements in Room Acoustics,”
+           Acta Acust. United Ac., vol. 81, no. 4, pp. 344-355, Jul. 1995.
 
     Examples
     --------
@@ -503,7 +505,7 @@ def energy_decay_curve_lundeby(
             np.abs(time_vector - intersection_time[ch]))
         p_square_at_intersection = noise_estimation[ch]
 
-        # Calculate correction term according to DIN EN ISO 3382
+        # Calculate correction term according to DIN EN ISO 3382-1
         # TO-DO: check reference!
         correction = (p_square_at_intersection
                       * late_reverberation_time[ch]
@@ -587,7 +589,6 @@ def energy_decay_curve_chu(
 
     References
     ----------
-
     .. [#] W. T. Chu. “Comparison of reverberation measurements using
            Schroeder's impulse method and decay-curve averaging method”.
            In: Journal of the Acoustical Society of America 63.5 (1978),
@@ -825,7 +826,7 @@ def energy_decay_curve_chu_lundeby(
         else:
             p_square_at_intersection = noise_level[ch]
 
-        # calculate correction term according to DIN EN ISO 3382
+        # calculate correction term according to DIN EN ISO 3382-1
         correction = (p_square_at_intersection
                       * late_reverberation_time[ch]
                       * (1 / (6*np.log(10)))
